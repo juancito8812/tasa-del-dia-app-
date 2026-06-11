@@ -22,22 +22,26 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Inicializar nested repo (tasa-del-dia)
         run: |
-          # El working-directory ya es tasa-del-dia, inicializamos aquí
-          git init
-          git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
-          git fetch --depth 1 origin master
-          git checkout FETCH_HEAD
+          if [ -z "$(ls -A .)" ]; then
+            echo "📦 Directorio vacío — inicializando desde GitHub..."
+            git init
+            git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
+            git fetch --depth 1 origin master
+            git checkout FETCH_HEAD
+          else
+            echo "✅ Directorio ya contiene archivos"
+          fi
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: tasa-del-dia/package-lock.json
+          cache-dependency-path: '**/package-lock.json'
 
       - name: Instalar dependencias
         run: npm ci
@@ -66,9 +70,9 @@ jobs:
       - name: Compilar APK con EAS Build
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        timeout-minutes: 20
+        timeout-minutes: 45
         run: |
-          echo "Iniciando build en servidores Expo (esto toma 3-15 min)..."
+          echo "Iniciando build en servidores Expo (esto toma 3-30 min)..."
           npx eas build \
             --platform android \
             --profile preview \
@@ -93,7 +97,7 @@ jobs:
           fi
 
       - name: Subir APK como artefacto del release
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: TasaDelDia-${{ steps.version.outputs.tag }}.apk
           path: tasa-del-dia/TasaDelDia-${{ steps.version.outputs.tag }}.apk

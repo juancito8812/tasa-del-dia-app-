@@ -20,10 +20,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repositorio con submódulos
-        uses: actions/checkout@v4
+      - name: Checkout repositorio
+        uses: actions/checkout@v5
         with:
-          submodules: recursive
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,7 +38,7 @@ jobs:
           echo "status<<EOF" >> $GITHUB_OUTPUT
           echo "$STATUS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          
+
           if [ -z "$STATUS" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
             echo "🟢 No hay cambios en el repo padre"
@@ -49,11 +48,11 @@ jobs:
             echo "$STATUS"
           fi
 
-      - name: Sincronizar submódulos
+      - name: Sincronizar directorios tipo submódulo
         id: sync-submodules
         if: steps.parent-status.outputs.has_changes == 'true'
         run: |
-          # Buscar submódulos con cambios
+          # Buscar directorios que contengan .git (submódulos reales o clones)
           for dir in */; do
             dir="${dir%/}"
             if [ -d "$dir/.git" ] || [ -f "$dir/.git" ]; then
@@ -62,14 +61,14 @@ jobs:
               if [ -n "$SM_STATUS" ]; then
                 echo "🔄 Sincronizando submódulo: $dir"
                 echo "$SM_STATUS"
-                
+
                 git add .
-                
+
                 # Generar mensaje de commit
                 FILES=$(git diff --cached --name-only | head -5)
                 SM_COUNT=$(git diff --cached --name-only | wc -l)
                 MSG="🔧 chore: Actualizar ${dir} (${SM_COUNT} archivo(s))"
-                
+
                 git commit -m "$MSG"
                 git push
                 echo "✅ Submódulo $dir sincronizado"
@@ -87,22 +86,22 @@ jobs:
             echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
             exit 0
           fi
-          
+
           # Obtener estado de cambios
           ADDED=$(git status --porcelain | grep -c '^[A?]' || echo 0)
           DELETED=$(git status --porcelain | grep -c '^ D' || echo 0)
           MODIFIED=$(git status --porcelain | grep -c '^.M' || echo 0)
-          
+
           # Obtener nombres de archivos para el mensaje
           CHANGED_FILES=$(git status --porcelain | awk '{print $2}' | head -3 | tr '\n' ', ' | sed 's/, $//')
           FILE_COUNT=$(git status --porcelain | wc -l)
-          
+
           # Determinar tipo de cambio
           ALL_FILES=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
-          
+
           TYPE="chore"
           EMOJI="🔧"
-          
+
           if echo "$ALL_FILES" | grep -qiE "readme|\.md$|doc"; then
             TYPE="docs"
             EMOJI="📝"
@@ -110,7 +109,7 @@ jobs:
             TYPE="chore"
             EMOJI="🔧"
           fi
-          
+
           # Construir descripción
           if [ "$ADDED" -gt 0 ] && [ "$MODIFIED" -eq 0 ] && [ "$DELETED" -eq 0 ]; then
             DESC="Agregar ${CHANGED_FILES}"
@@ -121,7 +120,7 @@ jobs:
           else
             DESC="Actualizar ${FILE_COUNT} archivo(s)"
           fi
-          
+
           MSG="${EMOJI} ${TYPE}: ${DESC}"
           echo "message=${MSG}" >> $GITHUB_OUTPUT
           echo "📝 Mensaje generado: $MSG"
@@ -130,16 +129,16 @@ jobs:
         if: steps.parent-status.outputs.has_changes == 'true'
         run: |
           git add .
-          
+
           # Verificar que haya algo que commitear
           if git diff --cached --quiet; then
             echo "🟢 No hay cambios nuevos después del add, saltando commit"
             exit 0
           fi
-          
+
           git commit -m "${{ steps.commit-message.outputs.message }}"
           echo "✅ Commit realizado: ${{ steps.commit-message.outputs.message }}"
-          
+
           git push
           echo "✅ Push realizado correctamente"
 
