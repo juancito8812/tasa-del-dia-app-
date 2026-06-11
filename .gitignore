@@ -29,7 +29,6 @@ env/
 *.egg-info/
 tasa-del-dia-desktop/build/
 tasa-del-dia-desktop/dist/
-tasa-del-dia-desktop/*.spec
 tasa-del-dia-desktop/app_icon.ico
 tasa-del-dia-desktop/__pycache__/
 
