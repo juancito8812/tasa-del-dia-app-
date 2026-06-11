@@ -2,6 +2,8 @@
 """
 Spec para compilar Tasa del Día con PyInstaller.
 Uso: python -m PyInstaller TasaDelDia.spec
+Nota: __file__ no está disponible en el contexto de PyInstaller,
+      usar os.getcwd() en su lugar.
 """
 
 from __future__ import annotations
@@ -9,17 +11,15 @@ from __future__ import annotations
 import os
 import sys
 
-# Incluir todo el paquete 'app' como datos adicionales
-app_dir = os.path.join(os.path.dirname(__file__), "app")
+# El directorio actual es tasa-del-dia-desktop/ (por working-directory en workflow)
+app_dir = os.path.join(os.getcwd(), "app")
 
 a = Analysis(
     ['main.py'],
-    pathex=[os.path.dirname(__file__)],
+    pathex=[os.getcwd()],
     binaries=[],
     datas=[
         ('app_icon.ico', '.'),
-        # Incluir todo el paquete app como módulo
-        (app_dir, 'app'),
     ],
     hiddenimports=[
         'app',
@@ -33,7 +33,6 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Excluir tests del .exe final
         'tests',
         'pytest',
         'unittest',
