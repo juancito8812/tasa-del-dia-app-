@@ -21,8 +21,10 @@ jobs:
         working-directory: tasa-del-dia
 
     steps:
-      - name: Checkout código
+      - name: Checkout código con submódulos
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
