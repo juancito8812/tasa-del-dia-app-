@@ -133,7 +133,7 @@ export async function fetchAllData() {
     fetchBCVCurrencies(),
   ]);
 
-  return {
+  const result = {
     tasaBCV: usdRates.rates.reference?.mid ?? null,
     tasaParalelo: usdRates.rates.parallel?.mid ?? null,
     tasaBinanceP2P: usdRates.rates.binance?.mid ?? null,
@@ -142,6 +142,74 @@ export async function fetchAllData() {
     eurReferenceDate: bcvCurrencies.referenceDate,
     eurCapturedAt: bcvCurrencies.capturedAt,
   };
+
+  // Save to offline cache on success
+  saveCacheRates(result);
+
+  return result;
+}
+
+/**
+ * Intenta cargar datos desde la API. Si falla, intenta cargar desde caché.
+ * Retorna { data, fromCache, cacheInfo } indicando si vino de caché.
+ */
+export async function fetchWithOfflineFallback() {
+  try {
+    const data = await fetchAllData();
+    return { data, fromCache: false, error: null };
+  } catch (error) {
+    // Try loading from cache
+    const cache = await loadCacheRates();
+    if (cache && (cache.tasaBCV !== null || cache.tasaParalelo !== null)) {
+      return {
+        data: cache,
+        fromCache: true,
+        error: error.message || 'Error al obtener las tasas',
+        cacheInfo: { cachedAt: cache.cachedAt },
+      };
+    }
+    // No cache available
+    return { data: null, fromCache: false, error: error.message || 'Error al obtener las tasas' };
+  }
+}
+
+// ─── Caché Offline ────────────────────────────────────────────────
+
+const STORAGE_KEY_CACHE = '@tasa_del_dia/cache_rates';
+
+/**
+ * Guarda las tasas en caché para uso offline.
+ */
+export async function saveCacheRates(data) {
+  try {
+    const cache = {
+      tasaBCV: data.tasaBCV,
+      tasaParalelo: data.tasaParalelo,
+      tasaBinanceP2P: data.tasaBinanceP2P,
+      tasaEuro: data.tasaEuro,
+      usdFetchedAt: data.usdFetchedAt,
+      eurCapturedAt: data.eurCapturedAt,
+      cachedAt: new Date().toISOString(),
+    };
+    await AsyncStorage.setItem(STORAGE_KEY_CACHE, JSON.stringify(cache));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Carga las tasas desde el caché offline.
+ * Retorna null si no hay caché.
+ */
+export async function loadCacheRates() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_CACHE);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 }
 
 // ─── Historial de tasas ─────────────────────────────────────────────

@@ -35,7 +35,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "eas-cli": "^20.1.0"
   },
   "private": true
 }

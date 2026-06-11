@@ -20,7 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
-import { fetchAllData, getStoredBCVLunes } from '../services/api';
+import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
 import AutoRefreshBar from '../components/AutoRefreshBar';
 import useAutoRefresh from '../hooks/useAutoRefresh';
 
@@ -505,6 +505,8 @@ export default function ConverterScreen() {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [copiedType, setCopiedType] = useState(null);
   const [pasteFeedback, setPasteFeedback] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineCachedAt, setOfflineCachedAt] = useState(null);
   const insets = useSafeAreaInsets();
 
   // Animación fade-in al cambiar de pestaña
@@ -528,11 +530,41 @@ export default function ConverterScreen() {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
-      const [data, bcvLunesData] = await Promise.all([
-        fetchAllData(),
+      
+      const [result, bcvLunesData] = await Promise.all([
+        fetchWithOfflineFallback(),
         getStoredBCVLunes(),
       ]);
-      setRates({ bcv: data.tasaBCV, paralelo: data.tasaParalelo, euro: data.tasaEuro, binance_p2p: data.tasaBinanceP2P, bcv_lunes: bcvLunesData.value });
+
+      const { data: apiData, fromCache, error: fetchError, cacheInfo } = result;
+
+      if (fromCache && apiData) {
+        // Using cached data (offline mode)
+        setRates({
+          bcv: apiData.tasaBCV,
+          paralelo: apiData.tasaParalelo,
+          euro: apiData.tasaEuro,
+          binance_p2p: apiData.tasaBinanceP2P,
+          bcv_lunes: bcvLunesData.value,
+        });
+        setOfflineMode(true);
+        setOfflineCachedAt(cacheInfo?.cachedAt || null);
+      } else if (apiData) {
+        // Fresh data from API
+        setRates({
+          bcv: apiData.tasaBCV,
+          paralelo: apiData.tasaParalelo,
+          euro: apiData.tasaEuro,
+          binance_p2p: apiData.tasaBinanceP2P,
+          bcv_lunes: bcvLunesData.value,
+        });
+        setOfflineMode(false);
+        setOfflineCachedAt(null);
+      }
+
+      if (fetchError && !fromCache) {
+        Alert.alert('Error', 'No se pudieron cargar las tasas: ' + fetchError);
+      }
     } catch (err) {
       Alert.alert('Error', 'No se pudieron cargar las tasas: ' + err.message);
     } finally {
@@ -643,6 +675,14 @@ export default function ConverterScreen() {
               <View style={{ flex: 1 }} />
               <ThemeToggleMini />
             </View>
+            {offlineMode && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.warning, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 }}>
+                <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 11, flex: 1 }}>
+                  Sin conexión — Mostrando últimas tasas{offlineCachedAt ? ` (${new Date(offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
+                </Text>
+              </View>
+            )}
           </View>
 
           <AutoRefreshBar countdown={countdown} compact />

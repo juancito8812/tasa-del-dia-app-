@@ -1,6 +1,0 @@
-fix(ui): correcciones de UX y DatePicker nativo
-
-- Bugfix: elimina selectTextOnFocus del conversor (los dígitos ya no reemplazan al valor existente)
-- Bugfix: mejora placeholder y ayuda en input de fecha de Tasas Históricas
-- Feature: reemplaza input manual de fecha por DateTimePicker nativo (@react-native-community/datetimepicker)
-- Config: agrega plugin datetimepicker a app.config.js

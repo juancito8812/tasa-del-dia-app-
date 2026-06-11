@@ -21,7 +21,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
-import { fetchAllData, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled, getHistoricalRates, saveHistoricalRate, setManualHistoricalRate, getTodayKey, formatDateKey } from '../services/api';
+import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled, getHistoricalRates, saveHistoricalRate, setManualHistoricalRate, getTodayKey, formatDateKey } from '../services/api';
 import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
 import AutoRefreshBar from '../components/AutoRefreshBar';
@@ -146,6 +146,8 @@ export default function RatesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineCachedAt, setOfflineCachedAt] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [editValue, setEditValue] = useState('');
 
@@ -178,8 +180,23 @@ export default function RatesScreen() {
       else setLoading(true);
       setError(null);
 
-      const result = await fetchAllData();
-      setData(result);
+      const { data: result, fromCache, error: fetchError, cacheInfo } = await fetchWithOfflineFallback();
+      
+      if (fromCache && result) {
+        // Using cached data (offline mode)
+        setData(result);
+        setOfflineMode(true);
+        setOfflineCachedAt(cacheInfo?.cachedAt || null);
+      } else if (result) {
+        // Fresh data from API
+        setData(result);
+        setOfflineMode(false);
+        setOfflineCachedAt(null);
+      }
+      
+      if (fetchError && !fromCache) {
+        setError(fetchError);
+      }
     } catch (err) {
       setError(err.message || 'Error al obtener las tasas');
     } finally {
@@ -365,10 +382,18 @@ export default function RatesScreen() {
               <Text style={styles.headerBadgeText}>🇻🇪</Text>
             </View>
           </View>
-          {error && (
+          {error && !offlineMode && (
             <View style={[styles.errorBanner, { backgroundColor: C.highlight }]}>
               <Ionicons name="alert-circle" size={12} color="#fff" />
               <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+          {offlineMode && (
+            <View style={[styles.errorBanner, { backgroundColor: C.warning }]}>
+              <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
+              <Text style={styles.errorText}>
+                Sin conexión — Mostrando últimas tasas disponibles{offlineCachedAt ? ` (${new Date(offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
+              </Text>
             </View>
           )}
         </View>
