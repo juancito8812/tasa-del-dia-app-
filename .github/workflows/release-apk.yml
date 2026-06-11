@@ -50,10 +50,10 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "⚠️  EXPO_TOKEN no configurado en GitHub Secrets"
-            echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
+            echo "⚠️  EXPO_TOKEN no configurado — build manual requerido"
             exit 1
           fi
+          echo "Autenticando con EXPO_TOKEN..."
           npx eas whoami --non-interactive
 
       - name: Obtener versión del tag

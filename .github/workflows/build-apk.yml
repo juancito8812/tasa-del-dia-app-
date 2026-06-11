@@ -47,8 +47,10 @@ jobs:
         run: npm install -g eas-cli
 
       - name: Autenticar en Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+          if [ -z "$EXPO_TOKEN" ]; then
             echo "⚠️  EXPO_TOKEN no configurado — build manual requerido"
             echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
             echo "Luego agrégalo como secreto en GitHub: EXPO_TOKEN"
