@@ -1,0 +1,3 @@
+[submodule "tasa-del-dia"]
+    path = tasa-del-dia
+    url = https://github.com/juancito8812/tasa-del-dia-app-.git
