@@ -28,6 +28,7 @@ jobs:
       - name: Inicializar nested repo (tasa-del-dia)
         run: |
           # El nested repo no tiene .gitmodules, lo inicializamos manualmente
+          mkdir -p tasa-del-dia
           cd tasa-del-dia
           git init
           git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
