@@ -10,6 +10,7 @@
 [![Build EXE](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/build-exe.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/build-exe.yml)
 [![Release APK](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/release-apk.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/release-apk.yml)
 [![Release EXE](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/release-exe.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/release-exe.yml)
+[![Auto-Sync](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/auto-sync.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/auto-sync.yml)
 
 </div>
 
@@ -122,6 +123,7 @@ Cuando no hay conexión:
 | **Build EXE** | Push a `main` con cambios en `tasa-del-dia-desktop/` | .exe (artefacto) |
 | **Release APK** | Tag `v*` o Release publicado | APK adjuntada al release |
 | **Release EXE** | Tag `v*` o Release publicado | .exe adjuntado al release |
+| **Auto-Sync** | ⏰ Diario (6:00 AM UTC) o manual | Git commit + push automático |
 
 ### Configurar builds automáticos
 
