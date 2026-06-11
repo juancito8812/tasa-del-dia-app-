@@ -1,4 +1,4 @@
-name: 🤖 Auto-Sync (git-sync-assistant)
+name: 🤖 Auto-Sync (daily commit)
 
 on:
   schedule:
@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout repositorio
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -31,8 +31,8 @@ jobs:
           git config user.name "git-sync-assistant[bot]"
           git config user.email "git-sync-assistant[bot]@users.noreply.github.com"
 
-      - name: Verificar cambios en el repo padre
-        id: parent-status
+      - name: Verificar cambios
+        id: status
         run: |
           STATUS=$(git status --porcelain)
           echo "status<<EOF" >> $GITHUB_OUTPUT
@@ -41,113 +41,54 @@ jobs:
 
           if [ -z "$STATUS" ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "🟢 No hay cambios en el repo padre"
+            echo "🟢 No hay cambios pendientes"
           else
             echo "has_changes=true" >> $GITHUB_OUTPUT
-            echo "🟡 Cambios detectados en el repo padre:"
+            echo "🟡 Cambios detectados:"
             echo "$STATUS"
           fi
 
-      - name: Sincronizar directorios tipo submódulo
-        id: sync-submodules
-        if: steps.parent-status.outputs.has_changes == 'true'
-        run: |
-          # Buscar directorios que contengan .git (submódulos reales o clones)
-          for dir in */; do
-            dir="${dir%/}"
-            if [ -d "$dir/.git" ] || [ -f "$dir/.git" ]; then
-              cd "$dir"
-              SM_STATUS=$(git status --porcelain)
-              if [ -n "$SM_STATUS" ]; then
-                echo "🔄 Sincronizando submódulo: $dir"
-                echo "$SM_STATUS"
-
-                git add .
-
-                # Generar mensaje de commit
-                FILES=$(git diff --cached --name-only | head -5)
-                SM_COUNT=$(git diff --cached --name-only | wc -l)
-                MSG="🔧 chore: Actualizar ${dir} (${SM_COUNT} archivo(s))"
-
-                git commit -m "$MSG"
-                git push
-                echo "✅ Submódulo $dir sincronizado"
-              fi
-              cd ..
-            fi
-          done
-
       - name: Generar mensaje de commit
         id: commit-message
-        if: steps.parent-status.outputs.has_changes == 'true'
+        if: steps.status.outputs.has_changes == 'true'
         run: |
-          # Si el usuario proporcionó un mensaje manual, usarlo
           if [ -n "${{ inputs.message }}" ]; then
             echo "message=${{ inputs.message }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          # Obtener estado de cambios
           ADDED=$(git status --porcelain | grep -c '^[A?]' || echo 0)
           DELETED=$(git status --porcelain | grep -c '^ D' || echo 0)
           MODIFIED=$(git status --porcelain | grep -c '^.M' || echo 0)
-
-          # Obtener nombres de archivos para el mensaje
           CHANGED_FILES=$(git status --porcelain | awk '{print $2}' | head -3 | tr '\n' ', ' | sed 's/, $//')
           FILE_COUNT=$(git status --porcelain | wc -l)
 
-          # Determinar tipo de cambio
-          ALL_FILES=$(git status --porcelain | awk '{print $2}' | tr '\n' ' ')
-
-          TYPE="chore"
-          EMOJI="🔧"
-
-          if echo "$ALL_FILES" | grep -qiE "readme|\.md$|doc"; then
-            TYPE="docs"
-            EMOJI="📝"
-          elif echo "$ALL_FILES" | grep -qiE "config|\.env|package\.json|\.yml|\.yaml|\.json"; then
-            TYPE="chore"
-            EMOJI="🔧"
-          fi
-
-          # Construir descripción
-          if [ "$ADDED" -gt 0 ] && [ "$MODIFIED" -eq 0 ] && [ "$DELETED" -eq 0 ]; then
-            DESC="Agregar ${CHANGED_FILES}"
-          elif [ "$DELETED" -gt 0 ] && [ "$ADDED" -eq 0 ] && [ "$MODIFIED" -eq 0 ]; then
-            DESC="Eliminar ${CHANGED_FILES}"
-          elif [ "$FILE_COUNT" -le 3 ]; then
+          if [ "$FILE_COUNT" -le 3 ]; then
             DESC="Actualizar ${CHANGED_FILES}"
           else
             DESC="Actualizar ${FILE_COUNT} archivo(s)"
           fi
 
-          MSG="${EMOJI} ${TYPE}: ${DESC}"
+          MSG="🔧 chore: ${DESC}"
           echo "message=${MSG}" >> $GITHUB_OUTPUT
           echo "📝 Mensaje generado: $MSG"
 
       - name: Hacer commit y push
-        if: steps.parent-status.outputs.has_changes == 'true'
+        if: steps.status.outputs.has_changes == 'true'
         run: |
           git add .
-
-          # Verificar que haya algo que commitear
           if git diff --cached --quiet; then
             echo "🟢 No hay cambios nuevos después del add, saltando commit"
             exit 0
           fi
-
           git commit -m "${{ steps.commit-message.outputs.message }}"
-          echo "✅ Commit realizado: ${{ steps.commit-message.outputs.message }}"
-
           git push
-          echo "✅ Push realizado correctamente"
+          echo "✅ Commit y push realizados"
 
       - name: Resumen final
         run: |
-          HAS_PARENT="${{ steps.parent-status.outputs.has_changes }}"
-          if [ "$HAS_PARENT" = "true" ]; then
+          if [ "${{ steps.status.outputs.has_changes }}" = "true" ]; then
             echo "✅ Sincronización completada"
-            echo "📝 Commit: ${{ steps.commit-message.outputs.message }}"
           else
             echo "🟢 No se detectaron cambios para sincronizar."
           fi

@@ -15,50 +15,40 @@ jobs:
   build:
     name: Compilar APK (Release)
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: tasa-del-dia
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
-      - name: Inicializar nested repo (tasa-del-dia)
+      - name: Verificar que existe app React Native
         run: |
-          if [ -z "$(ls -A .)" ]; then
-            echo "📦 Directorio vacío — inicializando desde GitHub..."
-            git init
-            git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
-            git fetch --depth 1 origin master
-            git checkout FETCH_HEAD
-          else
-            echo "✅ Directorio ya contiene archivos"
+          if [ ! -f "package.json" ]; then
+            echo "⚠️  El directorio tasa-del-dia/ está vacío."
+            echo ""
+            echo "La app React Native no está incluida en este repositorio."
+            echo "Agrega el proyecto React Native en tasa-del-dia/ para usar este workflow."
+            exit 1
           fi
+          echo "✅ package.json encontrado"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        if: success()
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache-dependency-path: tasa-del-dia/package-lock.json
 
       - name: Instalar dependencias
+        if: success()
         run: npm ci
 
       - name: Instalar EAS CLI
+        if: success()
         run: npm install -g eas-cli
-
-      - name: Autenticar en Expo
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "⚠️  EXPO_TOKEN no configurado — build manual requerido"
-            exit 1
-          fi
-          echo "Autenticando con EXPO_TOKEN..."
-          npx eas whoami --non-interactive
 
       - name: Obtener versión del tag
         id: version
@@ -67,37 +57,45 @@ jobs:
           echo "tag=$TAG" >> $GITHUB_OUTPUT
           echo "Version: $TAG"
 
+      - name: Autenticar en Expo
+        if: success()
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "⚠️  EXPO_TOKEN no configurado"
+            exit 1
+          fi
+          npx eas whoami --non-interactive
+
       - name: Compilar APK con EAS Build
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         timeout-minutes: 45
         run: |
-          echo "Iniciando build en servidores Expo (esto toma 3-30 min)..."
           npx eas build \
             --platform android \
             --profile preview \
             --non-interactive \
             --wait
-          echo "✅ Build completado"
 
-      - name: Subir APK como artefacto
+      - name: Descargar APK
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "📥 Descargando APK del servidor de Expo..."
           npx eas build:download \
             --platform android \
             --output TasaDelDia-${{ steps.version.outputs.tag }}.apk \
             --non-interactive || true
           if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
-            echo "✅ APK descargada: $(ls -lh TasaDelDia-${{ steps.version.outputs.tag }}.apk | awk '{print $5}')"
-          else
-            echo "⚠️  Descarga automática no disponible."
-            echo "Descarga manual desde: https://expo.dev/accounts/jr8812/projects/tasa-del-dia/builds"
+            echo "✅ APK descargada"
           fi
 
       - name: Subir APK como artefacto del release
-        uses: actions/upload-artifact@v5
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: TasaDelDia-${{ steps.version.outputs.tag }}.apk
           path: tasa-del-dia/TasaDelDia-${{ steps.version.outputs.tag }}.apk
@@ -105,7 +103,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Subir APK al Release de GitHub
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' && success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

@@ -5,7 +5,6 @@ on:
     branches: [main, master]
     paths:
       - 'tasa-del-dia/**'
-      - 'tasa-del-dia'
   workflow_dispatch:
 
 concurrency:
@@ -13,91 +12,89 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Compilar APK con EAS Build
+  check:
+    name: Verificar código React Native
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: tasa-del-dia
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 1
+        uses: actions/checkout@v4
 
-      - name: Inicializar nested repo (tasa-del-dia)
+      - name: Verificar que existe app React Native
         run: |
-          # El directorio tasa-del-dia existe como submodule vacío
-          # Inicializamos el repo React Native aquí
-          if [ -z "$(ls -A .)" ]; then
-            echo "📦 Directorio vacío — inicializando desde GitHub..."
-            git init
-            git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
-            git fetch --depth 1 origin master
-            git checkout FETCH_HEAD
-          else
-            echo "✅ Directorio ya contiene archivos"
+          if [ ! -f "package.json" ]; then
+            echo "⚠️  El directorio tasa-del-dia/ está vacío."
+            echo ""
+            echo "La app React Native no está incluida en este repositorio."
+            echo "Para compilar el APK necesitas:"
+            echo "  1. Tener el proyecto React Native en tasa-del-dia/"
+            echo "  2. Configurar EXPO_TOKEN como secreto de GitHub"
+            echo ""
+            echo "Build cancelado — no hay código fuente para compilar."
+            exit 1
           fi
+          echo "✅ package.json encontrado"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        if: success()
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
+          cache-dependency-path: tasa-del-dia/package-lock.json
 
       - name: Instalar dependencias
+        if: success()
         run: npm ci
 
       - name: Instalar EAS CLI
+        if: success()
         run: npm install -g eas-cli
 
       - name: Autenticar en Expo
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "⚠️  EXPO_TOKEN no configurado — build manual requerido"
+            echo "⚠️  EXPO_TOKEN no configurado"
             echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
             echo "Luego agrégalo como secreto en GitHub: EXPO_TOKEN"
             exit 1
           fi
-          echo "Autenticando con EXPO_TOKEN..."
           npx eas whoami --non-interactive
 
       - name: Compilar APK con EAS Build
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         timeout-minutes: 45
         run: |
-          echo "Iniciando build en servidores Expo (esto toma 3-30 min)..."
           npx eas build \
             --platform android \
             --profile preview \
             --non-interactive \
             --wait
-          echo "✅ Build completado"
 
       - name: Descargar APK
+        if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          echo "📥 Descargando APK del servidor de Expo..."
           npx eas build:download \
             --platform android \
             --output TasaDelDia.apk \
             --non-interactive || true
           if [ -f "TasaDelDia.apk" ]; then
             echo "✅ APK descargada: $(ls -lh TasaDelDia.apk | awk '{print $5}')"
-          else
-            echo "⚠️  Descarga automática no disponible."
-            echo "Descarga manual desde: https://expo.dev/accounts/jr8812/projects/tasa-del-dia/builds"
           fi
 
       - name: Subir APK como artefacto
-        uses: actions/upload-artifact@v5
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: TasaDelDia.apk
           path: tasa-del-dia/TasaDelDia.apk
