@@ -22,10 +22,17 @@ jobs:
         working-directory: tasa-del-dia
 
     steps:
-      - name: Checkout código con submódulos
+      - name: Checkout código
         uses: actions/checkout@v4
-        with:
-          submodules: recursive
+
+      - name: Inicializar nested repo (tasa-del-dia)
+        run: |
+          # El nested repo no tiene .gitmodules, lo inicializamos manualmente
+          cd tasa-del-dia
+          git init
+          git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
+          git fetch --depth 1 origin master
+          git checkout FETCH_HEAD
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
