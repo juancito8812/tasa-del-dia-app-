@@ -26,8 +26,7 @@ jobs:
 
       - name: Inicializar nested repo (tasa-del-dia)
         run: |
-          mkdir -p tasa-del-dia
-          cd tasa-del-dia
+          # El working-directory ya es tasa-del-dia, inicializamos aquí
           git init
           git remote add origin https://github.com/juancito8812/tasa-del-dia-app-.git
           git fetch --depth 1 origin master
