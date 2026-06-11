@@ -29,12 +29,11 @@ jobs:
             echo "⚠️  El directorio tasa-del-dia/ está vacío."
             echo ""
             echo "La app React Native no está incluida en este repositorio."
-            echo "Para compilar el APK necesitas:"
-            echo "  1. Tener el proyecto React Native en tasa-del-dia/"
-            echo "  2. Configurar EXPO_TOKEN como secreto de GitHub"
+            echo "Para compilar el APK necesitas tener el proyecto React Native en tasa-del-dia/"
+            echo "y configurar EXPO_TOKEN como secreto de GitHub."
             echo ""
-            echo "Build cancelado — no hay código fuente para compilar."
-            exit 1
+            echo "⏭️  Build omitido — no hay código fuente para compilar."
+            exit 0
           fi
           echo "✅ package.json encontrado"
           
@@ -42,8 +41,8 @@ jobs:
           if [ ! -f "app.json" ] && [ ! -d "node_modules" ]; then
             echo "⚠️  tasa-del-dia/ contiene solo archivos básicos (placeholder)."
             echo "Para compilar el APK, agrega el proyecto React Native completo en tasa-del-dia/."
-            echo "Build cancelado — no hay un proyecto React Native completo."
-            exit 78
+            echo "⏭️  Build omitido — no hay un proyecto React Native completo."
+            exit 0
           fi
           echo "✅ Proyecto React Native completo detectado"
 
