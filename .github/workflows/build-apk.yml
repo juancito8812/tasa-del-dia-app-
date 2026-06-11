@@ -25,26 +25,18 @@ jobs:
 
       - name: Verificar que existe app React Native
         run: |
+          ls -R
           if [ ! -f "package.json" ]; then
             echo "⚠️  El directorio tasa-del-dia/ está vacío."
-            echo ""
-            echo "La app React Native no está incluida en este repositorio."
-            echo "Para compilar el APK necesitas tener el proyecto React Native en tasa-del-dia/"
-            echo "y configurar EXPO_TOKEN como secreto de GitHub."
-            echo ""
-            echo "⏭️  Build omitido — no hay código fuente para compilar."
             exit 0
           fi
           echo "✅ package.json encontrado"
           
-          # Verificar si es un proyecto React Native real o solo un placeholder
-          if [ ! -f "app.json" ] && [ ! -f "app.config.js" ] && [ ! -d "node_modules" ]; then
-            echo "⚠️  tasa-del-dia/ contiene solo archivos básicos (placeholder)."
-            echo "Para compilar el APK, agrega el proyecto React Native completo en tasa-del-dia/."
-            echo "⏭️  Build omitido — no hay un proyecto React Native completo."
-            exit 0
+          if [ ! -f "app.config.js" ]; then
+            echo "❌ app.config.js no encontrado en tasa-del-dia/"
+            exit 1
           fi
-          echo "✅ Proyecto React Native completo detectado"
+          echo "✅ app.config.js encontrado"
 
       - name: Setup Node.js
         if: success()
