@@ -1,0 +1,19 @@
+{
+  "name": "tasa-del-dia",
+  "version": "1.0.0",
+  "description": "Tasa del Dia BCV - React Native App",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android"
+  },
+  "dependencies": {
+    "expo": "~52.0.0",
+    "react": "18.3.1",
+    "react-native": "0.76.6"
+  },
+  "devDependencies": {
+    "eas-cli": "^15.0.0"
+  },
+  "private": true
+}
