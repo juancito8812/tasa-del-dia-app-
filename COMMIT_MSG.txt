@@ -1,0 +1,10 @@
+feat: historical rates, bugfixes, API key to .env
+
+- Add historical rates feature: auto-save daily rates, date lookup,
+  and manual entry for past dates (AsyncStorage-based)
+- Fix brecha calculation: use != null instead of && for null checks
+- Fix AnimatedNumber: skip animation on first render to avoid glitch
+- Security: move API key to .env via app.config.js + dotenv
+- Add EAS Secret COTIZAVE_API_KEY for production builds
+- Add .env.example with documentation
+- Replace app.json with app.config.js

@@ -143,3 +143,94 @@ export async function fetchAllData() {
     eurCapturedAt: bcvCurrencies.capturedAt,
   };
 }
+
+// ─── Historial de tasas ─────────────────────────────────────────────
+
+const STORAGE_KEY_HISTORICAL = '@tasa_del_dia/historical_rates';
+
+/**
+ * Obtiene el historial completo de tasas guardadas (por fecha).
+ * Retorna un objeto { "YYYY-MM-DD": { bcv, paralelo, binance_p2p, euro, fetchedAt }, ... }
+ */
+export async function getHistoricalRates() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Guarda un conjunto de tasas para una fecha específica.
+ * @param {string} dateKey - "YYYY-MM-DD"
+ * @param {{ bcv, paralelo, binance_p2p, euro, fetchedAt }} rates
+ */
+export async function saveHistoricalRate(dateKey, rates) {
+  try {
+    const all = await getHistoricalRates();
+    // Solo sobreescribe si no existe o si los nuevos datos son más completos
+    if (!all[dateKey] || rates.bcv !== null) {
+      all[dateKey] = {
+        bcv: rates.bcv ?? null,
+        paralelo: rates.paralelo ?? null,
+        binance_p2p: rates.binance_p2p ?? null,
+        euro: rates.euro ?? null,
+        fetchedAt: rates.fetchedAt ?? new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
+    }
+  } catch {}
+}
+
+/**
+ * Guarda manualmente las tasas para una fecha (ingreso manual del usuario).
+ * @param {string} dateKey - "YYYY-MM-DD"
+ * @param {{ bcv, paralelo, binance_p2p, euro }} rates
+ */
+export async function setManualHistoricalRate(dateKey, rates) {
+  try {
+    const all = await getHistoricalRates();
+    all[dateKey] = {
+      bcv: rates.bcv ?? null,
+      paralelo: rates.paralelo ?? null,
+      binance_p2p: rates.binance_p2p ?? null,
+      euro: rates.euro ?? null,
+      fetchedAt: new Date().toISOString(),
+      manual: true,
+    };
+    await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
+  } catch {}
+}
+
+/**
+ * Retorna el key de fecha de hoy en formato "YYYY-MM-DD".
+ */
+export function getTodayKey() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Convierte fecha en formato DD/MM/AAAA a YYYY-MM-DD.
+ */
+export function parseDateDDMMYYYY(text) {
+  const parts = text.replace(/[^0-9/]/g, '').split('/');
+  if (parts.length !== 3) return null;
+  const [dd, mm, yyyy] = parts.map(Number);
+  if (!dd || !mm || !yyyy || dd > 31 || mm > 12 || yyyy < 2020 || yyyy > 2030) return null;
+  return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+}
+
+/**
+ * Formatea YYYY-MM-DD a DD/MM/AAAA para mostrar.
+ */
+export function formatDateKey(dateKey) {
+  if (!dateKey) return '';
+  const [y, m, d] = dateKey.split('-');
+  return `${d}/${m}/${y}`;
+}
