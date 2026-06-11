@@ -5,6 +5,7 @@ on:
     branches: [main, master]
     paths:
       - 'tasa-del-dia/**'
+      - 'tasa-del-dia'
   workflow_dispatch:
 
 concurrency:
