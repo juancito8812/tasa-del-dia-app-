@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verificar que existe app React Native
         run: |
@@ -38,7 +38,7 @@ jobs:
           echo "✅ package.json encontrado"
           
           # Verificar si es un proyecto React Native real o solo un placeholder
-          if [ ! -f "app.json" ] && [ ! -d "node_modules" ]; then
+          if [ ! -f "app.json" ] && [ ! -f "app.config.js" ] && [ ! -d "node_modules" ]; then
             echo "⚠️  tasa-del-dia/ contiene solo archivos básicos (placeholder)."
             echo "Para compilar el APK, agrega el proyecto React Native completo en tasa-del-dia/."
             echo "⏭️  Build omitido — no hay un proyecto React Native completo."
@@ -48,11 +48,11 @@ jobs:
 
       - name: Setup Node.js
         if: success()
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: tasa-del-dia/package-lock.json
+          cache-dependency-path: 'tasa-del-dia/package-lock.json'
 
       - name: Instalar dependencias
         if: success()
@@ -63,6 +63,10 @@ jobs:
             echo "⚠️  No se encontró package-lock.json, usando npm install"
             npm install
           fi
+
+      - name: Ejecutar Tests
+        if: success()
+        run: npm test
 
       - name: Instalar EAS CLI
         if: success()
@@ -108,7 +112,7 @@ jobs:
 
       - name: Subir APK como artefacto
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TasaDelDia.apk
           path: tasa-del-dia/TasaDelDia.apk

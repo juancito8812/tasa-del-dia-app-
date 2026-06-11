@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Verificar que existe app React Native
         run: |
@@ -36,15 +36,19 @@ jobs:
 
       - name: Setup Node.js
         if: success()
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: tasa-del-dia/package-lock.json
+          cache-dependency-path: 'tasa-del-dia/package-lock.json'
 
       - name: Instalar dependencias
         if: success()
         run: npm ci
+
+      - name: Ejecutar Tests
+        if: success()
+        run: npm test
 
       - name: Instalar EAS CLI
         if: success()
@@ -95,7 +99,7 @@ jobs:
 
       - name: Subir APK como artefacto del release
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TasaDelDia-${{ steps.version.outputs.tag }}.apk
           path: tasa-del-dia/TasaDelDia-${{ steps.version.outputs.tag }}.apk

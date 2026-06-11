@@ -27,14 +27,14 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python 3.x
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: tasa-del-dia-desktop/requirements.txt
+          cache-dependency-path: 'tasa-del-dia-desktop/requirements.txt'
 
       - name: Instalar PyInstaller y dependencias
         run: |
@@ -61,7 +61,7 @@ jobs:
           }
 
       - name: Subir .EXE como artefacto
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TasaDelDia.exe
           path: tasa-del-dia-desktop/dist/TasaDelDia.exe

@@ -1,19 +1,56 @@
 {
   "name": "tasa-del-dia",
   "version": "1.0.0",
-  "description": "Tasa del Dia BCV - React Native App",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android"
+    "android": "expo run:android",
+    "web": "expo start --web",
+    "build": "expo build:android",
+    "ios": "expo run:ios",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ],
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)"
+    ]
   },
   "dependencies": {
-    "expo": "~52.0.0",
-    "react": "18.3.1",
-    "react-native": "0.76.6"
+    "@expo/metro-runtime": "~6.1.2",
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "8.4.4",
+    "@react-navigation/bottom-tabs": "^7.0.0",
+    "@react-navigation/native": "^7.0.0",
+    "expo": "~54.0.0",
+    "expo-asset": "~12.0.13",
+    "expo-build-properties": "~1.0.10",
+    "expo-clipboard": "~8.0.8",
+    "expo-constants": "~18.0.13",
+    "expo-font": "~14.0.12",
+    "expo-notifications": "~0.32.17",
+    "expo-status-bar": "~3.0.9",
+    "expo-system-ui": "~6.0.9",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-native": "0.81.5",
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "^0.21.0",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "eas-cli": "^15.0.0"
+    "@babel/core": "^7.26.0",
+    "@testing-library/react-native": "^14.0.0",
+    "dotenv": "^17.4.2",
+    "eas-cli": "^20.1.0",
+    "jest": "^29.7.0",
+    "jest-expo": "^56.0.5",
+    "react-test-renderer": "^19.2.7"
   },
   "private": true
 }
