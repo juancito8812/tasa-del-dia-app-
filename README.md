@@ -192,7 +192,9 @@ skills/
 ---
 
 <div align="center">
-  <p>Hecho con ❤️ para Venezuela</p>
+  <p>Hecho con ❤️ para Venezuela
+
+<!-- Última actualización: 11-06-2026 --></p>
   <p>
     <a href="https://github.com/juancito8812/tasa-del-dia-app-/issues">Reportar un problema</a>
     ·
