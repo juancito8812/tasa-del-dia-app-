@@ -670,7 +670,7 @@ export default function ConverterScreen() {
 
             <View style={[styles.inputContainer, isKeyboardVisible && styles.inputContainerFocused]}>
               <Ionicons name={mode === 'usd-to-bs' ? 'logo-usd' : 'cash'} size={16} color={C.textMuted} style={styles.inputIcon} />
-              <TextInput ref={inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0,00" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" value={displayAmount} onChangeText={handleChangeText} returnKeyType="done" onSubmitEditing={handleConvert} selectTextOnFocus />
+              <TextInput ref={inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0,00" placeholderTextColor={C.textMuted} keyboardType="decimal-pad" value={displayAmount} onChangeText={handleChangeText} returnKeyType="done" onSubmitEditing={handleConvert} />
               <TouchableOpacity onPress={handlePaste} activeOpacity={0.6} style={{ paddingLeft: 8, paddingVertical: 4 }}>
                 <View style={{ backgroundColor: pasteFeedback ? (C.success + '20') : (currentColor + '20'), borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
                   <Ionicons name={pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={pasteFeedback ? C.success : currentColor} />

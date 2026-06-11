@@ -33,6 +33,7 @@ module.exports = {
     plugins: [
       "expo-asset",
       "expo-font",
+      "@react-native-community/datetimepicker",
       [
         "expo-build-properties",
         {

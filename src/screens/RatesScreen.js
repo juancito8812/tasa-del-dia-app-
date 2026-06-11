@@ -17,10 +17,11 @@ import {
   Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
-import { fetchAllData, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled, getHistoricalRates, saveHistoricalRate, setManualHistoricalRate, getTodayKey, parseDateDDMMYYYY, formatDateKey } from '../services/api';
+import { fetchAllData, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled, getHistoricalRates, saveHistoricalRate, setManualHistoricalRate, getTodayKey, formatDateKey } from '../services/api';
 import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
 import AutoRefreshBar from '../components/AutoRefreshBar';
@@ -151,8 +152,9 @@ export default function RatesScreen() {
   // Historial de tasas
   const [historicalRates, setHistoricalRates] = useState({});
   const [histModalVisible, setHistModalVisible] = useState(false);
-  const [histDateText, setHistDateText] = useState('');
+  const [histDate, setHistDate] = useState(new Date());
   const [histDateKey, setHistDateKey] = useState(null);
+  const [histShowPicker, setHistShowPicker] = useState(false);
   const [histManualModal, setHistManualModal] = useState(false);
   const [histManualValues, setHistManualValues] = useState({ bcv: '', paralelo: '', euro: '' });
 
@@ -449,7 +451,7 @@ export default function RatesScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
-              setHistDateText('');
+              setHistDate(new Date());
               setHistDateKey(null);
               setHistModalVisible(true);
             }}
@@ -515,44 +517,44 @@ export default function RatesScreen() {
               <Text style={{ fontSize: 16, fontWeight: '700', color: C.textPrimary, marginBottom: 4 }}>Tasas Históricas</Text>
               <Text style={{ fontSize: 12, color: C.textMuted, marginBottom: 14 }}>Ingresa una fecha para ver las tasas de ese día</Text>
 
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-                <TextInput
-                  style={{
-                    flex: 1,
-                    backgroundColor: C.inputBg, borderRadius: 12, padding: 12,
-                    fontSize: 16, fontWeight: '600', color: C.textPrimary,
-                    textAlign: 'center', borderWidth: 1, borderColor: C.inputBorder,
-                  }}
-                  placeholder="DD/MM/AAAA"
-                  placeholderTextColor={C.textMuted}
-                  keyboardType="number-pad"
-                  value={histDateText}
-                  onChangeText={(t) => {
-                    // Auto-formatear DD/MM/AAAA
-                    let cleaned = t.replace(/[^0-9]/g, '');
-                    if (cleaned.length > 2) cleaned = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-                    if (cleaned.length > 5) cleaned = cleaned.slice(0, 5) + '/' + cleaned.slice(5);
-                    if (cleaned.length > 10) cleaned = cleaned.slice(0, 10);
-                    setHistDateText(cleaned);
-                    setHistDateKey(null);
-                  }}
-                  autoFocus
-                />
-                <TouchableOpacity
-                  style={{ backgroundColor: C.info, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center' }}
-                  onPress={() => {
-                    const parsed = parseDateDDMMYYYY(histDateText);
-                    if (parsed) {
-                      setHistDateKey(parsed);
-                    } else {
-                      Alert.alert('Fecha inválida', 'Ingresa una fecha válida en formato DD/MM/AAAA');
+              {/* Selector de fecha nativo */}
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row', alignItems: 'center', gap: 10,
+                  backgroundColor: C.inputBg, borderRadius: 12, padding: 14,
+                  borderWidth: 1, borderColor: C.inputBorder,
+                  marginBottom: 10,
+                }}
+                onPress={() => setHistShowPicker(true)}
+                activeOpacity={0.7}
+              >
+                <View style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  backgroundColor: C.info + '18',
+                  justifyContent: 'center', alignItems: 'center',
+                }}>
+                  <Ionicons name="calendar-outline" size={18} color={C.info} />
+                </View>
+                <Text style={{ flex: 1, fontSize: 16, fontWeight: '600', color: histDateKey ? C.textPrimary : C.textMuted }}>
+                  {histDateKey ? formatDateKey(histDateKey) : 'Seleccionar fecha'}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color={C.textMuted} />
+              </TouchableOpacity>
+
+              {histShowPicker && (
+                <DateTimePicker
+                  value={histDate}
+                  mode="date"
+                  display="default"
+                  onChange={(event, selectedDate) => {
+                    setHistShowPicker(false);
+                    if (event.type === 'set' && selectedDate) {
+                      setHistDate(selectedDate);
+                      setHistDateKey(selectedDate.toISOString().slice(0, 10));
                     }
                   }}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="search" size={20} color="#fff" />
-                </TouchableOpacity>
-              </View>
+                />
+              )}
 
               {histDateKey && (
                 <>
