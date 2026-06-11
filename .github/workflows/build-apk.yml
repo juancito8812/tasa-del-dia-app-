@@ -37,6 +37,15 @@ jobs:
             exit 1
           fi
           echo "✅ package.json encontrado"
+          
+          # Verificar si es un proyecto React Native real o solo un placeholder
+          if [ ! -f "app.json" ] && [ ! -d "node_modules" ]; then
+            echo "⚠️  tasa-del-dia/ contiene solo archivos básicos (placeholder)."
+            echo "Para compilar el APK, agrega el proyecto React Native completo en tasa-del-dia/."
+            echo "Build cancelado — no hay un proyecto React Native completo."
+            exit 78
+          fi
+          echo "✅ Proyecto React Native completo detectado"
 
       - name: Setup Node.js
         if: success()
@@ -48,7 +57,13 @@ jobs:
 
       - name: Instalar dependencias
         if: success()
-        run: npm ci
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            echo "⚠️  No se encontró package-lock.json, usando npm install"
+            npm install
+          fi
 
       - name: Instalar EAS CLI
         if: success()
