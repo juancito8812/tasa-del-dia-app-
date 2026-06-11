@@ -1,0 +1,76 @@
+name: Release .EXE (Desktop)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Compilar TasaDelDia.exe (Release)
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        working-directory: tasa-del-dia-desktop
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.x
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Instalar PyInstaller
+        run: |
+          pip install pyinstaller
+          echo "PyInstaller $(python -m PyInstaller --version)"
+
+      - name: Generar icono
+        run: python generate_icon.py
+
+      - name: Compilar .EXE con PyInstaller
+        run: python -m PyInstaller --clean TasaDelDia.spec
+        timeout-minutes: 5
+
+      - name: Obtener versión del tag
+        id: version
+        shell: bash
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Version: $TAG"
+
+      - name: Verificar .EXE
+        run: |
+          if (Test-Path "dist/TasaDelDia.exe") {
+            $size = (Get-Item "dist/TasaDelDia.exe").Length
+            $sizeMB = [math]::Round($size / 1MB, 1)
+            Write-Host "✅ EXE creado: $sizeMB MB"
+          } else {
+            Write-Error "❌ No se encontró dist/TasaDelDia.exe"
+            exit 1
+          }
+
+      - name: Subir .EXE como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: TasaDelDia-${{ steps.version.outputs.tag }}.exe
+          path: tasa-del-dia-desktop/dist/TasaDelDia.exe
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Subir EXE al Release de GitHub
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG=${{ steps.version.outputs.tag }}
+          gh release upload "$TAG" dist/TasaDelDia.exe --clobber
+          echo "✅ EXE adjuntado al release $TAG"

@@ -1,0 +1,50 @@
+# ─── Node / React Native / Expo ───
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+tasa-del-dia/android/.gradle/
+tasa-del-dia/android/app/build/
+tasa-del-dia/android/build/
+tasa-del-dia/android/local.properties
+*.apk
+*.aab
+
+# ─── Python / PyInstaller ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+venv/
+env/
+*.egg-info/
+tasa-del-dia-desktop/build/
+tasa-del-dia-desktop/dist/
+tasa-del-dia-desktop/*.spec
+tasa-del-dia-desktop/app_icon.ico
+tasa-del-dia-desktop/__pycache__/
+
+# ─── IDE ───
+.idea/
+*.swp
+*.swo
+*~
+.vscode/
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ─── Environment ───
+.env.local
+.env.production

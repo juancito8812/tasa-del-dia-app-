@@ -1,0 +1,103 @@
+name: Release APK (React Native)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compilar APK (Release)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: tasa-del-dia
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: tasa-del-dia/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Autenticar en Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "⚠️  EXPO_TOKEN no configurado en GitHub Secrets"
+            echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
+            exit 1
+          fi
+          npx eas whoami --non-interactive
+
+      - name: Obtener versión del tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Version: $TAG"
+
+      - name: Compilar APK con EAS Build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        timeout-minutes: 20
+        run: |
+          echo "Iniciando build en servidores Expo (esto toma 3-15 min)..."
+          npx eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --wait
+          echo "✅ Build completado"
+
+      - name: Subir APK como artefacto
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "📥 Descargando APK del servidor de Expo..."
+          npx eas build:download \
+            --platform android \
+            --output TasaDelDia-${{ steps.version.outputs.tag }}.apk \
+            --non-interactive || true
+          if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
+            echo "✅ APK descargada: $(ls -lh TasaDelDia-${{ steps.version.outputs.tag }}.apk | awk '{print $5}')"
+          else
+            echo "⚠️  Descarga automática no disponible."
+            echo "Descarga manual desde: https://expo.dev/accounts/jr8812/projects/tasa-del-dia/builds"
+          fi
+
+      - name: Subir APK como artefacto del release
+        uses: actions/upload-artifact@v4
+        with:
+          name: TasaDelDia-${{ steps.version.outputs.tag }}.apk
+          path: tasa-del-dia/TasaDelDia-${{ steps.version.outputs.tag }}.apk
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Subir APK al Release de GitHub
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
+            gh release upload ${{ steps.version.outputs.tag }} TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber
+            echo "✅ APK adjuntada al release"
+          fi

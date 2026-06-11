@@ -1,0 +1,86 @@
+name: Build APK (React Native)
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'tasa-del-dia/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compilar APK con EAS Build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: tasa-del-dia
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: tasa-del-dia/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Autenticar en Expo
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then
+            echo "⚠️  EXPO_TOKEN no configurado — build manual requerido"
+            echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
+            echo "Luego agrégalo como secreto en GitHub: EXPO_TOKEN"
+            exit 1
+          fi
+          echo "Autenticando con EXPO_TOKEN..."
+          npx eas whoami --non-interactive
+
+      - name: Compilar APK con EAS Build
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        timeout-minutes: 20
+        run: |
+          echo "Iniciando build en servidores Expo (esto toma 3-15 min)..."
+          npx eas build \
+            --platform android \
+            --profile preview \
+            --non-interactive \
+            --wait
+          echo "✅ Build completado"
+
+      - name: Descargar APK
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "📥 Descargando APK del servidor de Expo..."
+          npx eas build:download \
+            --platform android \
+            --output TasaDelDia.apk \
+            --non-interactive || true
+          if [ -f "TasaDelDia.apk" ]; then
+            echo "✅ APK descargada: $(ls -lh TasaDelDia.apk | awk '{print $5}')"
+          else
+            echo "⚠️  Descarga automática no disponible."
+            echo "Descarga manual desde: https://expo.dev/accounts/jr8812/projects/tasa-del-dia/builds"
+          fi
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: TasaDelDia.apk
+          path: tasa-del-dia/TasaDelDia.apk
+          retention-days: 30
+          if-no-files-found: warn
