@@ -48,13 +48,7 @@ jobs:
 
       - name: Instalar dependencias
         if: success()
-        run: |
-          if [ -f "package-lock.json" ]; then
-            npm ci
-          else
-            echo "⚠️  No se encontró package-lock.json, usando npm install"
-            npm install
-          fi
+        run: npm install --legacy-peer-deps
 
       - name: Ejecutar Tests
         if: success()

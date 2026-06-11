@@ -44,7 +44,7 @@ jobs:
 
       - name: Instalar dependencias
         if: success()
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: Ejecutar Tests
         if: success()
