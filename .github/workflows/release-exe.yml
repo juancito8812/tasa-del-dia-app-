@@ -7,6 +7,10 @@ on:
   release:
     types: [published]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Compilar TasaDelDia.exe (Release)
@@ -18,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Setup Python 3.x
         uses: actions/setup-python@v5
@@ -29,11 +33,7 @@ jobs:
 
       - name: Instalar PyInstaller y dependencias
         run: |
-          if (Test-Path "requirements.txt") {
-            pip install -r requirements.txt
-          } else {
-            pip install pyinstaller
-          }
+          pip install -r requirements.txt
           echo "PyInstaller $(python -m PyInstaller --version)"
 
       - name: Generar icono
@@ -63,7 +63,7 @@ jobs:
           }
 
       - name: Subir .EXE como artefacto
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v4
         with:
           name: TasaDelDia-${{ steps.version.outputs.tag }}.exe
           path: tasa-del-dia-desktop/dist/TasaDelDia.exe
