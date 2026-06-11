@@ -165,6 +165,32 @@ Cuando no hay conexión:
 
 ---
 
+## 🧠 Agent Skills
+
+Este proyecto incluye **24 skills** del repositorio [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — workflows estructurados para que agentes de IA sigan buenas prácticas de ingeniería de producción.
+
+| Ciclo | Skills incluidos |
+|-------|-----------------|
+| **🔍 Define** | `interview-me`, `idea-refine`, `spec-driven-development` |
+| **📋 Plan** | `planning-and-task-breakdown` |
+| **🛠 Build** | `incremental-implementation`, `test-driven-development`, `context-engineering`, `source-driven-development`, `doubt-driven-development`, `frontend-ui-engineering`, `api-and-interface-design` |
+| **✅ Verify** | `browser-testing-with-devtools`, `debugging-and-error-recovery` |
+| **👁️ Review** | `code-review-and-quality`, `code-simplification`, `security-and-hardening`, `performance-optimization` |
+| **🚢 Ship** | `git-workflow-and-versioning`, `ci-cd-and-automation`, `deprecation-and-migration`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch` |
+
+### 📁 Estructura
+
+```
+skills/
+├── 24 skills/           # Cada skill es un directorio con SKILL.md
+├── agents/              # 4 personas especialistas (code-reviewer, security, test, webperf)
+├── references/          # 5 checklists de referencia
+├── commands/            # 8 comandos slash
+└── docs/                # Guías de setup por herramienta
+```
+
+---
+
 <div align="center">
   <p>Hecho con ❤️ para Venezuela</p>
   <p>
