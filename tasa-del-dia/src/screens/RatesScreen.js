@@ -225,6 +225,36 @@ export default function RatesScreen() {
     }
   }, [data.tasaBCV, data.tasaParalelo, data.tasaBinanceP2P, data.tasaEuro, data.usdFetchedAt]);
 
+  // ─── Retry automático cuando estamos offline ───────────────────
+  // Intenta reconectar cada 30s; en cuanto la API responde,
+  // actualiza las tasas y sale del modo offline.
+  const retryIntervalRef = useRef(null);
+
+  useEffect(() => {
+    if (offlineMode) {
+      retryIntervalRef.current = setInterval(async () => {
+        try {
+          const { data: result, fromCache } = await fetchWithOfflineFallback();
+          if (result && !fromCache) {
+            // ¡Conexión recuperada!
+            setData(result);
+            setOfflineMode(false);
+            setOfflineCachedAt(null);
+            setError(null);
+          }
+        } catch {
+          // Sigue sin conexión, esperar al próximo intento
+        }
+      }, 30000);
+    }
+    return () => {
+      if (retryIntervalRef.current) {
+        clearInterval(retryIntervalRef.current);
+        retryIntervalRef.current = null;
+      }
+    };
+  }, [offlineMode, fetchWithOfflineFallback]);
+
   const onRefresh = () => {
     loadRates(true);
     resetCountdown();
