@@ -5,6 +5,7 @@ on:
     branches: [main, master]
     paths:
       - 'tasa-del-dia/**'
+      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
 concurrency:
