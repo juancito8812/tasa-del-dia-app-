@@ -67,6 +67,9 @@ class TasaDelDiaApp:
         # Widget compacto
         self.widget: Optional[WidgetWindow] = None
 
+        # Diálogo activo (para Esc)
+        self._active_dialog: Optional[tk.Toplevel] = None
+
         # BCV Lunes state
         bcv_config = load_config()
         self.bcv_lunes: Optional[float] = bcv_config.get("bcv_lunes")
@@ -858,6 +861,14 @@ class TasaDelDiaApp:
         btn_frame.pack(fill="x")
 
         tk.Button(
+            btn_frame, text="📁 Exportar CSV", font=FONTS["section"],
+            bg=c.info, fg="#ffffff",
+            activebackground=c.info, activeforeground="#ffffff",
+            relief="flat", padx=16, pady=6, cursor="hand2",
+            command=lambda: self._export_historical_csv(),
+        ).pack(side="left", fill="x", expand=True, padx=(0, 2))
+
+        tk.Button(
             btn_frame, text="Cerrar", font=FONTS["section"],
             bg=c.input_bg, fg=c.secondary,
             activebackground=c.accent, activeforeground=c.primary,
@@ -1105,6 +1116,51 @@ class TasaDelDiaApp:
                 self.hist_count_label.config(
                     text="Toca para consultar o guardar tasas de una fecha anterior"
                 )
+
+    # ─── Exportar CSV ────────────────────────────────────────────
+
+    def _export_historical_csv(self) -> None:
+        """Exporta todas las tasas históricas a un archivo CSV."""
+        from tkinter import filedialog, messagebox
+
+        historical = get_historical_rates()
+        if not historical:
+            messagebox.showinfo("Exportar", "No hay datos históricos para exportar.")
+            return
+
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv")],
+            initialfile=f"tasas-historicas-{datetime.now().strftime('%Y-%m-%d')}.csv",
+        )
+        if not filename:
+            return
+
+        try:
+            import csv
+            with open(filename, "w", newline="", encoding="utf-8-sig") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Fecha", "BCV (Oficial)", "Paralelo", "Binance P2P", "Euro (BCV)", "Manual"])
+                for date_key in sorted(historical.keys(), reverse=True):
+                    entry = historical[date_key]
+                    writer.writerow([
+                        format_date_key(date_key),
+                        f'{entry.get("bcv", ""):,.2f}' if entry.get("bcv") else "",
+                        f'{entry.get("paralelo", ""):,.2f}' if entry.get("paralelo") else "",
+                        f'{entry.get("binance_p2p", ""):,.2f}' if entry.get("binance_p2p") else "",
+                        f'{entry.get("euro", ""):,.2f}' if entry.get("euro") else "",
+                        "Sí" if entry.get("manual") else "",
+                    ])
+
+            count = len(historical)
+            messagebox.showinfo(
+                "Exportar",
+                f"✅ {count} registros exportados correctamente.\n{filename}",
+            )
+            logger.info("CSV exportado: %s (%d registros)", filename, count)
+        except Exception as e:
+            logger.exception("Error exportando CSV: %s", e)
+            messagebox.showerror("Error", f"No se pudo exportar:\n{e}")
 
     # ─── Widget compacto ──────────────────────────────────────────
 
@@ -1410,8 +1466,81 @@ class TasaDelDiaApp:
         _poll()
 
     def _bind_events(self) -> None:
-        """Vincula eventos de la ventana."""
+        """Vincula eventos de la ventana y atajos de teclado."""
         self.window.protocol("WM_DELETE_WINDOW", self._on_close)
+
+        # ─── Atajos de teclado ────────────────────────────────────
+        self.window.bind("<Control-r>", lambda _e: self.refresh_rates())
+        self.window.bind("<Control-R>", lambda _e: self.refresh_rates())
+        self.window.bind("<Control-c>", lambda _e: self._copy_bcv_rate())
+        self.window.bind("<Control-C>", lambda _e: self._copy_bcv_rate())
+        self.window.bind("<Control-Shift-C>", lambda _e: self._copy_all_rates())
+        self.window.bind("<Control-Shift-c>", lambda _e: self._copy_all_rates())
+        self.window.bind("<Escape>", lambda _e: self._close_active_dialog())
+        self.window.bind("<Control-w>", lambda _e: self._toggle_widget())
+        self.window.bind("<Control-W>", lambda _e: self._toggle_widget())
+
+    def _copy_bcv_rate(self) -> None:
+        """Copia la tasa BCV al portapapeles (Ctrl+C)."""
+        # No interferir con copia de texto en inputs
+        if isinstance(self.window.focus_get(), tk.Entry):
+            return
+        rate_text = self.card_bcv.rate_var.get()
+        if rate_text and rate_text not in ("—", "Cargando...", "Error"):
+            self.window.clipboard_clear()
+            self.window.clipboard_append(f"Bs. {rate_text}")
+            self._show_toast("BCV copiado", f"Bs. {rate_text}")
+            logger.info("Tasa BCV copiada: %s", rate_text)
+
+    def _copy_all_rates(self) -> None:
+        """Copia todas las tasas al portapapeles (Ctrl+Shift+C)."""
+        lines = []
+        cards = [
+            ("BCV", self.card_bcv),
+            ("Paralelo", self.card_parallel),
+            ("Euro", self.card_eur),
+            ("Binance P2P", self.card_binance),
+        ]
+        for name, card in cards:
+            val = card.rate_var.get()
+            if val and val not in ("—", "Cargando...", "Error"):
+                lines.append(f"{name}: Bs. {val}")
+        if self.bcv_lunes:
+            lines.append(f"BCV Lunes: Bs. {self.bcv_lunes:,.2f}")
+
+        if lines:
+            text = "\n".join(lines)
+            self.window.clipboard_clear()
+            self.window.clipboard_append(text)
+            self._show_toast("Tasas copiadas", f"{len(lines)} tasas")
+            logger.info("Todas las tasas copiadas (%d)", len(lines))
+
+    def _close_active_dialog(self) -> None:
+        """Cierra el diálogo activo si hay uno (Esc)."""
+        if self._active_dialog and self._active_dialog.winfo_exists():
+            self._active_dialog.destroy()
+            self._active_dialog = None
+
+    def _show_toast(self, title: str, message: str) -> None:
+        """Muestra un toast temporal de feedback."""
+        toast = tk.Toplevel(self.window)
+        toast.overrideredirect(True)
+        toast.attributes("-topmost", True)
+        toast.configure(bg=self.actual_theme.card)
+
+        x = self.window.winfo_x() + (self.window.winfo_width() - 200) // 2
+        y = self.window.winfo_y() + 40
+        toast.geometry(f"200x36+{x}+{y}")
+
+        frame = tk.Frame(toast, bg=self.actual_theme.accent, padx=12, pady=6)
+        frame.pack(fill="both", expand=True)
+
+        tk.Label(
+            frame, text=f"✓ {message}", bg=self.actual_theme.accent,
+            fg=self.actual_theme.primary, font=("Segoe UI", 9),
+        ).pack()
+
+        toast.after(1500, lambda: toast.destroy() if toast.winfo_exists() else None)
 
     def _on_close(self) -> None:
         """Maneja el cierre de la aplicación."""
