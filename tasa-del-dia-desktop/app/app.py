@@ -26,6 +26,7 @@ from app.storage import (
 )
 from app.theme import FONTS, Theme, get_system_theme, resolve_theme
 from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
+from app.widget_window import WidgetWindow
 
 logger = logging.getLogger(__name__)
 
@@ -63,10 +64,16 @@ class TasaDelDiaApp:
         self._countdown: int = REFRESH_MINUTES * 60
         self._countdown_timer: Optional[str] = None
 
+        # Widget compacto
+        self.widget: Optional[WidgetWindow] = None
+
         # BCV Lunes state
         bcv_config = load_config()
         self.bcv_lunes: Optional[float] = bcv_config.get("bcv_lunes")
         self.bcv_lunes_updated_at: Optional[str] = bcv_config.get("bcv_lunes_updated_at")
+
+        # Widget state: starts hidden, created on first use
+        self._widget_enabled: bool = bcv_config.get("widget_enabled", False)
 
         # Reminder state
         self.reminder_enabled: bool = bcv_config.get("reminder_enabled", False)
@@ -84,6 +91,11 @@ class TasaDelDiaApp:
         # Check reminder immediately on startup
         if self.reminder_enabled and not self._reminder_shown_this_friday:
             self.window.after(1000, self._check_reminder)
+
+        # Auto-mostrar widget si estaba habilitado
+        if self._widget_enabled:
+            self.window.after(500, self._show_widget)
+
         self.refresh_rates()
 
     # ─── Window icon ───────────────────────────────────────────────
@@ -141,6 +153,17 @@ class TasaDelDiaApp:
 
         if old_rates:
             self._on_rates_loaded(old_rates)
+
+        # Recrear widget si estaba visible
+        if self.widget and self.widget.is_visible:
+            self.widget.destroy()
+            self.widget = WidgetWindow(self, self.actual_theme)
+            self.widget.show()
+            # Re-aplicar tasas actuales
+            bcv = old_rates.get("bcv") if old_rates else None
+            paralelo = old_rates.get("parallel") if old_rates else None
+            fetched = old_rates.get("fetched_at") if old_rates else None
+            self.widget.update_rates(bcv, paralelo, fetched)
 
         # Restore offline mode after theme rebuild
         if old_offline:
@@ -221,6 +244,16 @@ class TasaDelDiaApp:
             relief="flat", padx=8, pady=2, cursor="hand2",
             command=self._switch_theme_mode
         )
+        # Widget toggle button
+        widget_btn = tk.Button(
+            title_frame, text="📌 Widget", font=("Segoe UI", 9),
+            bg=c.card, fg=c.secondary,
+            activebackground=c.accent, activeforeground=c.primary,
+            relief="flat", padx=8, pady=2, cursor="hand2",
+            command=self._toggle_widget
+        )
+        widget_btn.pack(side="right", padx=(2, 0))
+
         theme_btn.pack(side="right", padx=(4, 0))
 
         # Venezuela flag badge
@@ -1073,6 +1106,40 @@ class TasaDelDiaApp:
                     text="Toca para consultar o guardar tasas de una fecha anterior"
                 )
 
+    # ─── Widget compacto ──────────────────────────────────────────
+
+    def _toggle_widget(self) -> None:
+        """Alterna la visibilidad del widget compacto."""
+        if not self.widget:
+            self.widget = WidgetWindow(self, self.actual_theme)
+
+        self.widget.toggle()
+        self._widget_enabled = self.widget.is_visible
+        save_config(widget_enabled=self._widget_enabled)
+
+    def _show_widget(self) -> None:
+        """Muestra el widget (si estaba habilitado)."""
+        if not self.widget:
+            self.widget = WidgetWindow(self, self.actual_theme)
+        self.widget.show()
+        self._widget_enabled = True
+
+    def _hide_widget(self) -> None:
+        """Oculta el widget."""
+        if self.widget:
+            self.widget.hide()
+        self._widget_enabled = False
+
+    def _update_widget_rates(
+        self,
+        bcv: Optional[float],
+        paralelo: Optional[float],
+        fetched_at: Optional[str] = None,
+    ) -> None:
+        """Actualiza las tasas en el widget si está visible."""
+        if self.widget and self.widget.is_visible:
+            self.widget.update_rates(bcv, paralelo, fetched_at)
+
     # ─── BCV Lunes ─────────────────────────────────────────────────
 
     def _edit_bcv_lunes(self) -> None:
@@ -1349,6 +1416,8 @@ class TasaDelDiaApp:
     def _on_close(self) -> None:
         """Maneja el cierre de la aplicación."""
         self._cancel_timers()
+        if self.widget:
+            self.widget.destroy()
         self.window.destroy()
         logger.info("Aplicación cerrada")
 
@@ -1468,6 +1537,11 @@ class TasaDelDiaApp:
                 self.info_label.config(text=f"✓ Actualizado: {time_str}")
             except (ValueError, TypeError) as e:
                 logger.warning("Error formateando fetched_at: %s", e)
+
+        # Update widget
+        self._update_widget_rates(
+            rates.get("bcv"), rates.get("parallel"), rates.get("fetched_at")
+        )
 
         # Save to offline cache
         save_cache_rates(rates)

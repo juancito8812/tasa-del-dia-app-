@@ -51,6 +51,7 @@ def load_config() -> ConfigDict:
             "bcv_lunes_updated_at": data.get("bcv_lunes_updated_at"),
             "reminder_enabled": data.get("reminder_enabled", False),
             "last_known_theme": data.get("last_known_theme", "dark"),
+            "widget_enabled": data.get("widget_enabled", False),
         }
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("Error cargando configuración: %s", e)
@@ -62,14 +63,16 @@ def _default_config() -> ConfigDict:
         "bcv_lunes": None,
         "bcv_lunes_updated_at": None,
         "reminder_enabled": False,
-        "last_known_theme": "dark",
-    }
+    "last_known_theme": "dark",
+    "widget_enabled": False,
+}
 
 
 def save_config(
     bcv_lunes_value: Optional[float] = None,
     reminder_enabled: Optional[bool] = None,
     last_known_theme: Optional[str] = None,
+    widget_enabled: Optional[bool] = None,
 ) -> None:
     """Guarda valores en la configuración. Pasar None para no modificar.
 
@@ -77,6 +80,7 @@ def save_config(
         bcv_lunes_value: Tasa BCV del lunes (0 para borrar).
         reminder_enabled: Activar recordatorio de los viernes.
         last_known_theme: Último tema conocido ('dark' o 'light').
+        widget_enabled: Activar widget compacto siempre visible.
     """
     try:
         _ensure_config_dir()
@@ -92,6 +96,8 @@ def save_config(
             config["reminder_enabled"] = bool(reminder_enabled)
         if last_known_theme is not None:
             config["last_known_theme"] = last_known_theme
+        if widget_enabled is not None:
+            config["widget_enabled"] = bool(widget_enabled)
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
         logger.debug("Configuración guardada correctamente")
