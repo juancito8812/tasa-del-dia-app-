@@ -29,6 +29,7 @@ from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
 from app.widget_window import WidgetWindow
 from app.system_tray import send_notification, start_tray, stop_tray
 from app.auto_update import check_for_updates, APP_VERSION
+from app.trend_chart import TrendChart
 
 logger = logging.getLogger(__name__)
 
@@ -317,6 +318,8 @@ class TasaDelDiaApp:
         self._build_rates_tab()
         # ═══════ TAB 2: CONVERSOR ═══════
         self._build_converter_tab()
+        # ═══════ TAB 3: TENDENCIA ═══════
+        self._build_trend_tab()
 
     def _create_scrollable(self, parent: tk.Widget) -> tk.Frame:
         """Crea un panel con scroll.
@@ -772,6 +775,23 @@ class TasaDelDiaApp:
             color_a=c.bcv_lunes, label_a="●  BCV (Lunes)",
             color_b=c.highlight, label_b="●  Paralelo",
         )
+
+    # ─── Trend Chart ────────────────────────────────────────────────
+
+    def _build_trend_tab(self) -> None:
+        """Construye la pestaña de gráfico de tendencia."""
+        c = self.actual_theme
+        self.tab_trend = tk.Frame(self.notebook, bg=c.bg)
+        self.notebook.add(self.tab_trend, text="📈  Tendencia")
+
+        self.trend_chart = TrendChart(self.tab_trend, c)
+        self.trend_chart.pack(fill="both", expand=True)
+
+    def _update_trend_chart(self) -> None:
+        """Actualiza el gráfico de tendencia con los datos actuales."""
+        if hasattr(self, "trend_chart"):
+            historical = get_historical_rates()
+            self.trend_chart.update_chart(historical)
 
     # ─── Historial de Tasas ────────────────────────────────────────
 
@@ -1831,6 +1851,9 @@ class TasaDelDiaApp:
             binance_p2p=rates.get("binance_p2p"),
             euro=rates.get("eur"),
         )
+
+        # Update trend chart
+        self._update_trend_chart()
 
         # Schedule next refresh
         if self._refresh_timer:

@@ -31,6 +31,7 @@ a = Analysis(
         'app.widget_window',
         'app.system_tray',
         'app.auto_update',
+        'app.trend_chart',
     ],
     hookspath=[],
     hooksconfig={},
