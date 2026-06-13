@@ -772,6 +772,7 @@ class TasaDelDiaApp:
         historical = get_historical_rates()
 
         dialog = tk.Toplevel(self.window)
+        self._active_dialog = dialog
         dialog.title("Tasas Históricas")
         dialog.configure(bg=c.card)
         dialog.resizable(False, False)
@@ -873,7 +874,7 @@ class TasaDelDiaApp:
             bg=c.input_bg, fg=c.secondary,
             activebackground=c.accent, activeforeground=c.primary,
             relief="flat", padx=16, pady=6, cursor="hand2",
-            command=dialog.destroy,
+            command=lambda: (dialog.destroy(), setattr(self, "_active_dialog", None)),
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
         dialog.grab_set()
@@ -1202,6 +1203,7 @@ class TasaDelDiaApp:
         """Abre un diálogo para editar la tasa BCV del lunes."""
         c = self.actual_theme
         dialog = tk.Toplevel(self.window)
+        self._active_dialog = dialog
         dialog.title("Editar BCV (Lunes)")
         dialog.configure(bg=c.card)
         dialog.resizable(False, False)
