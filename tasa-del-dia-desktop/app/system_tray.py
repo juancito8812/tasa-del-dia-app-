@@ -77,21 +77,12 @@ def start_tray(
     draw.rectangle([12, 8, 52, 56], fill=(233, 69, 96))
     draw.text((20, 14), "T", fill=(255, 255, 255))
 
-    def on_clicked(icon: Any, item: Any) -> None:
-        """Maneja clics en el menú del icono."""
-        label = str(item) if item else ""
-        if "Mostrar" in label or "Abrir" in label:
-            on_show()
-        elif "Salir" in label or "Cerrar" in label:
-            icon.stop()
-            on_quit()
-
     menu = pystray.Menu(
-        pystray.MenuItem("📊 Abrir Tasa del Día", lambda: on_show()),
+        pystray.MenuItem("📊 Abrir Tasa del Día", on_show),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("🔄 Actualizar tasas", lambda: on_show()),
+        pystray.MenuItem("🔄 Actualizar tasas", on_show),
         pystray.Menu.SEPARATOR,
-        pystray.MenuItem("❌ Salir", lambda: on_quit()),
+        pystray.MenuItem("❌ Salir", on_quit),
     )
 
     _tray_icon = pystray.Icon(
