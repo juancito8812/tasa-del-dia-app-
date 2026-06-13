@@ -426,8 +426,6 @@ class TasaDelDiaApp:
         # Reminder toggle
         self._build_reminder_card(scroll_frame)
 
-        # Historical rates
-        self._build_historical_card(scroll_frame)
 
         # Offline banner (hidden by default)
         self.offline_banner = tk.Frame(scroll_frame, bg=c.warning, padx=12, pady=6)
@@ -493,46 +491,6 @@ class TasaDelDiaApp:
         )
         reminder_check.pack(side="right", padx=(8, 0))
 
-    def _build_historical_card(self, parent: tk.Frame) -> None:
-        """Construye la tarjeta de acceso a tasas históricas."""
-        c = self.actual_theme
-        hist_card = tk.Frame(
-            parent, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
-        hist_card.pack(fill="x", padx=12, pady=(0, 6))
-        hist_inner = tk.Frame(hist_card, bg=c.card)
-        hist_inner.pack(padx=14, pady=10, fill="x")
-
-        tk.Label(
-            hist_inner, text="📅", bg=c.card, font=("Segoe UI", 11),
-        ).pack(side="left", padx=(0, 8))
-        hist_text_frame = tk.Frame(hist_inner, bg=c.card)
-        hist_text_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(
-            hist_text_frame, text="Tasas Históricas", bg=c.card,
-            fg=c.primary, font=FONTS["subtitle"], anchor="w",
-        ).pack(fill="x")
-        self.hist_count_label = tk.Label(
-            hist_text_frame,
-            text="Toca para consultar tasas de fechas anteriores",
-            bg=c.card, fg=c.muted, font=FONTS["small"], anchor="w",
-        )
-        self.hist_count_label.pack(fill="x")
-
-        hist_btn = tk.Label(
-            hist_inner, text="→", bg=c.card, fg=c.secondary,
-            font=("Segoe UI", 14), cursor="hand2", padx=4,
-        )
-        hist_btn.pack(side="right")
-
-        def _open_hist(_e: object = None) -> None:
-            self._show_historical_rates()
-
-        hist_btn.bind("<Button-1>", _open_hist)
-        hist_inner.bind("<Button-1>", _open_hist)
-        for child in hist_inner.winfo_children():
-            child.bind("<Button-1>", _open_hist)
 
     def _build_converter_tab(self) -> None:
         """Construye la pestaña del conversor Bs/USD."""
@@ -1540,7 +1498,6 @@ class TasaDelDiaApp:
             # Refresh display
             updated_historical = get_historical_rates()
             self._update_hist_display(container, c, date_var, updated_historical, parent_dialog)
-            self._update_hist_count()
             sub.destroy()
 
         tk.Button(
@@ -1559,20 +1516,6 @@ class TasaDelDiaApp:
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
         sub.grab_set()
-
-    def _update_hist_count(self) -> None:
-        """Actualiza el contador de tasas históricas en la UI principal."""
-        if hasattr(self, "hist_count_label") and self.hist_count_label.winfo_exists():
-            historical = get_historical_rates()
-            count = len(historical)
-            if count > 0:
-                self.hist_count_label.config(
-                    text=f"{count} fechas guardadas · Toca para consultar"
-                )
-            else:
-                self.hist_count_label.config(
-                    text="Toca para consultar o guardar tasas de una fecha anterior"
-                )
 
     # ─── Exportar CSV ────────────────────────────────────────────
 
@@ -2273,9 +2216,6 @@ class TasaDelDiaApp:
         self.spread_lunes.update(self.bcv_lunes, rates.get("parallel"))
         self._update_converter_spreads(rates.get("bcv"), rates.get("parallel"))
 
-        # Update historical rates count
-        self._update_hist_count()
-
         # Update info label
         if rates.get("fetched_at"):
             try:
@@ -2325,8 +2265,8 @@ class TasaDelDiaApp:
         )
 
         # Update trend chart
-        logger.debug("_on_rates_loaded: actualizando gráfico de tendencia")
-        self._update_trend_chart()
+        logger.debug("_on_rates_loaded: actualizando pestaña de historial")
+        self._update_history_tab()
 
         # Schedule next refresh
         if self._refresh_timer:
@@ -2380,9 +2320,7 @@ class TasaDelDiaApp:
                 binance_p2p=cache.get("binance_p2p"),
                 euro=cache.get("euro"),
             )
-
-            self._update_hist_count()
-            self._update_trend_chart()
+            self._update_history_tab()
 
             # Update widget with cached rates
             self._update_widget_rates(
