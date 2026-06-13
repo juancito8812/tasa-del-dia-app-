@@ -1486,15 +1486,17 @@ class TasaDelDiaApp:
         """Inicia la verificación periódica del tema del sistema."""
         def _poll() -> None:
             if self.theme_mode == "system":
-                new_theme = get_system_theme()
-                current = self.actual_theme.name
-                expected = "dark" if new_theme == "dark" else "light"
-                if current != expected:
-                    logger.info("Tema del sistema cambió a %s, reconstruyendo UI", new_theme)
+                new_system = get_system_theme()  # "dark" o "light"
+                current_name = self.actual_theme.name  # "oscuro" o "claro"
+                expected_name = "oscuro" if new_system == "dark" else "claro"
+                if current_name != expected_name:
+                    logger.info("Tema del sistema cambió a %s, reconstruyendo UI", new_system)
                     self._rebuild_ui()
                     return
             self._theme_poll_timer = self.window.after(5000, _poll)
-        _poll()
+
+        # NO llamar _poll() directamente — programar con after para evitar recursión
+        self._theme_poll_timer = self.window.after(5000, _poll)
 
     def _bind_events(self) -> None:
         """Vincula eventos de la ventana y atajos de teclado."""
