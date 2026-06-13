@@ -1,12 +1,76 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, Dimensions, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-chart-kit';
 import { useTheme } from '../context/ThemeContext';
 import { getHistoricalRates, formatDateKey } from '../services/api';
 
 const screenWidth = Dimensions.get("window").width;
+
+// --- Simple Bar Chart built with native Views (no SVG needed) ---
+function NativeBarChart({ data, labels, colors, legendLabels, C }) {
+  if (!data || data.length === 0) return null;
+
+  // data is an array of arrays: [[bcv1, bcv2, ...], [par1, par2, ...]]
+  const allValues = data.flat().filter(v => v > 0);
+  if (allValues.length === 0) return null;
+
+  const maxVal = Math.max(...allValues);
+  const minVal = Math.min(...allValues);
+  const range = maxVal - minVal || 1;
+  const chartHeight = 160;
+  const barGroupWidth = (screenWidth - 80) / labels.length;
+
+  return (
+    <View>
+      {/* Legend */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 16, marginBottom: 12 }}>
+        {legendLabels.map((label, i) => (
+          <View key={label} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: colors[i] }} />
+            <Text style={{ color: C.textSecondary, fontSize: 12, fontWeight: '600' }}>{label}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Chart Area */}
+      <View style={{ height: chartHeight, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-around', paddingHorizontal: 4 }}>
+        {labels.map((label, idx) => (
+          <View key={label} style={{ alignItems: 'center', width: barGroupWidth }}>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: chartHeight - 20 }}>
+              {data.map((dataset, dIdx) => {
+                const val = dataset[idx] || 0;
+                const pct = val > 0 ? ((val - minVal) / range) * 0.8 + 0.2 : 0;
+                const barHeight = Math.max(pct * (chartHeight - 40), val > 0 ? 8 : 0);
+                return (
+                  <View key={dIdx} style={{ alignItems: 'center' }}>
+                    {val > 0 && (
+                      <Text style={{ color: colors[dIdx], fontSize: 8, fontWeight: '700', marginBottom: 2 }}>
+                        {val.toFixed(1)}
+                      </Text>
+                    )}
+                    <View
+                      style={{
+                        width: barGroupWidth / data.length - 6,
+                        minWidth: 12,
+                        maxWidth: 24,
+                        height: barHeight,
+                        backgroundColor: colors[dIdx],
+                        borderRadius: 4,
+                        opacity: 0.85,
+                      }}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+            <Text style={{ color: C.textMuted, fontSize: 9, fontWeight: '600', marginTop: 4 }}>{label}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 function createStyles(C) {
   return StyleSheet.create({
@@ -51,11 +115,10 @@ function createStyles(C) {
     chartContainer: {
       backgroundColor: C.cardBg,
       borderRadius: 16,
-      padding: 10,
+      padding: 14,
       marginBottom: 20,
       borderWidth: 1,
       borderColor: C.cardBorder,
-      alignItems: 'center',
     },
     listContainer: {
       gap: 12,
@@ -135,16 +198,16 @@ export default function HistoryScreen() {
     setRatesData(arr);
   };
   
-  const chartData = React.useMemo(() => {
+  const chartInfo = React.useMemo(() => {
     if (ratesData.length === 0) return null;
     
     // For chart, we need ascending order (oldest to newest)
     const reversed = [...ratesData].reverse().slice(-7); // Last 7 days
     
-    // If we have less than 2 data points, we can't draw a line chart nicely
+    // If we have less than 2 data points, we can't draw a chart nicely
     if (reversed.length < 2) return null;
     
-    const labels = reversed.map(item => item.dateKey.slice(5).replace('-', '/')); // MM/DD
+    const labels = reversed.map(item => item.dateKey.slice(5).replace('-', '/'));
     const bcvData = reversed.map(item => item.bcv || 0);
     const paraleloData = reversed.map(item => item.paralelo || 0);
     
@@ -153,19 +216,9 @@ export default function HistoryScreen() {
 
     return {
       labels,
-      datasets: [
-        {
-          data: bcvData,
-          color: (opacity = 1) => C.success, // BCV color
-          strokeWidth: 2
-        },
-        {
-          data: paraleloData,
-          color: (opacity = 1) => C.highlight, // Paralelo color
-          strokeWidth: 2
-        }
-      ],
-      legend: ["BCV", "Paralelo"]
+      data: [bcvData, paraleloData],
+      colors: [C.success, C.highlight],
+      legendLabels: ['BCV', 'Paralelo'],
     };
   }, [ratesData, C]);
 
@@ -195,27 +248,17 @@ export default function HistoryScreen() {
         </View>
 
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {chartData && (
+          {chartInfo && (
             <View style={styles.chartContainer}>
-              <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary, marginBottom: 12, alignSelf: 'flex-start', marginLeft: 10 }}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary, marginBottom: 12 }}>
                 Últimos 7 días
               </Text>
-              <LineChart
-                data={chartData}
-                width={screenWidth - 46}
-                height={220}
-                chartConfig={{
-                  backgroundColor: C.cardBg,
-                  backgroundGradientFrom: C.cardBg,
-                  backgroundGradientTo: C.cardBg,
-                  decimalPlaces: 2,
-                  color: (opacity = 1) => C.textPrimary,
-                  labelColor: (opacity = 1) => C.textMuted,
-                  style: { borderRadius: 16 },
-                  propsForDots: { r: "4", strokeWidth: "2", stroke: C.cardBg }
-                }}
-                bezier
-                style={{ borderRadius: 16 }}
+              <NativeBarChart
+                data={chartInfo.data}
+                labels={chartInfo.labels}
+                colors={chartInfo.colors}
+                legendLabels={chartInfo.legendLabels}
+                C={C}
               />
             </View>
           )}
