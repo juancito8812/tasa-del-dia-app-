@@ -120,6 +120,18 @@ Se agregaron logs detallados en:
 
 Para ver los logs: ejecutar `python main.py` (salen en terminal). En el `.exe`, se guardan en `%APPDATA%\TasaDelDia\app.log`.
 
+**Nota importante sobre los logs:** Durante pruebas con `basher`, la app se ejecuta pero el timeout mata el proceso antes de que los logs del callback `_on_rates_loaded` (programado con `window.after(0, ...)`) se escriban al archivo. Para ver los logs completos, ejecutar la app interactivamente con `python main.py`.
+
+### 🔍 Diagnóstico: Histórico no se guardaba automáticamente
+
+**Síntoma:** El log mostraba `Archivo histórico no existe aún` repetidamente pero NUNCA `Tasas de hoy guardadas en histórico`.
+
+**Diagnóstico:** La función `save_today_historical_rate()` funciona correctamente cuando se llama directamente. El problema es que durante la ejecución normal de la app vía `basher` (con timeout), el event loop de Tkinter no alcanza a procesar el callback `after(0, ...)` del thread antes de que el proceso sea terminado.
+
+**Solución:** Ejecutar la app interactivamente con `python main.py` para que el event loop tenga tiempo de procesar todos los callbacks. Una vez que el `historical_rates.json` se crea, las ejecuciones posteriores lo cargan correctamente.
+
+**Estado actual:** El archivo `historical_rates.json` existe con los datos de hoy (13/06/2026) y la app lo carga correctamente (`Histórico cargado: 1 registros`).
+
 ### 🛠️ Aplicación Móvil (React Native)
 
 **Build APK:** Se corrigió el error `private properties are not supported` de Hermes:
@@ -129,6 +141,17 @@ Para ver los logs: ejecutar `python main.py` (salen en terminal). En el `.exe`, 
 ### 🔄 Estado del Build APK
 
 El workflow Build APK (#24, commit `2772071`) está **pendiente de verificar**. Los builds locales pueden tardar 15-30 minutos.
+
+### 📝 Skills de Codebuff (`.agents/`)
+
+Se crearon 4 skills como archivos markdown:
+
+| Skill | Archivo | Qué hace |
+|-------|---------|----------|
+| 🔨 **Build EXE** | `.agents/build-exe.md` | Compilar .exe con PyInstaller + troubleshooting |
+| 🧪 **Run Tests** | `.agents/run-tests.md` | Ejecutar tests (115), troubleshooting de Tkinter |
+| 📱 **Check Build APK** | `.agents/check-build-apk.md` | Verificar GitHub Actions + errores comunes |
+| 🚀 **Run App** | `.agents/run-app.md` | Ejecutar app con `python main.py`, atajos, troubleshooting |
 
 ---
 
