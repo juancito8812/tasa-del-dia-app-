@@ -61,7 +61,23 @@ def setup_logging() -> None:
 
 def main() -> None:
     """Punto de entrada principal de la aplicación."""
+    # Crash dump temprano para diagnóstico
+    _dump_path = os.path.join(
+        os.environ.get("TEMP", os.path.expanduser("~")),
+        "tasa_del_dia_crash.log",
+    )
+    try:
+        with open(_dump_path, "w", encoding="utf-8") as _f:
+            _f.write("=== Tasa del Día iniciando ===\n")
+            _f.write(f"CWD: {os.getcwd()}\n")
+            _f.write(f"ARGV: {sys.argv}\n")
+            _f.write(f"PYTHONPATH: {os.environ.get('PYTHONPATH', 'N/A')}\n")
+            _f.write("Iniciando setup_logging...\n")
+    except Exception as _e:
+        pass  # No podemos hacer nada si falla escribir el dump
+
     setup_logging()
+    logging.info("Inicio de la app")
 
     try:
         from app.app import TasaDelDiaApp
@@ -70,6 +86,13 @@ def main() -> None:
         app.window.mainloop()
     except Exception:
         logging.exception("Error fatal al iniciar la aplicación")
+        # También escribir al crash dump
+        import traceback
+        try:
+            with open(_dump_path, "a", encoding="utf-8") as _f:
+                traceback.print_exc(file=_f)
+        except Exception:
+            pass
         raise
 
 

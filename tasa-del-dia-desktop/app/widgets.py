@@ -60,7 +60,7 @@ def _format_time(updated_at: Optional[str]) -> str:
     try:
         dt = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
         return dt.strftime("%d/%m %I:%M %p")
-    except (ValueError, TypeError) as e:
+    except (ValueError, TypeError, AttributeError) as e:
         logger.warning("Error formateando timestamp '%s': %s", updated_at, e)
         return ""
 
