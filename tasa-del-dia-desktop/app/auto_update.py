@@ -37,7 +37,7 @@ def _parse_version(version_str: str) -> tuple:
     Returns:
         Tupla (major, minor, patch) para comparación.
     """
-    cleaned = version_str.lstrip("v").strip()
+    cleaned = version_str.strip().lstrip("v")
     # Ignorar pre-release tags (ej: v1.0.0-beta → 1.0.0)
     base = cleaned.split("-")[0]
     parts = base.split(".")
