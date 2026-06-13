@@ -58,27 +58,57 @@ Se agregaron **153 tests nuevos** en 2 archivos, elevando la suite total a **268
 
 **Línea modificada:** `except (ValueError, TypeError) as e:` → `except (ValueError, TypeError, AttributeError) as e:`
 
+### 🔖 Release v1.0.3
+
+**Versión actualizada:** `"1.0.2"` → `"1.0.3"` en `app/auto_update.py`
+
+**Tag creado:** `v1.0.3` — pusheado a `origin/main`
+
+**Release en GitHub:** No se creó automáticamente (falta `GITHUB_TOKEN` en entorno local). Para crearlo manualmente:
+
+👉 https://github.com/juancito8812/tasa-del-dia-app-/releases/new?tag=v1.0.3
+
+El tag `v1.0.3` ya está en GitHub y disparó los workflows de release.
+
+---
+
+### 🏗️ Workflows de GitHub Actions
+
+| Workflow | Último Run | Resultado |
+|----------|:-----------:|:---------:|
+| **Build .EXE** (Desktop) | 13/06 17:16 | ✅ Success |
+| **Build APK** (React Native) | 13/06 16:13 | ✅ Success |
+| **Auto-Sync** (daily commit) | 13/06 08:51 | ✅ Success |
+| **Release .EXE** (tags v*) | 13/06 17:28 | ✅ **Success** — compiló y subió artefactos |
+| **Release APK** (tags v*) | 13/06 17:28 | ❌ **Failure** — EAS Build excedió límite del plan Free |
+
+**Causa del fallo del Release APK:** El paso "Compilar APK con EAS Build" falló porque la cuenta gratuita de Expo/EAS ha usado todos sus builds Android del mes. Resetea el 01/07/2026. Soluciones:
+- Esperar al reset del plan Free (17 días)
+- Actualizar a plan pago en https://expo.dev/accounts/jr8812/settings/billing
+- Build local con `npx eas build --platform android --profile preview --local`
+
+---
+
 ### 📦 Compilación con PyInstaller
 
 **Archivo:** `TasaDelDia.spec`
 
-Se compiló exitosamente el `.exe` (~51.6 MB) usando:
-```bash
-python -m PyInstaller --clean TasaDelDia.spec
-```
-
-El ejecutable está en `tasa-del-dia-desktop/dist/TasaDelDia.exe`.
+Se compiló exitosamente el `.exe` (~51.6 MB) en dos ubicaciones:
+- `dist/TasaDelDia.exe` (raíz del proyecto)
+- `tasa-del-dia-desktop/dist/TasaDelDia.exe`
 
 Verificado con:
-- Proceso iniciado correctamente
-- Logs de la app funcionales (tasas obtenidas de la API)
-- Historical_rates.json cargado correctamente
-- Sin errores en crash dump
+- ✅ Proceso iniciado correctamente
+- ✅ Tasas obtenidas de la API (BCV=582.69, Paralelo=793.20)
+- ✅ Historical_rates.json cargado correctamente
+- ✅ Sin errores en crash dump
+- ✅ Detecta tema del sistema (dark)
 
 Advertencias conocidas (no críticas):
 - `matplotlib` no disponible en el .exe (gráfico de tendencia desactivado)
-- `auto_update` HTTP 404 (sin releases publicados aún)
+- `auto_update` HTTP 404 — ahora ya debería resolverse con el tag v1.0.3 en GitHub
 - `pystray` SyntaxWarning inofensivo
+- Error intermitente de notificaciones (`No usable implementation found!`)
 
 ### 📊 Reporte de Cobertura
 
