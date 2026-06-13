@@ -100,5 +100,7 @@ def fetch_all_rates() -> RatesDict:
     logger.info("Tasas obtenidas: BCV=%s, Paralelo=%s, Euro=%s, Binance=%s",
                 result_rates["bcv"], result_rates["parallel"],
                 result_rates["eur"], result_rates["binance_p2p"])
+    logger.debug("API bruta: %d markets en results, fetched_at=%s",
+                 len(data.get("results", [])), fetched_at)
 
     return result_rates

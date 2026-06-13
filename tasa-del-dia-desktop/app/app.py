@@ -791,6 +791,9 @@ class TasaDelDiaApp:
         """Actualiza el gráfico de tendencia con los datos actuales."""
         if hasattr(self, "trend_chart"):
             historical = get_historical_rates()
+            logger.info(
+                "_update_trend_chart: %d fechas en histórico", len(historical),
+            )
             self.trend_chart.update_chart(historical)
 
     # ─── Historial de Tasas ────────────────────────────────────────
@@ -1216,6 +1219,7 @@ class TasaDelDiaApp:
         """Muestra el widget (si estaba habilitado)."""
         if not self.widget:
             self.widget = WidgetWindow(self, self.actual_theme)
+            logger.debug("_show_widget: widget creado")
         self.widget.show()
         self._widget_enabled = True
 
@@ -1223,10 +1227,18 @@ class TasaDelDiaApp:
         # (evita que el widget aparezca con "—" si _on_rates_loaded
         #  se ejecutó antes de crear el widget)
         if self.rates:
+            logger.info(
+                "_show_widget: aplicando tasas existentes — BCV=%s, Paralelo=%s",
+                self.rates.get("bcv"), self.rates.get("parallel"),
+            )
             self._update_widget_rates(
                 self.rates.get("bcv"),
                 self.rates.get("parallel"),
                 self.rates.get("fetched_at"),
+            )
+        else:
+            logger.info(
+                "_show_widget: widget mostrado sin tasas (rates aún no cargadas)"
             )
 
     def _hide_widget(self) -> None:
@@ -1243,7 +1255,17 @@ class TasaDelDiaApp:
     ) -> None:
         """Actualiza las tasas en el widget si está visible."""
         if self.widget and self.widget.is_visible:
+            logger.info(
+                "Widget actualizado: BCV=%s, Paralelo=%s, fetched_at=%s",
+                bcv, paralelo, fetched_at,
+            )
             self.widget.update_rates(bcv, paralelo, fetched_at)
+        else:
+            logger.debug(
+                "Widget NO actualizado (no existe o no visible): existe=%s, visible=%s",
+                self.widget is not None,
+                self.widget.is_visible if self.widget else False,
+            )
 
     # ─── BCV Lunes ─────────────────────────────────────────────────
 
@@ -1866,6 +1888,11 @@ class TasaDelDiaApp:
         self._set_offline_mode(False)
 
         # Auto-save today's historical rates
+        logger.info(
+            "_on_rates_loaded: guardando histórico — BCV=%s, Paralelo=%s, Euro=%s, Binance=%s",
+            rates.get("bcv"), rates.get("parallel"),
+            rates.get("eur"), rates.get("binance_p2p"),
+        )
         save_today_historical_rate(
             bcv=rates.get("bcv"),
             paralelo=rates.get("parallel"),
@@ -1874,6 +1901,7 @@ class TasaDelDiaApp:
         )
 
         # Update trend chart
+        logger.debug("_on_rates_loaded: actualizando gráfico de tendencia")
         self._update_trend_chart()
 
         # Schedule next refresh

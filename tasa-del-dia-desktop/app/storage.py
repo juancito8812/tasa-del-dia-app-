@@ -131,7 +131,7 @@ def save_cache_rates(rates: Dict[str, Any]) -> bool:
         }
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
             json.dump(cache, f, ensure_ascii=False, indent=2)
-        logger.debug("Caché de tasas guardada")
+        logger.debug("Caché guardada en %s (BCV=%s)", CACHE_FILE, cache.get("bcv"))
         return True
     except OSError as e:
         logger.exception("Error guardando caché de tasas: %s", e)
@@ -168,7 +168,10 @@ def get_historical_rates() -> HistoricalRates:
     try:
         if os.path.exists(HISTORICAL_FILE):
             with open(HISTORICAL_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data: dict = json.load(f)
+            logger.debug("Histórico cargado: %d registros desde %s", len(data), HISTORICAL_FILE)
+            return data
+        logger.info("Archivo histórico no existe aún: %s", HISTORICAL_FILE)
         return {}
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("Error cargando tasas históricas: %s", e)
@@ -196,7 +199,14 @@ def save_today_historical_rate(
     today_key = datetime.now().strftime("%Y-%m-%d")
     try:
         all_rates = get_historical_rates()
-        if today_key not in all_rates or bcv is not None:
+        should_save = today_key not in all_rates or bcv is not None
+        logger.debug(
+            "save_today_historical_rate: today=%s, already_exists=%s, "
+            "bcv_provided=%s, should_save=%s, total_historicos=%d",
+            today_key, today_key in all_rates,
+            bcv is not None, should_save, len(all_rates),
+        )
+        if should_save:
             existing = all_rates.get(today_key, {})
             entry: Dict[str, Any] = {
                 "bcv": bcv if bcv is not None else existing.get("bcv"),
