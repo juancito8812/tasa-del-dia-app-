@@ -32,6 +32,12 @@ a = Analysis(
         'app.system_tray',
         'app.auto_update',
         'app.trend_chart',
+        # matplotlib y backends para el gráfico
+        'matplotlib',
+        'matplotlib.backends.backend_tkagg',
+        'matplotlib.figure',
+        'matplotlib.dates',
+        'matplotlib.pyplot',
     ],
     hookspath=[],
     hooksconfig={},
