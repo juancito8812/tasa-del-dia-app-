@@ -29,7 +29,6 @@ from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
 from app.widget_window import WidgetWindow
 from app.system_tray import send_notification, start_tray, stop_tray
 from app.auto_update import check_for_updates, APP_VERSION
-from app.trend_chart import TrendChart
 
 logger = logging.getLogger(__name__)
 
@@ -318,8 +317,8 @@ class TasaDelDiaApp:
         self._build_rates_tab()
         # ═══════ TAB 2: CONVERSOR ═══════
         self._build_converter_tab()
-        # ═══════ TAB 3: TENDENCIA ═══════
-        self._build_trend_tab()
+        # ═══════ TAB 3: HISTORIAL ═══════
+        self._build_history_tab()
 
     def _create_scrollable(self, parent: tk.Widget) -> tk.Frame:
         """Crea un panel con scroll.
@@ -776,25 +775,450 @@ class TasaDelDiaApp:
             color_b=c.highlight, label_b="●  Paralelo",
         )
 
-    # ─── Trend Chart ────────────────────────────────────────────────
 
-    def _build_trend_tab(self) -> None:
-        """Construye la pestaña de gráfico de tendencia."""
+    # ─── Historial (reemplaza Tendencia) ───────────────────────────
+
+    def _build_history_tab(self) -> None:
+        """Construye la pestaña de historial con selector de fechas y detalle."""
         c = self.actual_theme
-        self.tab_trend = tk.Frame(self.notebook, bg=c.bg)
-        self.notebook.add(self.tab_trend, text="📈  Tendencia")
+        self.tab_history = tk.Frame(self.notebook, bg=c.bg)
+        self.notebook.add(self.tab_history, text="📅  Historial")
 
-        self.trend_chart = TrendChart(self.tab_trend, c)
-        self.trend_chart.pack(fill="both", expand=True)
+        # Scrollable
+        hist_canvas = tk.Canvas(self.tab_history, bg=c.bg, highlightthickness=0)
+        hist_scroll = tk.Frame(hist_canvas, bg=c.bg)
+        hist_sbar = tk.Scrollbar(self.tab_history, orient="vertical", command=hist_canvas.yview)
+        hist_canvas.configure(yscrollcommand=hist_sbar.set)
+        hist_sbar.pack(side="right", fill="y")
+        hist_canvas.pack(side="left", fill="both", expand=True)
+        hist_canvas.create_window((0, 0), window=hist_scroll, anchor="nw", tags="inner_hist")
 
-    def _update_trend_chart(self) -> None:
-        """Actualiza el gráfico de tendencia con los datos actuales."""
-        if hasattr(self, "trend_chart"):
-            historical = get_historical_rates()
-            logger.info(
-                "_update_trend_chart: %d fechas en histórico", len(historical),
+        def _cfg_hist(_e: object = None) -> None:
+            hist_canvas.configure(scrollregion=hist_canvas.bbox("all"))
+            hist_canvas.itemconfig("inner_hist", width=hist_canvas.winfo_width())
+
+        hist_scroll.bind("<Configure>", _cfg_hist)
+        hist_canvas.bind("<Configure>", _cfg_hist)
+
+        def _on_enter_hist(_e: object) -> None:
+            hist_canvas.bind_all(
+                "<MouseWheel>",
+                lambda e: hist_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"),
             )
-            self.trend_chart.update_chart(historical)
+
+        def _on_leave_hist(_e: object) -> None:
+            hist_canvas.unbind_all("<MouseWheel>")
+
+        hist_canvas.bind("<Enter>", _on_enter_hist)
+        hist_canvas.bind("<Leave>", _on_leave_hist)
+
+        # ─── Date selector ───
+        hist_header = tk.Frame(hist_scroll, bg=c.bg)
+        hist_header.pack(fill="x", padx=12, pady=(12, 4))
+
+        tk.Label(
+            hist_header, text="SELECCIONAR FECHA", bg=c.bg,
+            fg=c.muted, font=FONTS["section"], anchor="w",
+        ).pack(fill="x")
+
+        # Chips row
+        self._hist_chips_frame = tk.Frame(hist_scroll, bg=c.bg)
+        self._hist_chips_frame.pack(fill="x", padx=12, pady=(4, 8))
+
+        # Custom date row
+        custom_row = tk.Frame(hist_scroll, bg=c.bg)
+        custom_row.pack(fill="x", padx=12, pady=(0, 4))
+
+        self._hist_custom_var = tk.StringVar()
+        self._hist_custom_entry = tk.Entry(
+            custom_row, textvariable=self._hist_custom_var,
+            bg=c.input_bg, fg=c.input_text,
+            font=("Segoe UI", 12, "bold"), relief="flat",
+            insertbackground=c.primary, justify="center",
+        )
+        self._hist_custom_entry.pack(side="left", fill="x", expand=True, ipady=4, padx=(0, 6))
+        self._hist_custom_entry.insert(0, datetime.now().strftime("%d/%m/%Y"))
+        self._hist_custom_entry.bind("<Return>", lambda _e: self._hist_search_date())
+
+        tk.Button(
+            custom_row, text="🔍 Ver", font=FONTS["section"],
+            bg=c.info, fg="#ffffff",
+            activebackground=c.info, activeforeground="#ffffff",
+            relief="flat", padx=14, pady=4, cursor="hand2",
+            command=self._hist_search_date,
+        ).pack(side="right")
+
+        # ─── Detail card (hidden by default) ───
+        self._hist_detail_card = tk.Frame(
+            hist_scroll, bg=c.card,
+            highlightbackground=c.card_border, highlightthickness=1,
+        )
+        # Will be packed when a date is selected
+
+        # ─── Chart container (visible when no date selected) ───
+        self._hist_chart_container = tk.Frame(
+            hist_scroll, bg=c.card,
+            highlightbackground=c.card_border, highlightthickness=1,
+        )
+        self._hist_chart_container.pack(fill="x", padx=12, pady=(0, 8))
+
+        # ─── List container ───
+        self._hist_list_container = tk.Frame(hist_scroll, bg=c.bg)
+        self._hist_list_container.pack(fill="x", padx=12, pady=(0, 12))
+
+        self._hist_selected_date: Optional[str] = None
+        self._hist_copied_field: Optional[str] = None
+        self._hist_copy_timer: Optional[str] = None
+
+        # Initial render
+        self._update_history_tab()
+
+    def _update_history_tab(self) -> None:
+        """Actualiza la pestaña de historial con los datos actuales."""
+        if not hasattr(self, "tab_history"):
+            return
+        c = self.actual_theme
+        historical = get_historical_rates()
+
+        # Build sorted list (descending)
+        sorted_dates = sorted(historical.keys(), reverse=True)
+        last_5 = sorted_dates[:5]
+
+        logger.info("_update_history_tab: %d fechas en histórico", len(sorted_dates))
+
+        # ── Update chips ──
+        for w in self._hist_chips_frame.winfo_children():
+            w.destroy()
+
+        if last_5:
+            chips_row = tk.Frame(self._hist_chips_frame, bg=c.bg)
+            chips_row.pack(fill="x")
+
+            for date_key in last_5:
+                is_selected = date_key == self._hist_selected_date
+                entry = historical.get(date_key, {})
+                is_today = date_key == get_today_key()
+                day = date_key.split("-")[2]
+                months = ["", "Ene", "Feb", "Mar", "Abr", "May", "Jun",
+                          "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+                month_abbr = months[int(date_key.split("-")[1])]
+                label_text = f"{day}\n{month_abbr}"
+                if is_today:
+                    label_text = f"{day}\n¡Hoy!"
+
+                btn = tk.Button(
+                    chips_row, text=label_text,
+                    font=("Segoe UI", 9, "bold"),
+                    bg=c.accent if is_selected else c.card,
+                    fg=c.primary if is_selected else c.secondary,
+                    activebackground=c.info, activeforeground=c.primary,
+                    relief="flat", padx=10, pady=6, cursor="hand2",
+                    width=6, height=2,
+                    command=lambda dk=date_key: self._hist_select_date(dk),
+                )
+                btn.pack(side="left", padx=(0, 6))
+
+                # Green dot if has data
+                has_data = any([
+                    entry.get("bcv"), entry.get("paralelo"),
+                    entry.get("binance_p2p"), entry.get("euro"),
+                ])
+                if has_data:
+                    dot = tk.Label(
+                        chips_row, text="●", bg=c.bg,
+                        fg=c.success, font=("Segoe UI", 6),
+                    )
+                    dot.pack(side="left", padx=(0, 8), anchor="s")
+        else:
+            tk.Label(
+                self._hist_chips_frame, text="No hay fechas guardadas aún",
+                bg=c.bg, fg=c.muted, font=FONTS["small"],
+            ).pack()
+
+        # ── Update detail card ──
+        for w in self._hist_detail_card.winfo_children():
+            w.destroy()
+        self._hist_detail_card.pack_forget()
+
+        if self._hist_selected_date and self._hist_selected_date in historical:
+            self._hist_detail_card.pack(fill="x", padx=12, pady=(0, 8))
+            self._render_hist_detail(historical[self._hist_selected_date])
+
+        # ── Update chart (when no date selected) ──
+        for w in self._hist_chart_container.winfo_children():
+            w.destroy()
+
+        if not self._hist_selected_date and len(sorted_dates) >= 2:
+            # Simple bar chart for last 5 days
+            recent = sorted(historical.items(), key=lambda x: x[0])[-5:]
+            chart_inner = tk.Frame(self._hist_chart_container, bg=c.card, padx=14, pady=12)
+            chart_inner.pack(fill="x")
+
+            tk.Label(
+                chart_inner, text="📈 ÚLTIMOS 5 DÍAS", bg=c.card,
+                fg=c.muted, font=FONTS["section"], anchor="w",
+            ).pack(fill="x", pady=(0, 8))
+
+            # Legend
+            legend = tk.Frame(chart_inner, bg=c.card)
+            legend.pack(fill="x", pady=(0, 8))
+            for lbl, clr in [("BCV", c.success), ("Paralelo", c.highlight)]:
+                lf = tk.Frame(legend, bg=c.card)
+                lf.pack(side="left", padx=(0, 12))
+                tk.Label(lf, text="●", bg=c.card, fg=clr,
+                         font=("Segoe UI", 8)).pack(side="left")
+                tk.Label(lf, text=lbl, bg=c.card, fg=c.muted,
+                         font=FONTS["small"]).pack(side="left", padx=(2, 0))
+
+            # Bars
+            bcv_vals = [v.get("bcv", 0) or 0 for _, v in recent]
+            par_vals = [v.get("paralelo", 0) or 0 for _, v in recent]
+            all_vals = [x for x in bcv_vals + par_vals if x > 0]
+
+            if all_vals:
+                max_val = max(all_vals)
+                min_val = min(all_vals)
+                rng = max_val - min_val or 1
+                chart_h = 100
+
+                bars_frame = tk.Frame(chart_inner, bg=c.card)
+                bars_frame.pack(fill="x")
+
+                for i, (date_key, _) in enumerate(recent):
+                    col = tk.Frame(bars_frame, bg=c.card)
+                    col.pack(side="left", fill="x", expand=True, padx=1)
+
+                    for val, clr in [(bcv_vals[i], c.success), (par_vals[i], c.highlight)]:
+                        if val and val > 0:
+                            pct = ((val - min_val) / rng) * 0.8 + 0.2
+                            bh = max(int(pct * chart_h), 6)
+                            bar = tk.Frame(col, bg=clr, height=bh)
+                            bar.pack(fill="x", pady=1, padx=2)
+
+                    # Date label
+                    parts = date_key.split("-")
+                    lbl = f"{parts[2]}/{parts[1]}"
+                    tk.Label(
+                        col, text=lbl, bg=c.card, fg=c.muted,
+                        font=("Segoe UI", 7), anchor="center",
+                    ).pack(fill="x")
+
+        # ── Update list (when no date selected) ──
+        for w in self._hist_list_container.winfo_children():
+            w.destroy()
+
+        if not self._hist_selected_date:
+            if sorted_dates:
+                for date_key in sorted_dates:
+                    entry = historical[date_key]
+                    card = tk.Frame(
+                        self._hist_list_container, bg=c.card,
+                        highlightbackground=c.card_border, highlightthickness=1,
+                    )
+                    card.pack(fill="x", pady=(0, 6))
+                    card.pack_propagate(False)
+                    inner = tk.Frame(card, bg=c.card, padx=12, pady=8)
+                    inner.pack(fill="x")
+
+                    # Header row
+                    hdr = tk.Frame(inner, bg=c.card)
+                    hdr.pack(fill="x", pady=(0, 6))
+                    tk.Label(
+                        hdr, text=f"📅 {format_date_key(date_key)}",
+                        bg=c.card, fg=c.primary,
+                        font=("Segoe UI", 11, "bold"),
+                    ).pack(side="left")
+                    if entry.get("manual"):
+                        tk.Label(
+                            hdr, text="  ✏️ Manual", bg=c.card,
+                            fg=c.muted, font=("Segoe UI", 8),
+                        ).pack(side="left", padx=(4, 0))
+
+                    # View button
+                    tk.Button(
+                        hdr, text="Ver detalle", font=FONTS["section"],
+                        bg=c.accent, fg=c.primary,
+                        activebackground=c.info, activeforeground=c.primary,
+                        relief="flat", padx=8, pady=2, cursor="hand2",
+                        command=lambda dk=date_key: self._hist_select_date(dk),
+                    ).pack(side="right")
+
+                    # Rates row
+                    rates_row = tk.Frame(inner, bg=c.card)
+                    rates_row.pack(fill="x")
+                    fields = [
+                        ("BCV", entry.get("bcv"), c.success),
+                        ("Paralelo", entry.get("paralelo"), c.highlight),
+                        ("Binance", entry.get("binance_p2p"), c.warning),
+                        ("Euro", entry.get("euro"), c.info),
+                    ]
+                    for lbl, val, clr in fields:
+                        col = tk.Frame(rates_row, bg=c.card)
+                        col.pack(side="left", fill="x", expand=True)
+                        tk.Label(
+                            col, text=lbl, bg=c.card, fg=c.muted,
+                            font=("Segoe UI", 8),
+                        ).pack()
+                        val_text = f"Bs. {val:,.2f}" if val else "—"
+                        tk.Label(
+                            col, text=val_text, bg=c.card,
+                            fg=clr if val else c.muted,
+                            font=("Segoe UI", 10, "bold"),
+                        ).pack()
+            else:
+                tk.Label(
+                    self._hist_list_container,
+                    text="No hay tasas históricas guardadas aún.\n"
+                         "Se guardarán automáticamente al obtener las tasas del día.",
+                    bg=c.bg, fg=c.muted, font=FONTS["small"],
+                    justify="center", wraplength=350,
+                ).pack(pady=20)
+
+    def _hist_select_date(self, date_key: str) -> None:
+        """Selecciona o deselecciona una fecha del historial."""
+        if self._hist_selected_date == date_key:
+            self._hist_selected_date = None
+        else:
+            self._hist_selected_date = date_key
+        self._update_history_tab()
+
+    def _hist_search_date(self) -> None:
+        """Busca la fecha ingresada en el campo personalizado."""
+        raw = self._hist_custom_var.get().strip()
+        date_key = parse_date_from_display(raw)
+        if date_key is None:
+            return
+        historical = get_historical_rates()
+        if date_key not in historical:
+            return
+        self._hist_selected_date = date_key
+        self._update_history_tab()
+
+    def _render_hist_detail(self, entry: Dict[str, Any]) -> None:
+        """Renderiza la tarjeta de detalle de una fecha seleccionada."""
+        c = self.actual_theme
+        card = self._hist_detail_card
+
+        inner = tk.Frame(card, bg=c.card, padx=14, pady=12)
+        inner.pack(fill="x")
+
+        # Header
+        hdr = tk.Frame(inner, bg=c.card)
+        hdr.pack(fill="x", pady=(0, 10))
+        tk.Label(
+            hdr, text=f"📅 {format_date_key(self._hist_selected_date)}",
+            bg=c.card, fg=c.primary, font=("Segoe UI", 14, "bold"),
+        ).pack(side="left")
+        if self._hist_selected_date == get_today_key():
+            tk.Label(
+                hdr, text="  HOY", bg=c.card,
+                fg=c.success, font=("Segoe UI", 8, "bold"),
+            ).pack(side="left", padx=(4, 0))
+        if entry.get("manual"):
+            tk.Label(
+                hdr, text="  ✏️ Manual", bg=c.card,
+                fg=c.muted, font=("Segoe UI", 8),
+            ).pack(side="left", padx=(4, 0))
+
+        # Close button
+        tk.Button(
+            hdr, text="✕", font=("Segoe UI", 10, "bold"),
+            bg=c.card, fg=c.muted,
+            activebackground=c.highlight, activeforeground="#ffffff",
+            relief="flat", padx=6, pady=1, cursor="hand2",
+            command=lambda: self._hist_select_date(self._hist_selected_date or ""),
+        ).pack(side="right")
+
+        # Rates rows
+        rates = [
+            ("BCV (Oficial)", entry.get("bcv"), c.success),
+            ("Paralelo", entry.get("paralelo"), c.highlight),
+            ("Binance P2P", entry.get("binance_p2p"), c.warning),
+            ("Euro (BCV)", entry.get("euro"), c.info),
+        ]
+
+        for label_text, val, color in rates:
+            row = tk.Frame(inner, bg=c.input_bg)
+            row.pack(fill="x", pady=(0, 4))
+
+            tk.Label(
+                row, text=f"●  {label_text}", bg=c.input_bg,
+                fg=color if val else c.muted,
+                font=("Segoe UI", 10), anchor="w", padx=8, pady=6,
+            ).pack(side="left", fill="x", expand=True)
+
+            val_str = f"Bs. {val:,.2f}" if val else "—"
+            tk.Label(
+                row, text=val_str, bg=c.input_bg,
+                fg=color if val else c.muted,
+                font=("Segoe UI", 12, "bold"), padx=4,
+            ).pack(side="right")
+
+            # Copy button per rate
+            if val:
+                field_key = f"hist_{label_text.lower().split()[0]}"
+                is_copied = self._hist_copied_field == field_key
+                copy_btn = tk.Button(
+                    row, text="📋" if not is_copied else "✓",
+                    font=("Segoe UI", 8),
+                    bg=c.accent if not is_copied else c.success,
+                    fg=c.primary if not is_copied else "#ffffff",
+                    activebackground=c.info, activeforeground=c.primary,
+                    relief="flat", padx=4, pady=2, cursor="hand2",
+                    command=lambda fk=field_key, v=val:
+                        self._hist_copy_rate(fk, f"Bs. {v:,.2f}"),
+                )
+                copy_btn.pack(side="right", padx=(2, 6))
+
+        # Copy all button
+        all_btn_row = tk.Frame(inner, bg=c.card, pady=(8, 0))
+        all_btn_row.pack(fill="x")
+        is_all_copied = self._hist_copied_field == "hist_all"
+        tk.Button(
+            all_btn_row, text="📋  Copiar todo" if not is_all_copied else "✓  ¡Copiado!",
+            font=FONTS["button"],
+            bg=c.info if not is_all_copied else c.success,
+            fg="#ffffff",
+            activebackground=c.info, activeforeground="#ffffff",
+            relief="flat", padx=12, pady=6, cursor="hand2",
+            command=self._hist_copy_all,
+        ).pack(fill="x")
+
+    def _hist_copy_rate(self, field_key: str, text: str) -> None:
+        """Copia una tasa individual del historial al portapapeles."""
+        self.window.clipboard_clear()
+        self.window.clipboard_append(text)
+        self._hist_copied_field = field_key
+        if self._hist_copy_timer:
+            self.window.after_cancel(self._hist_copy_timer)
+        self._hist_copy_timer = self.window.after(
+            1500,
+            lambda: (setattr(self, "_hist_copied_field", None)
+                     or self._update_history_tab()),
+        )
+        self._update_history_tab()
+
+    def _hist_copy_all(self) -> None:
+        """Copia todas las tasas de la fecha seleccionada."""
+        if not self._hist_selected_date:
+            return
+        historical = get_historical_rates()
+        entry = historical.get(self._hist_selected_date, {})
+        lines = [
+            f"📅 Fecha: {format_date_key(self._hist_selected_date)}",
+            f"🏦 BCV: Bs. {entry.get('bcv', 0):,.2f}" if entry.get("bcv") else "🏦 BCV: —",
+            f"💵 Paralelo: Bs. {entry.get('paralelo', 0):,.2f}" if entry.get("paralelo") else "💵 Paralelo: —",
+            f"📊 Binance P2P: Bs. {entry.get('binance_p2p', 0):,.2f}" if entry.get("binance_p2p") else "📊 Binance P2P: —",
+            f"💶 Euro: Bs. {entry.get('euro', 0):,.2f}" if entry.get("euro") else "💶 Euro: —",
+        ]
+        if entry.get("manual"):
+            lines.append("📝 Ingreso manual")
+        text = "\n".join(lines)
+        self._hist_copy_rate("hist_all", text)
+
+    def _update_hist_chart(self) -> None:
+        """Actualiza el historial desde _on_rates_loaded (reemplaza _update_trend_chart)."""
+        self._update_history_tab()
 
     # ─── Historial de Tasas ────────────────────────────────────────
 
