@@ -71,7 +71,7 @@ jobs:
           fi
           npx eas whoami --non-interactive
 
-      - name: Compilar APK con EAS Build
+      - name: Compilar APK localmente (GitHub Runner)
         if: success()
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -80,20 +80,18 @@ jobs:
           npx eas build \
             --platform android \
             --profile preview \
+            --local \
             --non-interactive \
-            --wait
+            --output TasaDelDia.apk
 
-      - name: Descargar APK
+      - name: Verificar APK generada
         if: success()
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
-          npx eas build:download \
-            --platform android \
-            --output TasaDelDia.apk \
-            --non-interactive || true
           if [ -f "TasaDelDia.apk" ]; then
-            echo "✅ APK descargada: $(ls -lh TasaDelDia.apk | awk '{print $5}')"
+            echo "✅ APK generada localmente: $(ls -lh TasaDelDia.apk | awk '{print $5}')"
+          else
+            echo "❌ No se encontró TasaDelDia.apk"
+            exit 1
           fi
 
       - name: Subir APK como artefacto

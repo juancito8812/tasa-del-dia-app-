@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import RatesScreen from './src/screens/RatesScreen';
 import ConverterScreen from './src/screens/ConverterScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
+import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
 
 const Tab = createBottomTabNavigator();
 
@@ -33,6 +35,8 @@ function AnimatedTabIcon({ routeName, focused, color, size }) {
     iconName = focused ? 'pulse' : 'pulse-outline';
   } else if (routeName === 'Conversor') {
     iconName = focused ? 'swap-horizontal' : 'swap-horizontal-outline';
+  } else if (routeName === 'Historial') {
+    iconName = focused ? 'stats-chart' : 'stats-chart-outline';
   }
 
   return (
@@ -112,6 +116,7 @@ function AnimatedAppContent() {
         >
           <Tab.Screen name="Tasas" component={RatesScreen} />
           <Tab.Screen name="Conversor" component={ConverterScreen} />
+          <Tab.Screen name="Historial" component={HistoryScreen} />
         </Tab.Navigator>
       </NavigationContainer>
     </Animated.View>
@@ -119,6 +124,10 @@ function AnimatedAppContent() {
 }
 
 function App() {
+  useEffect(() => {
+    registerBackgroundFetchAsync();
+  }, []);
+
   return (
     <ThemeProvider>
       <AnimatedAppContent />
