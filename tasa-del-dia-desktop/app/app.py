@@ -1199,9 +1199,18 @@ class TasaDelDiaApp:
         if not self.widget:
             self.widget = WidgetWindow(self, self.actual_theme)
 
+        was_visible = self.widget.is_visible
         self.widget.toggle()
         self._widget_enabled = self.widget.is_visible
         save_config(widget_enabled=self._widget_enabled)
+
+        # Si se acaba de mostrar y ya hay tasas cargadas, aplicarlas
+        if not was_visible and self.widget.is_visible and self.rates:
+            self._update_widget_rates(
+                self.rates.get("bcv"),
+                self.rates.get("parallel"),
+                self.rates.get("fetched_at"),
+            )
 
     def _show_widget(self) -> None:
         """Muestra el widget (si estaba habilitado)."""
@@ -1209,6 +1218,16 @@ class TasaDelDiaApp:
             self.widget = WidgetWindow(self, self.actual_theme)
         self.widget.show()
         self._widget_enabled = True
+
+        # Aplicar tasas actuales si ya están cargadas
+        # (evita que el widget aparezca con "—" si _on_rates_loaded
+        #  se ejecutó antes de crear el widget)
+        if self.rates:
+            self._update_widget_rates(
+                self.rates.get("bcv"),
+                self.rates.get("parallel"),
+                self.rates.get("fetched_at"),
+            )
 
     def _hide_widget(self) -> None:
         """Oculta el widget."""
@@ -1875,6 +1894,13 @@ class TasaDelDiaApp:
         cache = load_cache_rates()
         if cache and cache.get("bcv") is not None:
             self.cached_rates = cache
+            self.rates = {
+                "bcv": cache.get("bcv"),
+                "parallel": cache.get("paralelo"),
+                "eur": cache.get("euro"),
+                "binance_p2p": cache.get("binance_p2p"),
+                "fetched_at": cache.get("fetched_at"),
+            }
             self._set_offline_mode(True, cache.get("cached_at", ""))
 
             self.card_bcv.update_rate(cache.get("bcv"), cache.get("fetched_at"))
@@ -1894,6 +1920,25 @@ class TasaDelDiaApp:
             self.spread_indicator.update(cache.get("bcv"), cache.get("paralelo"))
             self.spread_lunes.update(self.bcv_lunes, cache.get("paralelo"))
             self._update_converter_spreads(cache.get("bcv"), cache.get("paralelo"))
+
+            # Auto-save cached rates to historical (para que la tendencia funcione)
+            save_today_historical_rate(
+                bcv=cache.get("bcv"),
+                paralelo=cache.get("paralelo"),
+                binance_p2p=cache.get("binance_p2p"),
+                euro=cache.get("euro"),
+            )
+
+            self._update_hist_count()
+            self._update_trend_chart()
+
+            # Update widget with cached rates
+            self._update_widget_rates(
+                cache.get("bcv"),
+                cache.get("paralelo"),
+                cache.get("fetched_at"),
+            )
+
             self.do_conversion()
         else:
             # No cache available
