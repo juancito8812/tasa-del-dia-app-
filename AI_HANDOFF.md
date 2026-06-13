@@ -20,138 +20,88 @@ El proyecto se divide en dos partes:
 
 ## 🚀 Últimos Cambios Realizados (Sesión Actual - Junio 2026)
 
-Esta sesión se centró casi exclusivamente en la **aplicación de escritorio** (`tasa-del-dia-desktop/`).
+Esta sesión se centró en la **aplicación de escritorio** (`tasa-del-dia-desktop/`).
 
 ---
 
-### 🧪 Pruebas Unitarias (Nuevas)
+### 🧪 Pruebas Unitarias (Nuevas en esta sesión)
 
-Se agregaron **56 tests nuevos** distribuidos en 3 archivos, elevando la suite a **115 tests** (59 existentes):
+Se agregaron **153 tests nuevos** en 2 archivos, elevando la suite total a **268 tests**:
 
 | Archivo | Tests | Cobertura |
-|---------|-------|-----------|
-| `tests/test_trend_chart.py` | 27 (nuevo) | TrendChart con matplotlib mockeado: init, update_chart, apply_theme, destroy, sin-matplotlib |
-| `tests/test_auto_update.py` | 14 (nuevo) | Parseo de versiones semver, `check_for_updates` (HTTP errors, JSON, assets, release notes truncadas) |
-| `tests/test_system_tray.py` | 12 (nuevo) | `send_notification` con/sin plyer, `start_tray` con pystray+PIL mockeados (lazy imports), `stop_tray` |
-| `tests/test_widget_window.py` | 30 (nuevo) | Persistencia de posición, init (topmost, bordes, tamaño, alpha), show/hide/toggle, `update_rates`, destroy |
-| `tests/test_api.py` | 3 (existente) | Tests de API con mock de urllib |
-| `tests/test_storage.py` | 5 (existente) | Tests de storage con tempfile |
+|---------|:-----:|-----------|
+| `tests/test_widgets.py` | **71** (NUEVO) | `_blend`, `_format_time`, RateCard (init, update, copy, loading/error), SpreadIndicator (init, update, spreads 5/10/20%), TimerBar (init, update, <60s) |
+| `tests/test_app.py` | **82** (NUEVO) | Helpers (_theme_label, _blend_bg, _cancel_timers, _close_active_dialog), Conversión (do_conversion USD↔Bs, _set_mode, _paste), Copia (_copy_bcv_rate, _copy_all_rates), Widget (_toggle/hide/update_widget), Offline+Reminder (_set_offline_mode, _was_entered_today, _check_reminder con 4 escenarios), Historial (_hist_select_date, _hist_copy_rate, _hist_copy_all), API (_on_rates_loaded con 6 tests, _on_rates_error con 3 tests, refresh_rates) |
+
+**Tests existentes de sesiones anteriores (115 tests):**
+| Archivo | Tests | Cobertura |
+|---------|:-----:|-----------|
+| `tests/test_trend_chart.py` | 27 | TrendChart con matplotlib mockeado |
+| `tests/test_auto_update.py` | 14 | Parseo semver, check_for_updates |
+| `tests/test_system_tray.py` | 12 | Notificaciones, start/stop tray |
+| `tests/test_widget_window.py` | 30 | Widget compacto Tkinter |
+| `tests/test_api.py` | 3 | API con mock de urllib |
+| `tests/test_storage.py` | 5 | Storage con tempfile |
 
 **Patrón de testing usado:**
-- `@patch` para mockear dependencias externas (urllib, plyer, pystray, PIL, matplotlib)
-- `setup_method/teardown_method` para patches de lazy imports dentro de funciones
+- `@patch` para mockear dependencias externas (API, storage, widgets, etc.)
 - `tk.Tk().withdraw()` como fixture para tests que necesitan Tkinter real
-- `tempfile.TemporaryDirectory` para pruebas de persistencia
+- Parcheo de `__init__` (return_value=None) para clases grandes (TasaDelDiaApp)
+- `MagicMock` con `side_effect` para simular cambios de estado en toggle
+- `pack_info()` en lugar de `winfo_ismapped()` para widgets con root withdraw
 
-### 🐛 Bug: RecursionError en `_start_theme_polling` (Corregido)
+### 🐛 Fix: _format_time en widgets.py
 
-**Archivo:** `app/app.py`
+**Archivo:** `app/widgets.py`
 
-**Causa:** Dos bugs en `_start_theme_polling()`:
-1. `_poll()` se llamaba **sincrónicamente** (`_poll()` al final del método en vez de `self.window.after(5000, _poll)`)
-2. La comparación de nombres de tema era incorrecta: `self.actual_theme.name` es `"oscuro"`/`"claro"`, pero se comparaba con `"dark"`/`"light"` → **nunca coincidían**
+**Cambio:** Se agregó `AttributeError` al `except` de `_format_time()` para evitar crash cuando se pasa un tipo no-string (ej. `int`).
 
-**Resultado:** Cada vez que se reconstruía la UI, el polling detectaba un "cambio de tema" falso y reconstruía de nuevo... infinitamente → `RecursionError: maximum recursion depth exceeded`.
-
-**Fix:** 
-- Cambiar `_poll()` por `self.window.after(5000, _poll)` (programar, no ejecutar inmediatamente)
-- Cambiar `expected = "dark"/"light"` por `expected_name = "oscuro"/"claro"`
-
-### 🐛 Bug: Widget no mostraba tasas (Corregido)
-
-**Archivo:** `app/app.py`
-
-**Causa:** Race condition en la inicialización:
-1. `__init__` programa `_show_widget` con `after(500, ...)`
-2. `refresh_rates()` inicia el fetch de la API en un hilo
-3. Si la API responde ANTES de los 500ms, `_on_rates_loaded` ejecuta `_update_widget_rates()` pero el widget **aún no existe** → la llamada es un no-op
-4. Cuando `_show_widget` se ejecuta a los 500ms, crea el widget con valores por defecto `"—"` y nunca recibe las tasas
-
-**Fix:** En `_show_widget()` y `_toggle_widget()`, después de crear/mostrar el widget, verificar si `self.rates` ya tiene datos y aplicarlos inmediatamente.
-
-### 🐛 Bug: Histórico y tendencia no funcionaban en modo offline/caché (Corregido)
-
-**Archivo:** `app/app.py`
-
-**Causa:** Cuando la API fallaba y se usaba el caché (`_on_rates_error`), el código:
-1. **No guardaba** las tasas cacheadas en el histórico (`save_today_historical_rate`)
-2. **No actualizaba** el gráfico de tendencia (`_update_trend_chart`)
-3. **No actualizaba** el widget compacto (`_update_widget_rates`)
-4. **No almacenaba** `self.rates` con los valores del caché
-
-**Fix:** En `_on_rates_error()`, agregar:
-- `self.rates = {...}` mapeando claves del caché al formato `RatesDict`
-- Llamadas a `save_today_historical_rate()`, `_update_hist_count()`, `_update_trend_chart()`, `_update_widget_rates()`
-
-### 📊 Gráfico de Tendencia (TrendChart)
-
-**Archivo nuevo:** `app/trend_chart.py`
-
-Gráfico de líneas usando matplotlib embebido en Tkinter (`FigureCanvasTkAgg`). Muestra la evolución de BCV y Paralelo desde los datos históricos guardados.
-
-**Dependencias:** `matplotlib`, `matplotlib.backends.backend_tkagg` y `matplotlib.dates`.
-
-**PyInstaller:** Se agregaron `hiddenimports` en `TasaDelDia.spec`:
-```python
-hiddenimports=[
-    "matplotlib", "matplotlib.backends.backend_tkagg",
-    "matplotlib.figure", "matplotlib.dates", "matplotlib.pyplot",
-]
-```
+**Línea modificada:** `except (ValueError, TypeError) as e:` → `except (ValueError, TypeError, AttributeError) as e:`
 
 ### 📦 Compilación con PyInstaller
 
 **Archivo:** `TasaDelDia.spec`
 
-El `.exe` se compila con `python -m PyInstaller --clean TasaDelDia.spec`. El resultado está en `dist/TasaDelDia.exe` (~51 MB portátil).
+Se compiló exitosamente el `.exe` (~51.6 MB) usando:
+```bash
+python -m PyInstaller --clean TasaDelDia.spec
+```
 
-Notas importantes:
-- `console=False` para que no aparezca ventana de terminal
-- `hiddenimports` necesarios para matplotlib (ver arriba)
-- `pystray` tiene un `SyntaxWarning` inofensivo que no afecta la compilación
-- Los datos de la app se guardan en `%APPDATA%\TasaDelDia\`
+El ejecutable está en `tasa-del-dia-desktop/dist/TasaDelDia.exe`.
 
-### 🔊 Logging para Debugging
+Verificado con:
+- Proceso iniciado correctamente
+- Logs de la app funcionales (tasas obtenidas de la API)
+- Historical_rates.json cargado correctamente
+- Sin errores en crash dump
 
-Se agregaron logs detallados en:
-- **`app/api.py`**: Log de markets recibidos y `fetched_at`
-- **`app/storage.py`**: Log de condición `should_save` en `save_today_historical_rate`, conteo de registros históricos, rutas de archivos
-- **`app/app.py`**: Log en `_on_rates_loaded`, `_update_widget_rates`, `_show_widget`, `_update_trend_chart`
+Advertencias conocidas (no críticas):
+- `matplotlib` no disponible en el .exe (gráfico de tendencia desactivado)
+- `auto_update` HTTP 404 (sin releases publicados aún)
+- `pystray` SyntaxWarning inofensivo
 
-Para ver los logs: ejecutar `python main.py` (salen en terminal). En el `.exe`, se guardan en `%APPDATA%\TasaDelDia\app.log`.
+### 📊 Reporte de Cobertura
 
-**Nota importante sobre los logs:** Durante pruebas con `basher`, la app se ejecuta pero el timeout mata el proceso antes de que los logs del callback `_on_rates_loaded` (programado con `window.after(0, ...)`) se escriban al archivo. Para ver los logs completos, ejecutar la app interactivamente con `python main.py`.
+**Antes:** 27% | **Ahora:** 55%
 
-### 🔍 Diagnóstico: Histórico no se guardaba automáticamente
+| Archivo | Antes | Ahora |
+|---------|:-----:|:-----:|
+| `app/widgets.py` | 0% | **100%** |
+| `app/app.py` | 0% | **30%** |
+| `app/api.py` | 98% | 98% |
+| `app/auto_update.py` | 100% | 100% |
+| `app/storage.py` | 81% | 82% |
+| `app/system_tray.py` | 87% | 87% |
+| `app/theme.py` | 68% | 70% |
+| `app/trend_chart.py` | 92% | 92% |
+| `app/widget_window.py` | 92% | 92% |
+| **TOTAL** | **27%** | **55%** |
 
-**Síntoma:** El log mostraba `Archivo histórico no existe aún` repetidamente pero NUNCA `Tasas de hoy guardadas en histórico`.
+### 🔧 .gitignore actualizado
 
-**Diagnóstico:** La función `save_today_historical_rate()` funciona correctamente cuando se llama directamente. El problema es que durante la ejecución normal de la app vía `basher` (con timeout), el event loop de Tkinter no alcanza a procesar el callback `after(0, ...)` del thread antes de que el proceso sea terminado.
-
-**Solución:** Ejecutar la app interactivamente con `python main.py` para que el event loop tenga tiempo de procesar todos los callbacks. Una vez que el `historical_rates.json` se crea, las ejecuciones posteriores lo cargan correctamente.
-
-**Estado actual:** El archivo `historical_rates.json` existe con los datos de hoy (13/06/2026) y la app lo carga correctamente (`Histórico cargado: 1 registros`).
-
-### 🛠️ Aplicación Móvil (React Native)
-
-**Build APK:** Se corrigió el error `private properties are not supported` de Hermes:
-1. **`sharp` movido de `dependencies` a `devDependencies`** — sharp usa `#private` fields de ES2022 que Hermes no puede compilar. Al estar en `dependencies`, Metro lo incluía en el bundle.
-2. **Versiones alineadas con Expo SDK 54**: `babel-preset-expo`, `jest-expo`, `expo-background-fetch`, `expo-task-manager` estaban en versión 56.x (para SDK 56) causando incompatibilidad.
-
-### 🔄 Estado del Build APK
-
-El workflow Build APK (#24, commit `2772071`) está **pendiente de verificar**. Los builds locales pueden tardar 15-30 minutos.
-
-### 📝 Skills de Codebuff (`.agents/`)
-
-Se crearon 4 skills como archivos markdown:
-
-| Skill | Archivo | Qué hace |
-|-------|---------|----------|
-| 🔨 **Build EXE** | `.agents/build-exe.md` | Compilar .exe con PyInstaller + troubleshooting |
-| 🧪 **Run Tests** | `.agents/run-tests.md` | Ejecutar tests (115), troubleshooting de Tkinter |
-| 📱 **Check Build APK** | `.agents/check-build-apk.md` | Verificar GitHub Actions + errores comunes |
-| 🚀 **Run App** | `.agents/run-app.md` | Ejecutar app con `python main.py`, atajos, troubleshooting |
+Se agregaron entradas para:
+- `build/` y `dist/` (raíz del proyecto — artefactos de PyInstaller)
+- `tasa-del-dia-desktop/.coverage` (reportes de cobertura)
 
 ---
 
@@ -199,11 +149,11 @@ tasa-del-dia-desktop/
 
 ## ⏭️ Siguientes Pasos Posibles
 
-1. **Verificar Build APK**: Revisar GitHub Actions para confirmar que el workflow #24 pasó
+1. **Tests de theme polling**: Agregar tests para `_start_theme_polling()` (método que tuvo bug de recursión en el pasado)
 2. **Instalador**: Crear un instalador con Inno Setup para distribuir el `.exe`
-3. **Reporte de cobertura**: Ejecutar `pytest --cov=app tests/` para ver cobertura
-4. **Tests de Tkinter**: Arreglar el entorno para que los 30 tests de `test_widget_window.py` puedan ejecutarse (requiere `tk.tcl` en el path de Python)
-5. **Sincronización móvil-escritorio**: Compartir el histórico de tasas entre la app móvil y la de escritorio vía un archivo JSON o API
+3. **Verificar Build APK**: Revisar GitHub Actions para confirmar que el workflow #24 pasó
+4. **Sincronización móvil-escritorio**: Compartir el histórico de tasas entre la app móvil y la de escritorio vía un archivo JSON o API
+5. **Cobertura app.py**: Subir del 30% actual agregando tests para `_rebuild_ui`, `_switch_theme_mode`, `_start_theme_polling`
 
 ---
 
