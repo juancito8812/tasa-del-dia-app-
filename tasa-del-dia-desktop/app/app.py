@@ -28,6 +28,7 @@ from app.theme import FONTS, Theme, get_system_theme, resolve_theme
 from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
 from app.widget_window import WidgetWindow
 from app.system_tray import send_notification, start_tray, stop_tray
+from app.auto_update import check_for_updates, APP_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +70,9 @@ class TasaDelDiaApp:
         self.widget: Optional[WidgetWindow] = None
 
         # Diálogo activo (para Esc)
+        self._brecha_notified: bool = False
+
+        # Diálogo activo (para Esc)
         self._active_dialog: Optional[tk.Toplevel] = None
 
         # BCV Lunes state
@@ -100,6 +104,9 @@ class TasaDelDiaApp:
         # Auto-mostrar widget si estaba habilitado
         if self._widget_enabled:
             self.window.after(500, self._show_widget)
+
+        # Check for updates (silent, on startup)
+        self.window.after(5000, self._check_updates_silent)
 
         self.refresh_rates()
 
@@ -1483,6 +1490,8 @@ class TasaDelDiaApp:
         self.window.bind("<Escape>", lambda _e: self._close_active_dialog())
         self.window.bind("<Control-w>", lambda _e: self._toggle_widget())
         self.window.bind("<Control-W>", lambda _e: self._toggle_widget())
+        self.window.bind("<Control-q>", lambda _e: self._quit_from_tray())
+        self.window.bind("<Control-Q>", lambda _e: self._quit_from_tray())
 
     def _copy_bcv_rate(self) -> None:
         """Copia la tasa BCV al portapapeles (Ctrl+C)."""
@@ -1588,6 +1597,101 @@ class TasaDelDiaApp:
                     self.window.after_cancel(timer)
                 except Exception as e:
                     logger.warning("Error cancelando timer %s: %s", timer_name, e)
+
+    # ─── Auto Update ────────────────────────────────────────────
+
+    def _check_updates_silent(self) -> None:
+        """Verifica actualizaciones en segundo plano sin molestar."""
+        def _check() -> None:
+            try:
+                result = check_for_updates()
+                if result and result.get("has_update"):
+                    self._show_update_available(result)
+            except Exception as e:
+                logger.debug("Error checking updates: %s", e)
+        threading.Thread(target=_check, daemon=True).start()
+
+    def _check_updates_manual(self) -> None:
+        """Verifica actualizaciones manualmente (desde botón)."""
+        from tkinter import messagebox
+        try:
+            result = check_for_updates()
+            if result and result.get("has_update"):
+                self._show_update_available(result)
+            else:
+                messagebox.showinfo(
+                    "Actualizaciones",
+                    f"Tienes la última versión ({APP_VERSION}).",
+                )
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo verificar: {e}")
+
+    def _show_update_available(self, result: dict) -> None:
+        """Muestra un diálogo cuando hay una actualización disponible."""
+        from tkinter import messagebox
+        c = self.actual_theme
+
+        dialog = tk.Toplevel(self.window)
+        self._active_dialog = dialog
+        dialog.title("Actualización disponible")
+        dialog.configure(bg=c.card)
+        dialog.resizable(False, False)
+        dialog.transient(self.window)
+
+        x = self.window.winfo_x() + (self.window.winfo_width() - 360) // 2
+        y = self.window.winfo_y() + (self.window.winfo_height() - 220) // 2
+        dialog.geometry(f"360x220+{x}+{y}")
+
+        frame = tk.Frame(dialog, bg=c.card, padx=20, pady=20)
+        frame.pack(fill="both", expand=True)
+
+        tk.Label(
+            frame, text="🚀 Nueva versión disponible", bg=c.card,
+            fg=c.primary, font=("Segoe UI", 14, "bold"),
+        ).pack(anchor="w")
+
+        tk.Label(
+            frame,
+            text=f"Versión actual: {APP_VERSION}\nNueva versión: {result.get('latest_version', '?')}",
+            bg=c.card, fg=c.secondary, font=("Segoe UI", 10),
+            anchor="w", justify="left",
+        ).pack(fill="x", pady=(8, 4))
+
+        if result.get("release_notes"):
+            tk.Label(
+                frame, text=result["release_notes"][:200],
+                bg=c.card, fg=c.muted, font=("Segoe UI", 8),
+                anchor="w", wraplength=320, justify="left",
+            ).pack(fill="x")
+
+        btn_frame = tk.Frame(frame, bg=c.card)
+        btn_frame.pack(fill="x", pady=(12, 0))
+
+        def _download() -> None:
+            import webbrowser
+            url = result.get("download_url", result.get("release_url", ""))
+            if url:
+                webbrowser.open(url)
+            dialog.destroy()
+            self._active_dialog = None
+
+        tk.Button(
+            btn_frame, text="📥 Descargar", font=FONTS["button"],
+            bg=c.info, fg="#ffffff",
+            activebackground=c.info, activeforeground="#ffffff",
+            relief="flat", padx=16, pady=6, cursor="hand2",
+            command=_download,
+        ).pack(side="left", fill="x", expand=True, padx=(0, 2))
+
+        tk.Button(
+            btn_frame, text="Recordar después", font=FONTS["section"],
+            bg=c.input_bg, fg=c.secondary,
+            activebackground=c.accent, activeforeground=c.primary,
+            relief="flat", padx=16, pady=6, cursor="hand2",
+            command=lambda: (dialog.destroy(), setattr(self, "_active_dialog", None)),
+        ).pack(side="right", fill="x", expand=True, padx=(2, 0))
+
+        dialog.grab_set()
 
     # ─── Offline Mode ──────────────────────────────────────────────
 
@@ -1705,11 +1809,14 @@ class TasaDelDiaApp:
         paralelo = rates.get("parallel")
         if bcv and paralelo and bcv > 0:
             brecha = ((paralelo - bcv) / bcv) * 100
-            if brecha > 20:
+            if brecha > 20 and not self._brecha_notified:
                 send_notification(
                     "⚠️ Brecha BCV vs Paralelo alta",
                     f"La brecha es de {brecha:.1f}%.\nBCV: Bs. {bcv:,.2f} | Paralelo: Bs. {paralelo:,.2f}",
                 )
+                self._brecha_notified = True
+            elif brecha <= 20:
+                self._brecha_notified = False
 
         # Save to offline cache
         save_cache_rates(rates)
