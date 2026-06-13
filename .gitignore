@@ -27,8 +27,11 @@ __pycache__/
 venv/
 env/
 *.egg-info/
+build/
+dist/
 tasa-del-dia-desktop/build/
 tasa-del-dia-desktop/dist/
+tasa-del-dia-desktop/.coverage
 tasa-del-dia-desktop/app_icon.ico
 tasa-del-dia-desktop/__pycache__/
 
