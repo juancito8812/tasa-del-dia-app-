@@ -82,10 +82,23 @@ El tag `v1.0.3` ya está en GitHub y disparó los workflows de release.
 | **Release .EXE** (tags v*) | 13/06 17:28 | ✅ **Success** — compiló y subió artefactos |
 | **Release APK** (tags v*) | 13/06 17:28 | ❌ **Failure** — EAS Build excedió límite del plan Free |
 
-**Causa del fallo del Release APK:** El paso "Compilar APK con EAS Build" falló porque la cuenta gratuita de Expo/EAS ha usado todos sus builds Android del mes. Resetea el 01/07/2026. Soluciones:
-- Esperar al reset del plan Free (17 días)
-- Actualizar a plan pago en https://expo.dev/accounts/jr8812/settings/billing
-- Build local con `npx eas build --platform android --profile preview --local`
+**Causa del fallo del Release APK:** El paso "Compilar APK con EAS Build" falló porque la cuenta gratuita de Expo/EAS ha usado todos sus builds Android del mes. Resetea el 01/07/2026.
+
+### Intentos de Build APK Local (13/06/2026)
+
+Se intentaron 3 enfoques para compilar el APK localmente, todos fallaron:
+
+| Enfoque | Resultado | Causa |
+|---------|:---------:|-------|
+| `npx eas build --local` | ❌ | **EAS no soporta builds Android locales en Windows** (requiere macOS/Linux) |
+| `npx expo run:android` | ❌ | **Requiere dispositivo Android conectado o emulador** |
+| `./gradlew.bat assembleRelease` | ❌ | **Ruta demasiado larga para Windows** — `C:\Users\JRCPU\Desktop\Nueva carpeta\tasa-del-dia-app-\tasa-del-dia\...` excede el límite de 260 caracteres al compilar módulos nativos con Ninja |
+
+**Soluciones viables para build APK:**
+1. Mover el proyecto a `C:\tasa-del-dia-app\` para acortar la ruta y usar `gradlew.bat assembleRelease`
+2. Esperar al reset del plan EAS Free el 01/07/2026
+3. Actualizar a plan pago en https://expo.dev/accounts/jr8812/settings/billing
+4. Usar GitHub Actions (workflow `build-apk.yml`) que ya funciona correctamente
 
 ---
 
