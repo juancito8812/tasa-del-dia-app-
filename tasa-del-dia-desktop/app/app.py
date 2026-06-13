@@ -27,6 +27,7 @@ from app.storage import (
 from app.theme import FONTS, Theme, get_system_theme, resolve_theme
 from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
 from app.widget_window import WidgetWindow
+from app.system_tray import send_notification, start_tray, stop_tray
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ class TasaDelDiaApp:
         self._start_theme_polling()
         self._start_countdown()
         self._start_reminder_check()
+        self._init_tray()
         # Check reminder immediately on startup
         if self.reminder_enabled and not self._reminder_shown_this_friday:
             self.window.after(1000, self._check_reminder)
@@ -1544,13 +1546,37 @@ class TasaDelDiaApp:
 
         toast.after(1500, lambda: toast.destroy() if toast.winfo_exists() else None)
 
-    def _on_close(self) -> None:
-        """Maneja el cierre de la aplicación."""
+    # ─── System Tray ─────────────────────────────────────────────
+
+    def _init_tray(self) -> None:
+        """Inicia el system tray después de que la UI esté lista."""
+        self.window.after(2000, lambda: start_tray(
+            on_show=self._restore_from_tray,
+            on_quit=self._quit_from_tray,
+        ))
+
+    def _restore_from_tray(self) -> None:
+        """Restaura la ventana desde la bandeja."""
+        self.window.deiconify()
+        self.window.lift()
+        self.window.focus_force()
+
+    def _quit_from_tray(self) -> None:
+        """Cierra la app desde la bandeja."""
         self._cancel_timers()
         if self.widget:
             self.widget.destroy()
-        self.window.destroy()
-        logger.info("Aplicación cerrada")
+        stop_tray()
+        self.window.quit()
+
+    def _on_close(self) -> None:
+        """Maneja el cierre de la aplicación."""
+        self.window.withdraw()  # minimizar a bandeja en lugar de cerrar
+        send_notification(
+            "Tasa del Día",
+            "La app sigue corriendo en segundo plano. Haz clic en el icono de la bandeja para abrirla.",
+        )
+        logger.info("App minimizada a bandeja")
 
     def _cancel_timers(self) -> None:
         """Cancela todos los timers activos."""
@@ -1673,6 +1699,17 @@ class TasaDelDiaApp:
         self._update_widget_rates(
             rates.get("bcv"), rates.get("parallel"), rates.get("fetched_at")
         )
+
+        # Notificación si la brecha es muy alta
+        bcv = rates.get("bcv")
+        paralelo = rates.get("parallel")
+        if bcv and paralelo and bcv > 0:
+            brecha = ((paralelo - bcv) / bcv) * 100
+            if brecha > 20:
+                send_notification(
+                    "⚠️ Brecha BCV vs Paralelo alta",
+                    f"La brecha es de {brecha:.1f}%.\nBCV: Bs. {bcv:,.2f} | Paralelo: Bs. {paralelo:,.2f}",
+                )
 
         # Save to offline cache
         save_cache_rates(rates)

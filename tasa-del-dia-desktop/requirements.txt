@@ -1,9 +1,12 @@
 # ─── Tasa del Día - Dependencias ────────────────────────────────
-# Solo PyInstaller para compilar el .exe
-# La app usa solo la stdlib de Python.
 
 pyinstaller>=6.0
+plyer>=2.1
+pystray>=0.19
+Pillow>=10.0
+matplotlib>=3.7
+requests>=2.28
 
 # ─── Dependencias de desarrollo ─────────────────────────────────
-# pytest==8.0.0       # Descomentar para tests: pip install pytest
-# pytest-cov==5.0.0   # Para cobertura de código
+pytest>=8.0.0
+pytest-cov>=5.0.0
