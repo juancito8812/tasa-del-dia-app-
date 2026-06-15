@@ -1,7 +1,3 @@
-"""
-Utilidades de sistema: notificaciones nativas y bandeja del sistema.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -10,7 +6,7 @@ from typing import Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
-# ─── Notificaciones ─────────────────────────────────────────────
+# ─── Notifications ─────────────────────────────────────────────────
 
 _notifications_available = False
 try:
@@ -43,73 +39,102 @@ def send_notification(title: str, message: str, timeout: int = 5) -> None:
         logger.warning("Error enviando notificación: %s", e)
 
 
-# ─── System Tray ────────────────────────────────────────────────
+# ─── System Tray ────────────────────────────────────────────────────
 
-_tray_icon = None
-_tray_thread = None
+
+class SystemTray:
+    """Gestor del icono de bandeja del sistema."""
+
+    def __init__(self) -> None:
+        self._icon: Any = None
+        self._thread: Optional[threading.Thread] = None
+
+    def start(
+        self,
+        on_show: Callable[[], None],
+        on_quit: Callable[[], None],
+        on_refresh: Optional[Callable[[], None]] = None,
+    ) -> None:
+        """Inicia el icono de bandeja del sistema en un hilo separado.
+
+        Args:
+            on_show: Callback para mostrar/restaurar la ventana.
+            on_quit: Callback para cerrar la aplicación.
+            on_refresh: Callback para actualizar tasas.
+        """
+        if self._icon is not None:
+            return
+
+        try:
+            import pystray
+            from PIL import Image, ImageDraw
+        except ImportError:
+            logger.warning("pystray o Pillow no disponibles — system tray desactivado")
+            return
+
+        img = Image.new("RGB", (64, 64), color=(26, 26, 62))
+        draw = ImageDraw.Draw(img)
+        draw.rectangle([12, 8, 52, 56], fill=(233, 69, 96))
+        draw.text((20, 14), "T", fill=(255, 255, 255))
+
+        menu = pystray.Menu(
+            pystray.MenuItem("Abrir Tasa del Día", on_show),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Actualizar tasas", on_refresh or on_show),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Salir", on_quit),
+        )
+
+        self._icon = pystray.Icon(
+            "tasa_del_dia",
+            img,
+            "Tasa del Día — Venezuela",
+            menu,
+        )
+
+        def _run() -> None:
+            try:
+                self._icon.run()
+            except Exception as e:
+                logger.error("Error en system tray: %s", e)
+
+        self._thread = threading.Thread(target=_run, daemon=True)
+        self._thread.start()
+        logger.info("System tray iniciado")
+
+    def stop(self) -> None:
+        """Detiene el icono de bandeja."""
+        if self._icon is not None:
+            try:
+                self._icon.stop()
+            except Exception:
+                pass
+            self._icon = None
+            logger.info("System tray detenido")
+
+    @property
+    def running(self) -> bool:
+        return self._icon is not None
+
+
+# Module-level singleton
+_tray = SystemTray()
 
 
 def start_tray(
     on_show: Callable[[], None],
     on_quit: Callable[[], None],
+    on_refresh: Optional[Callable[[], None]] = None,
 ) -> None:
-    """Inicia el icono de bandeja del sistema en un hilo separado.
-
-    Args:
-        on_show: Callback para mostrar/restaurar la ventana.
-        on_quit: Callback para cerrar la aplicación.
-    """
-    global _tray_icon, _tray_thread
-
-    if _tray_icon is not None:
-        return  # ya iniciado
-
-    try:
-        import pystray
-        from PIL import Image, ImageDraw
-    except ImportError:
-        logger.warning("pystray o Pillow no disponibles — system tray desactivado")
-        return
-
-    # Crear un icono simple (rectángulo azul oscuro con texto T)
-    img = Image.new("RGB", (64, 64), color=(26, 26, 62))
-    draw = ImageDraw.Draw(img)
-    draw.rectangle([12, 8, 52, 56], fill=(233, 69, 96))
-    draw.text((20, 14), "T", fill=(255, 255, 255))
-
-    menu = pystray.Menu(
-        pystray.MenuItem("📊 Abrir Tasa del Día", on_show),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("🔄 Actualizar tasas", on_show),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("❌ Salir", on_quit),
-    )
-
-    _tray_icon = pystray.Icon(
-        "tasa_del_dia",
-        img,
-        "Tasa del Día — Venezuela",
-        menu,
-    )
-
-    def _run_tray() -> None:
-        try:
-            _tray_icon.run()
-        except Exception as e:
-            logger.error("Error en system tray: %s", e)
-
-    _tray_thread = threading.Thread(target=_run_tray, daemon=True)
-    _tray_thread.start()
-    logger.info("System tray iniciado")
+    """Inicia el icono de bandeja del sistema (wrapper legacy)."""
+    _tray.start(on_show, on_quit, on_refresh)
 
 
 def stop_tray() -> None:
-    """Detiene el icono de bandeja."""
-    global _tray_icon
-    if _tray_icon is not None:
-        try:
-            _tray_icon.stop()
-        except Exception:
-            pass
-        _tray_icon = None
-        logger.info("System tray detenido")
+    """Detiene el icono de bandeja (wrapper legacy)."""
+    _tray.stop()
+
+
+def get_tray() -> SystemTray:
+    """Retorna la instancia única del SystemTray."""
+    return _tray

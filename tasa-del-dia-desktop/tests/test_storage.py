@@ -12,6 +12,7 @@ import pytest
 
 from app.storage import (
     CONFIG_DIR,
+    _invalidate_config_cache,
     format_date_key,
     get_historical_rates,
     get_today_key,
@@ -79,6 +80,7 @@ class TestConfigPersistence:
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("app.storage.CONFIG_DIR", tmpdir), \
                  patch("app.storage.CONFIG_FILE", os.path.join(tmpdir, "config.json")):
+                _invalidate_config_cache()
                 yield
 
     def test_load_config_defaults(self) -> None:

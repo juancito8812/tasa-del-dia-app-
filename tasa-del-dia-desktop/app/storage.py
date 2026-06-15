@@ -33,29 +33,37 @@ def _ensure_config_dir() -> None:
 
 ConfigDict = Dict[str, Any]
 
+_config_cache: Optional[ConfigDict] = None
+
 
 def load_config() -> ConfigDict:
-    """Carga la configuración desde el archivo JSON.
+    """Carga la configuración con caché en memoria.
 
     Returns:
         Diccionario con valores por defecto si el archivo no existe o está corrupto.
     """
+    global _config_cache
+    if _config_cache is not None:
+        return _config_cache
     try:
         if not os.path.exists(CONFIG_FILE):
             logger.info("Archivo de configuración no encontrado, usando valores por defecto")
-            return _default_config()
+            _config_cache = _default_config()
+            return _config_cache
         with open(CONFIG_FILE, "r", encoding="utf-8") as f:
             data: dict = json.load(f)
-        return {
+        _config_cache = {
             "bcv_lunes": data.get("bcv_lunes"),
             "bcv_lunes_updated_at": data.get("bcv_lunes_updated_at"),
             "reminder_enabled": data.get("reminder_enabled", False),
             "last_known_theme": data.get("last_known_theme", "dark"),
             "widget_enabled": data.get("widget_enabled", False),
         }
+        return _config_cache
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("Error cargando configuración: %s", e)
-        return _default_config()
+        _config_cache = _default_config()
+        return _config_cache
 
 
 def _default_config() -> ConfigDict:
@@ -63,9 +71,14 @@ def _default_config() -> ConfigDict:
         "bcv_lunes": None,
         "bcv_lunes_updated_at": None,
         "reminder_enabled": False,
-    "last_known_theme": "dark",
-    "widget_enabled": False,
-}
+        "last_known_theme": "dark",
+        "widget_enabled": False,
+    }
+
+
+def _invalidate_config_cache() -> None:
+    global _config_cache
+    _config_cache = None
 
 
 def save_config(
@@ -100,6 +113,7 @@ def save_config(
             config["widget_enabled"] = bool(widget_enabled)
         with open(CONFIG_FILE, "w", encoding="utf-8") as f:
             json.dump(config, f, ensure_ascii=False, indent=2)
+        _config_cache = config
         logger.debug("Configuración guardada correctamente")
     except OSError as e:
         logger.exception("Error guardando configuración: %s", e)

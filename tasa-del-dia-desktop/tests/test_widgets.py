@@ -690,14 +690,13 @@ class TestTimerBarUpdate:
         timer.destroy()
 
     def test_update_exactly_60_seconds(self, fresh_root) -> None:
-        """Exactamente 60s → formato normal (minutos: 1:00)."""
+        """Exactamente 60s → warning (menos de 5 min)."""
         timer = TimerBar(fresh_root, DARK)
         timer.update(60)
 
         text = timer.label.cget("text")
-        # mins=1, secs=00 → formato "1:00", no "01:00"
         assert "1:00" in text
-        assert timer.label.cget("fg") == DARK.muted  # Normal, no warning
+        assert timer.label.cget("fg") == DARK.warning  # Warning < 5 min
         timer.destroy()
 
     def test_update_zero_seconds(self, fresh_root) -> None:

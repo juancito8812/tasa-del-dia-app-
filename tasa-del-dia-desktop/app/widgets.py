@@ -89,14 +89,14 @@ class RateCard(tk.Frame):
             highlightthickness=1,
             **kwargs  # type: ignore[arg-type]
         )
-        self.configure(padx=16, pady=14)
+        self.configure(padx=18, pady=16)
         self.color: str = color
         self.rate_var: tk.StringVar = tk.StringVar(value="—")
         self.time_var: tk.StringVar = tk.StringVar(value="")
         self._copy_timer: Optional[str] = None
 
-        # Glow accent bar (top)
-        glow = tk.Frame(self, bg=color, height=3)
+        # Glow accent bar (top) — more prominent
+        glow = tk.Frame(self, bg=color, height=4)
         glow.pack(fill="x", side="top")
         glow.lift()
 
@@ -105,14 +105,14 @@ class RateCard(tk.Frame):
         header.pack(fill="x", pady=(6, 0))
 
         icon_frame = tk.Frame(
-            header, bg=_blend(color, 0.15, c.card_bg_rgb), width=38, height=38
+            header, bg=_blend(color, 0.12, c.card_bg_rgb), width=40, height=40
         )
-        icon_frame.pack(side="left", padx=(0, 10))
+        icon_frame.pack(side="left", padx=(0, 12))
         icon_frame.pack_propagate(False)
         icon_label = tk.Label(
             icon_frame, text=icon,
-            bg=_blend(color, 0.15, c.card_bg_rgb),
-            fg=color, font=("Segoe UI", 16)
+            bg=_blend(color, 0.12, c.card_bg_rgb),
+            fg=color, font=("Segoe UI", 18)
         )
         icon_label.pack(expand=True)
 
@@ -134,41 +134,41 @@ class RateCard(tk.Frame):
             header, textvariable=self.time_var, bg=c.card,
             fg=c.muted, font=FONTS["small"]
         )
-        self.time_label.pack(side="right", anchor="n", padx=(4, 0))
+        self.time_label.pack(side="right", anchor="n", padx=(6, 0))
 
         # Rate
         rate_frame = tk.Frame(self, bg=c.card)
-        rate_frame.pack(fill="x", pady=(8, 0))
+        rate_frame.pack(fill="x", pady=(10, 0))
 
         tk.Label(
             rate_frame, text="Bs.", bg=c.card, fg=color,
-            font=("Segoe UI", 16, "bold"), anchor="w"
+            font=("Segoe UI", 18, "bold"), anchor="w"
         ).pack(side="left")
 
         self.rate_label = tk.Label(
             rate_frame, textvariable=self.rate_var, bg=c.card,
             fg=color, font=FONTS["rate"], anchor="w", cursor="hand2"
         )
-        self.rate_label.pack(side="left", padx=(4, 0))
+        self.rate_label.pack(side="left", padx=(6, 0))
 
         # Copy button
         self.copy_btn = tk.Label(
             rate_frame, text="📋", bg=c.card, fg=c.muted,
-            font=("Segoe UI", 10), cursor="hand2", padx=4
+            font=("Segoe UI", 11), cursor="hand2", padx=4
         )
-        self.copy_btn.pack(side="left", padx=(2, 0))
+        self.copy_btn.pack(side="left", padx=(4, 0))
         self.copy_btn.bind("<Button-1>", lambda _e: self._copy_rate())
         self.rate_label.bind("<Button-1>", lambda _e: self._copy_rate())
 
         # Copy feedback
         self.copy_feedback = tk.Label(
             self, text="", bg=c.card, fg=color,
-            font=("Segoe UI", 8, "bold"), anchor="e"
+            font=("Segoe UI", 9, "bold"), anchor="e"
         )
 
-        # Divider
-        divider = tk.Frame(self, bg=c.card_border, height=1)
-        divider.pack(fill="x", pady=(8, 6))
+        # Divider subtle
+        divider = tk.Frame(self, bg=_blend(c.card_border, 0.5, c.card_bg_rgb), height=1)
+        divider.pack(fill="x", pady=(10, 8))
 
         # 1 USD info
         self.usd_info = tk.Label(
@@ -257,7 +257,7 @@ class SpreadIndicator(tk.Frame):
             highlightthickness=1,
             **kwargs  # type: ignore[arg-type]
         )
-        self.configure(padx=14, pady=12)
+        self.configure(padx=16, pady=14)
         self.color_a: str = color_a
         self.color_b: str = color_b
 
@@ -266,10 +266,10 @@ class SpreadIndicator(tk.Frame):
 
         # Title
         title_frame = tk.Frame(self.inner, bg=c.card)
-        title_frame.pack(fill="x", pady=(0, 10))
+        title_frame.pack(fill="x", pady=(0, 12))
 
         tk.Label(
-            title_frame, text=icon, bg=c.card, font=("Segoe UI", 11)
+            title_frame, text=icon, bg=c.card,             font=("Segoe UI", 12)
         ).pack(side="left", padx=(0, 6))
         tk.Label(
             title_frame, text=title, bg=c.card,
@@ -278,7 +278,7 @@ class SpreadIndicator(tk.Frame):
 
         # Rates row
         rates_row = tk.Frame(self.inner, bg=c.card)
-        rates_row.pack(fill="x", pady=(0, 10))
+        rates_row.pack(fill="x", pady=(0, 12))
 
         # Rate A
         a_frame = tk.Frame(rates_row, bg=c.card)
@@ -295,7 +295,7 @@ class SpreadIndicator(tk.Frame):
 
         # VS
         vs_frame = tk.Frame(rates_row, bg=c.card)
-        vs_frame.pack(side="left", padx=10)
+        vs_frame.pack(side="left", padx=14)
         tk.Label(
             vs_frame, text="VS", bg=c.card, fg=c.muted,
             font=("Segoe UI", 10, "bold")
@@ -315,11 +315,11 @@ class SpreadIndicator(tk.Frame):
         self.b_value.pack()
 
         # Progress bar background
-        self.bar_bg = tk.Frame(self.inner, bg=c.input_bg, height=4)
-        self.bar_bg.pack(fill="x", pady=(0, 10))
+        self.bar_bg = tk.Frame(self.inner, bg=c.input_bg, height=6)
+        self.bar_bg.pack(fill="x", pady=(0, 12))
 
-        # Bar fill
-        self.bar_fill = tk.Frame(self.bar_bg, bg=c.success, height=4)
+        # Bar fill — rounded look
+        self.bar_fill = tk.Frame(self.bar_bg, bg=c.success, height=6)
         self.bar_fill.place(x=0, y=0, relheight=1.0, relwidth=0.0)
 
         # Stats row
@@ -328,7 +328,7 @@ class SpreadIndicator(tk.Frame):
 
         # Diferencia
         diff_frame = tk.Frame(stats_frame, bg=c.input_bg)
-        diff_frame.pack(side="left", expand=True, fill="x", pady=8)
+        diff_frame.pack(side="left", expand=True, fill="x", pady=10)
         tk.Label(
             diff_frame, text="DIFERENCIA", bg=c.input_bg, fg=c.muted,
             font=FONTS["spread_small"]
@@ -341,11 +341,11 @@ class SpreadIndicator(tk.Frame):
 
         # Separator
         sep = tk.Frame(stats_frame, bg=c.card_border, width=1)
-        sep.pack(side="left", fill="y", padx=4, pady=6)
+        sep.pack(side="left", fill="y", padx=6, pady=6)
 
         # Brecha %
         pct_frame = tk.Frame(stats_frame, bg=c.input_bg)
-        pct_frame.pack(side="left", expand=True, fill="x", pady=8)
+        pct_frame.pack(side="left", expand=True, fill="x", pady=10)
         tk.Label(
             pct_frame, text="BRECHA", bg=c.input_bg, fg=c.muted,
             font=FONTS["spread_small"]
@@ -389,9 +389,12 @@ class SpreadIndicator(tk.Frame):
             self.pct_value.config(text=f"{pct:.2f}%", fg=bar_color)
 
             if not self.winfo_ismapped():
-                parent_siblings = self.master.winfo_children()
-                before = parent_siblings[0] if parent_siblings else None
-                self.pack(fill="x", padx=12, pady=(0, 8), before=before)
+                for sibling in self.master.winfo_children():
+                    if sibling != self and sibling.winfo_ismapped():
+                        self.pack(fill="x", padx=12, pady=(0, 8), before=sibling)
+                        break
+                else:
+                    self.pack(fill="x", padx=12, pady=(0, 8))
         else:
             self.pack_forget()
 
@@ -411,30 +414,30 @@ class TimerBar(tk.Frame):
             highlightthickness=1,
             **kwargs  # type: ignore[arg-type]
         )
-        self.configure(padx=12, pady=8)
+        self.configure(padx=14, pady=10)
 
         row = tk.Frame(self, bg=c.card)
         row.pack(fill="x")
 
         # Icon
-        icon_frame = tk.Frame(row, bg=c.input_bg, width=22, height=22)
+        icon_frame = tk.Frame(row, bg=c.input_bg, width=24, height=24)
         icon_frame.pack(side="left")
         icon_frame.pack_propagate(False)
         tk.Label(
-            icon_frame, text="🔄", bg=c.input_bg, font=("Segoe UI", 10)
+            icon_frame, text="🔄", bg=c.input_bg, font=("Segoe UI", 11)
         ).pack(expand=True)
 
         self.label = tk.Label(
             row, text="Actualizando en 25:00", bg=c.card,
-            fg=c.muted, font=FONTS["timer"], anchor="w", padx=8
+            fg=c.muted, font=FONTS["timer"], anchor="w", padx=10
         )
         self.label.pack(side="left", fill="x", expand=True)
 
-        # Progress bar
-        self.bar_bg = tk.Frame(self, bg=c.input_bg, height=3)
-        self.bar_bg.pack(fill="x", pady=(6, 0))
+        # Progress bar — thicker for modern feel
+        self.bar_bg = tk.Frame(self, bg=c.input_bg, height=4)
+        self.bar_bg.pack(fill="x", pady=(8, 0))
 
-        self.bar_fill = tk.Frame(self.bar_bg, bg=c.accent, height=3)
+        self.bar_fill = tk.Frame(self.bar_bg, bg=c.accent, height=4)
         self.bar_fill.place(x=0, y=0, relheight=1.0, relwidth=0.0)
 
         self.total_seconds: int = REFRESH_MINUTES * 60
@@ -455,6 +458,12 @@ class TimerBar(tk.Frame):
         if remaining_seconds < 60:
             self.label.config(
                 text=f"🔄  Actualizando en {remaining_seconds}s…",
+                fg=c.warning
+            )
+            self.bar_fill.config(bg=c.warning)
+        elif remaining_seconds < 300:
+            self.label.config(
+                text=f"🔄  Próxima actualización en {mins}:{secs:02d}",
                 fg=c.warning
             )
             self.bar_fill.config(bg=c.warning)

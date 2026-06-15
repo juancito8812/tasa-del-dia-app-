@@ -5,9 +5,10 @@ Clase principal TasaDelDiaApp — aplicación de escritorio para tasas de cambio
 from __future__ import annotations
 
 import logging
-import threading
+import queue
 import tkinter as tk
-from tkinter import ttk
+import customtkinter as ctk
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -24,7 +25,7 @@ from app.storage import (
     set_manual_historical_rate,
     parse_date_from_display,
 )
-from app.theme import FONTS, Theme, get_system_theme, resolve_theme
+from app.theme import FONTS, Theme, get_system_theme, resolve_theme, apply_ctk_theme
 from app.widgets import REFRESH_MINUTES, RateCard, SpreadIndicator, TimerBar
 from app.widget_window import WidgetWindow
 from app.system_tray import send_notification, start_tray, stop_tray
@@ -37,7 +38,9 @@ class TasaDelDiaApp:
     """Aplicación principal de Tasa del Día."""
 
     def __init__(self) -> None:
-        self.window = tk.Tk()
+        ctk.set_appearance_mode("system")
+        ctk.set_default_color_theme("dark-blue")
+        self.window = ctk.CTk()
         self.window.title("Tasa del Día — Venezuela")
         self.window.resizable(True, True)
         self.window.minsize(420, 600)
@@ -50,6 +53,9 @@ class TasaDelDiaApp:
         x = (screen_w - 500) // 2
         y = (screen_h - 750) // 2
         self.window.geometry(f"500x750+{x}+{max(0, y - 50)}")
+
+        # ─── Executor para tareas en segundo plano ───
+        self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="tasa")
 
         # ─── Estado interno ───
         self.offline_mode: bool = False
@@ -69,11 +75,11 @@ class TasaDelDiaApp:
         # Widget compacto
         self.widget: Optional[WidgetWindow] = None
 
-        # Diálogo activo (para Esc)
+        # Control de notificación de brecha alta
         self._brecha_notified: bool = False
 
         # Diálogo activo (para Esc)
-        self._active_dialog: Optional[tk.Toplevel] = None
+        self._active_dialog: Optional[ctk.CTkToplevel] = None
 
         # BCV Lunes state
         bcv_config = load_config()
@@ -88,9 +94,11 @@ class TasaDelDiaApp:
         self._reminder_shown_this_friday: bool = False
         self._reminder_timer: Optional[str] = None
 
-        # ─── Teardown flag ───
-        self._rebuild_offline_mode: bool = False
+        # ─── Cola thread-safe para resultados de API ───
+        self._result_queue: queue.Queue = queue.Queue()
+        self._poll_queue()
 
+        # ─── Teardown flag ───
         self._build_ui()
         self._bind_events()
         self._start_theme_polling()
@@ -125,11 +133,15 @@ class TasaDelDiaApp:
     # ─── Theme ─────────────────────────────────────────────────────
 
     def _resolve_theme(self) -> Theme:
-        return resolve_theme(self.theme_mode)
+        mode = self.theme_mode
+        if mode == "system":
+            apply_ctk_theme("system")
+        else:
+            apply_ctk_theme(mode)
+        return resolve_theme(mode)
 
     def _rebuild_ui(self) -> None:
         """Reconstruye toda la UI (usado al cambiar de tema)."""
-        # Cancel timers before rebuilding
         self._cancel_timers()
 
         old_rates = self.rates
@@ -163,23 +175,25 @@ class TasaDelDiaApp:
         self.converter_rates = old_converter
         self._countdown = old_countdown
 
+        # Recrear widget ANTES de _on_rates_loaded para asegurar que
+        # el widget con el nuevo tema exista incluso si _on_rates_loaded falla
+        if self.widget:
+            was_widget_visible = self.widget.is_visible
+            self.widget.destroy()
+            self.widget = WidgetWindow(self, self.actual_theme)
+            if was_widget_visible:
+                self.widget.show()
+                bcv = old_rates.get("bcv") if old_rates else None
+                paralelo = old_rates.get("parallel") if old_rates else None
+                fetched = old_rates.get("fetched_at") if old_rates else None
+                self.widget.update_rates(bcv, paralelo, fetched)
+            self._widget_enabled = was_widget_visible
+
         if old_rates:
             self._on_rates_loaded(old_rates)
 
-        # Recrear widget si estaba visible
-        if self.widget and self.widget.is_visible:
-            self.widget.destroy()
-            self.widget = WidgetWindow(self, self.actual_theme)
-            self.widget.show()
-            # Re-aplicar tasas actuales
-            bcv = old_rates.get("bcv") if old_rates else None
-            paralelo = old_rates.get("parallel") if old_rates else None
-            fetched = old_rates.get("fetched_at") if old_rates else None
-            self.widget.update_rates(bcv, paralelo, fetched)
-
         # Restore offline mode after theme rebuild
         if old_offline:
-            self._rebuild_offline_mode = True
             if old_cached:
                 self._set_offline_mode(True, old_cached.get("cached_at", ""))
             else:
@@ -220,152 +234,100 @@ class TasaDelDiaApp:
     # ─── UI ────────────────────────────────────────────────────────
 
     def _build_ui(self) -> None:
-        """Construye todos los elementos de la interfaz."""
         c = self.actual_theme
+        self.window.configure(fg_color=c.bg)
 
         # ─── Top Bar ───
-        top = tk.Frame(self.window, bg=c.bg)
-        top.pack(fill="x", padx=16, pady=(12, 4))
+        top = ctk.CTkFrame(self.window, fg_color=c.bg, corner_radius=0)
+        top.pack(fill="x", padx=20, pady=(16, 6))
 
-        title_frame = tk.Frame(top, bg=c.bg)
+        title_frame = ctk.CTkFrame(top, fg_color=c.bg, corner_radius=0)
         title_frame.pack(fill="x")
 
-        # Logo container
-        logo_frame = tk.Frame(
-            title_frame, bg=self._blend_bg(c.highlight, 0.12),
-            width=40, height=40
+        title_frame.grid_columnconfigure(0, weight=0)
+        title_frame.grid_columnconfigure(1, weight=1)
+        title_frame.grid_columnconfigure(2, weight=0)
+        title_frame.grid_columnconfigure(3, weight=0)
+        title_frame.grid_columnconfigure(4, weight=0)
+
+        # Icon with modern rounded container
+        icon_container = ctk.CTkFrame(
+            title_frame, fg_color=self._blend_bg(c.highlight, 0.1),
+            corner_radius=10, width=44, height=44,
         )
-        logo_frame.pack(side="left", padx=(0, 10))
-        logo_frame.pack_propagate(False)
-        tk.Label(
-            logo_frame, text="📉",
-            bg=self._blend_bg(c.highlight, 0.12),
-            font=("Segoe UI", 18)
-        ).pack(expand=True)
+        icon_container.grid(row=0, column=0, padx=(0, 14), pady=2)
+        icon_container.grid_propagate(False)
+        ctk.CTkLabel(
+            icon_container, text="📉",
+            font=("Segoe UI", 20), fg_color="transparent",
+        ).place(relx=0.5, rely=0.5, anchor="center")
 
-        tk.Label(
-            title_frame, text="Tasa del Día", bg=c.bg, fg=c.primary,
-            font=FONTS["title"]
-        ).pack(side="left")
+        ctk.CTkLabel(
+            title_frame, text="Tasa del Día", font=FONTS["title"],
+            text_color=c.primary, anchor="w",
+        ).grid(row=0, column=1, sticky="w")
 
-        # Theme switch button
-        theme_btn = tk.Button(
-            title_frame, text=self._theme_label(), font=("Segoe UI", 9),
-            bg=c.card, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=8, pady=2, cursor="hand2",
-            command=self._switch_theme_mode
-        )
-        # Widget toggle button
-        widget_btn = tk.Button(
-            title_frame, text="📌 Widget", font=("Segoe UI", 9),
-            bg=c.card, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=8, pady=2, cursor="hand2",
-            command=self._toggle_widget
-        )
-        widget_btn.pack(side="right", padx=(2, 0))
+        ctk.CTkLabel(
+            title_frame, text="🇻🇪",             font=("Segoe UI", 14),
+            fg_color="transparent",
+        ).grid(row=0, column=2, padx=(0, 8))
 
-        theme_btn.pack(side="right", padx=(4, 0))
+        ctk.CTkButton(
+            title_frame, text=self._theme_label(),             font=("Segoe UI", 10),
+            fg_color=c.card, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=8,
+            command=self._switch_theme_mode, width=60, height=28,
+        ).grid(row=0, column=3, padx=(0, 4))
 
-        # Venezuela flag badge
-        badge = tk.Frame(
-            title_frame, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1
-        )
-        badge.pack(side="right", padx=(0, 6))
-        tk.Label(
-            badge, text="🇻🇪", bg=c.card, font=("Segoe UI", 12),
-            padx=6, pady=1
-        ).pack()
+        ctk.CTkButton(
+            title_frame, text="📌 Widget", font=FONTS["section"],
+            fg_color=c.card, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=8,
+            command=self._toggle_widget, width=60, height=28,
+        ).grid(row=0, column=4)
 
-        tk.Label(
+        ctk.CTkLabel(
             top, text="Tasas de cambio del Bolívar Venezolano",
-            bg=c.bg, fg=c.secondary, font=FONTS["subtitle"],
-            anchor="w"
-        ).pack(fill="x", padx=(50, 0), pady=(0, 4))
-
-        # Separator
-        sep = tk.Frame(self.window, bg=c.card_border, height=1)
-        sep.pack(fill="x", padx=16, pady=(2, 4))
+            text_color=c.secondary, font=FONTS["subtitle"], anchor="w",
+        ).pack(fill="x", padx=(58, 0), pady=(2, 0))
 
         # Timer bar
         self.timer_bar = TimerBar(self.window, c)
-        self.timer_bar.pack(fill="x", padx=12, pady=(0, 4))
+        self.timer_bar.pack(fill="x", padx=16, pady=(8, 6))
 
-        # ─── Notebook ───
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("TNotebook", background=c.bg, borderwidth=0)
-        style.configure(
-            "TNotebook.Tab",
-            background=c.card,
-            foreground=c.secondary,
-            padding=[22, 6],
-            font=FONTS["section"],
+        # ─── CTkTabview ───
+        self.notebook = ctk.CTkTabview(
+            self.window, corner_radius=10,
+            fg_color=c.bg,
+            segmented_button_fg_color=c.card,
+            segmented_button_selected_color=c.accent,
+            segmented_button_selected_hover_color=self._blend_bg(c.highlight, 0.3),
+            segmented_button_unselected_color=c.card,
+            text_color=c.primary,
+            segmented_button_unselected_hover_color=c.accent,
         )
-        style.map(
-            "TNotebook.Tab",
-            background=[("selected", c.accent)],
-            foreground=[("selected", c.primary)],
-        )
-
-        self.notebook = ttk.Notebook(self.window)
-        self.notebook.pack(fill="both", expand=True, padx=12, pady=(2, 4))
+        self.notebook.pack(fill="both", expand=True, padx=16, pady=(4, 8))
 
         # ═══════ TAB 1: TASAS ═══════
+        self.notebook.add("📊  Tasas")
         self._build_rates_tab()
         # ═══════ TAB 2: CONVERSOR ═══════
+        self.notebook.add("💱  Conversor")
         self._build_converter_tab()
         # ═══════ TAB 3: HISTORIAL ═══════
+        self.notebook.add("📅  Historial")
         self._build_history_tab()
 
-    def _create_scrollable(self, parent: tk.Widget) -> tk.Frame:
-        """Crea un panel con scroll.
-
-        Returns:
-            Frame interno donde se pueden agregar widgets.
-        """
+    def _create_scrollable(self, parent: ctk.CTkBaseClass) -> ctk.CTkScrollableFrame:
         c = self.actual_theme
-        canvas = tk.Canvas(parent, bg=c.bg, highlightthickness=0)
-        scroll_frame = tk.Frame(canvas, bg=c.bg)
-        scrollbar = tk.Scrollbar(parent, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        scrollbar.pack(side="right", fill="y")
-        canvas.pack(side="left", fill="both", expand=True)
-
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", tags="inner")
-
-        def _cfg_scroll(_e: object = None) -> None:
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            canvas.itemconfig("inner", width=canvas.winfo_width())
-
-        scroll_frame.bind("<Configure>", _cfg_scroll)
-        canvas.bind("<Configure>", _cfg_scroll)
-
-        def _on_enter(_e: object) -> None:
-            canvas.bind_all(
-                "<MouseWheel>",
-                lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"),
-            )
-
-        def _on_leave(_e: object) -> None:
-            canvas.unbind_all("<MouseWheel>")
-
-        canvas.bind("<Enter>", _on_enter)
-        canvas.bind("<Leave>", _on_leave)
-
-        setattr(self, "_canvas_rates", canvas)
-        return scroll_frame
+        scroll = ctk.CTkScrollableFrame(parent, fg_color=c.bg, corner_radius=0)
+        scroll.pack(fill="both", expand=True)
+        return scroll
 
     def _build_rates_tab(self) -> None:
-        """Construye la pestaña de tasas."""
         c = self.actual_theme
-        self.tab_rates = tk.Frame(self.notebook, bg=c.bg)
-        self.notebook.add(self.tab_rates, text="📊  Tasas")
-
-        scroll_frame = self._create_scrollable(self.tab_rates)
+        tab = self.notebook.tab("📊  Tasas")
+        scroll_frame = self._create_scrollable(tab)
 
         # Spread indicators
         self.spread_indicator = SpreadIndicator(
@@ -416,9 +378,9 @@ class TasaDelDiaApp:
         self.card_lunes.update_rate(self.bcv_lunes, self.bcv_lunes_updated_at)
 
         # Edit button for BCV Lunes
-        edit_btn = tk.Label(
-            self.card_lunes.rate_label.master, text="✏️", bg=c.card,
-            fg=c.bcv_lunes, font=("Segoe UI", 10), cursor="hand2", padx=4,
+        edit_btn = ctk.CTkLabel(
+            self.card_lunes.rate_label.master, text="✏️", text_color=c.bcv_lunes,
+            font=("Segoe UI", 10), cursor="hand2", fg_color="transparent",
         )
         edit_btn.pack(side="left", padx=(2, 0))
         edit_btn.bind("<Button-1>", lambda _e: self._edit_bcv_lunes())
@@ -428,115 +390,79 @@ class TasaDelDiaApp:
 
 
         # Offline banner (hidden by default)
-        self.offline_banner = tk.Frame(scroll_frame, bg=c.warning, padx=12, pady=6)
-        tk.Label(
-            self.offline_banner, text="⚠️", bg=c.warning, fg="#ffffff",
-            font=("Segoe UI", 11),
-        ).pack(side="left", padx=(0, 6))
-        self.offline_label = tk.Label(
-            self.offline_banner, text="", bg=c.warning, fg="#ffffff",
-            font=FONTS["small"], anchor="w",
+        self.offline_banner = ctk.CTkFrame(scroll_frame, fg_color=c.warning, corner_radius=0)
+        ctk.CTkLabel(
+            self.offline_banner, text="⚠️", text_color="#ffffff",
+            font=("Segoe UI", 11), fg_color="transparent",
+        ).pack(side="left", padx=(12, 6))
+        self.offline_label = ctk.CTkLabel(
+            self.offline_banner, text="", text_color="#ffffff",
+            font=FONTS["small"], anchor="w", fg_color="transparent",
         )
-        self.offline_label.pack(side="left", fill="x", expand=True)
+        self.offline_label.pack(side="left", fill="x", expand=True, padx=(0, 12), pady=6)
 
         # Info bar
-        info_frame = tk.Frame(
-            scroll_frame, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        info_frame = ctk.CTkFrame(scroll_frame, fg_color=c.card, border_color=c.card_border, border_width=1, corner_radius=6)
         info_frame.pack(fill="x", padx=12, pady=(6, 12))
-        info_inner = tk.Frame(info_frame, bg=c.card)
+        info_inner = ctk.CTkFrame(info_frame, fg_color="transparent", corner_radius=0)
         info_inner.pack(padx=14, pady=10, fill="x")
 
-        tk.Label(
-            info_inner, text="🔄", bg=c.card, font=("Segoe UI", 11),
+        ctk.CTkLabel(
+            info_inner, text="🔄", font=("Segoe UI", 11), fg_color="transparent",
         ).pack(side="left", padx=(0, 6))
-        self.info_label = tk.Label(
+        self.info_label = ctk.CTkLabel(
             info_inner, text="Las tasas se actualizan cada 25 minutos",
-            bg=c.card, fg=c.muted, font=FONTS["small"], anchor="w",
+            text_color=c.muted, font=FONTS["small"], anchor="w", fg_color="transparent",
         )
         self.info_label.pack(side="left", fill="x", expand=True)
 
-    def _build_reminder_card(self, parent: tk.Frame) -> None:
-        """Construye la tarjeta de recordatorio de los viernes."""
+    def _build_reminder_card(self, parent: ctk.CTkBaseClass) -> None:
         c = self.actual_theme
-        reminder_card = tk.Frame(
-            parent, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        reminder_card = ctk.CTkFrame(parent, fg_color=c.card, corner_radius=8)
         reminder_card.pack(fill="x", padx=12, pady=(0, 6))
-        reminder_inner = tk.Frame(reminder_card, bg=c.card)
+        reminder_inner = ctk.CTkFrame(reminder_card, fg_color=c.card, corner_radius=0)
         reminder_inner.pack(padx=14, pady=10, fill="x")
 
-        tk.Label(
-            reminder_inner, text="🔔", bg=c.card, font=("Segoe UI", 11),
+        ctk.CTkLabel(
+            reminder_inner, text="🔔", font=("Segoe UI", 11),
         ).pack(side="left", padx=(0, 8))
-        reminder_text_frame = tk.Frame(reminder_inner, bg=c.card)
+        reminder_text_frame = ctk.CTkFrame(reminder_inner, fg_color=c.card, corner_radius=0)
         reminder_text_frame.pack(side="left", fill="x", expand=True)
-        tk.Label(
+        ctk.CTkLabel(
             reminder_text_frame, text="Recordatorio viernes 6:00 PM",
-            bg=c.card, fg=c.primary, font=FONTS["subtitle"], anchor="w",
+            text_color=c.primary, font=FONTS["subtitle"], anchor="w",
         ).pack(fill="x")
-        tk.Label(
+        ctk.CTkLabel(
             reminder_text_frame, text="Te avisa si aún no has ingresado la tasa",
-            bg=c.card, fg=c.muted, font=FONTS["small"], anchor="w",
+            text_color=c.muted, font=FONTS["small"], anchor="w",
         ).pack(fill="x")
 
-        self.reminder_var = tk.BooleanVar(value=self.reminder_enabled)
-        reminder_check = tk.Checkbutton(
+        self.reminder_var = ctk.BooleanVar(value=self.reminder_enabled)
+        reminder_switch = ctk.CTkSwitch(
             reminder_inner, variable=self.reminder_var,
-            bg=c.card, activebackground=c.card,
-            selectcolor=c.card,
             command=self._toggle_reminder,
+            fg_color=c.card_border, progress_color=c.success,
+            button_color=c.accent, button_hover_color=c.highlight,
         )
-        reminder_check.pack(side="right", padx=(8, 0))
+        reminder_switch.pack(side="right", padx=(8, 0))
 
 
     def _build_converter_tab(self) -> None:
-        """Construye la pestaña del conversor Bs/USD."""
         c = self.actual_theme
-        self.tab_converter = tk.Frame(self.notebook, bg=c.bg)
-        self.notebook.add(self.tab_converter, text="💱  Conversor")
+        tab = self.notebook.tab("💱  Conversor")
+        cv_scroll = ctk.CTkScrollableFrame(tab, fg_color=c.bg, corner_radius=0)
+        cv_scroll.pack(fill="both", expand=True)
 
-        # Scrollable content
-        cv_canvas = tk.Canvas(self.tab_converter, bg=c.bg, highlightthickness=0)
-        cv_scroll = tk.Frame(cv_canvas, bg=c.bg)
-        cv_sbar = tk.Scrollbar(self.tab_converter, orient="vertical", command=cv_canvas.yview)
-        cv_canvas.configure(yscrollcommand=cv_sbar.set)
-        cv_sbar.pack(side="right", fill="y")
-        cv_canvas.pack(side="left", fill="both", expand=True)
-        cv_canvas.create_window((0, 0), window=cv_scroll, anchor="nw", tags="inner2")
-
-        def _cfg_cv(_e: object = None) -> None:
-            cv_canvas.configure(scrollregion=cv_canvas.bbox("all"))
-            cv_canvas.itemconfig("inner2", width=cv_canvas.winfo_width())
-
-        cv_scroll.bind("<Configure>", _cfg_cv)
-        cv_canvas.bind("<Configure>", _cfg_cv)
-
-        def _on_enter_cv(_e: object) -> None:
-            cv_canvas.bind_all(
-                "<MouseWheel>",
-                lambda e: cv_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"),
-            )
-
-        def _on_leave_cv(_e: object) -> None:
-            cv_canvas.unbind_all("<MouseWheel>")
-
-        cv_canvas.bind("<Enter>", _on_enter_cv)
-        cv_canvas.bind("<Leave>", _on_leave_cv)
-
-        conv_content = tk.Frame(cv_scroll, bg=c.bg)
+        conv_content = ctk.CTkFrame(cv_scroll, fg_color=c.bg, corner_radius=0)
         conv_content.pack(fill="x", padx=12, pady=12)
 
-        # Rate selector
-        tk.Label(
-            conv_content, text="TASA A USAR", bg=c.bg,
-            fg=c.muted, font=FONTS["section"], anchor="w",
+        ctk.CTkLabel(
+            conv_content, text="TASA A USAR",
+            text_color=c.muted, font=FONTS["section"], anchor="w",
         ).pack(fill="x", pady=(0, 8))
 
-        self.rate_var_conv = tk.StringVar(value="bcv")
-        self._rate_value_labels: Dict[str, tk.Label] = {}
+        self.rate_var_conv = ctk.StringVar(value="bcv")
+        self._rate_value_labels: Dict[str, ctk.CTkLabel] = {}
         rate_options = [
             ("bcv", "BCV (Oficial)", c.success),
             ("parallel", "Dólar Paralelo", c.highlight),
@@ -546,138 +472,113 @@ class TasaDelDiaApp:
         ]
 
         for key, label, color in rate_options:
-            frame = tk.Frame(
-                conv_content, bg=c.card,
-                highlightbackground=c.card_border, highlightthickness=1,
-            )
+            frame = ctk.CTkFrame(conv_content, fg_color=c.card, corner_radius=8)
             frame.pack(fill="x", pady=(0, 6))
 
-            rb = tk.Radiobutton(
+            rb = ctk.CTkRadioButton(
                 frame, text=label, variable=self.rate_var_conv, value=key,
-                bg=c.card, fg=c.secondary, selectcolor=c.card,
-                activebackground=c.card, activeforeground=c.primary,
-                font=FONTS["subtitle"], padx=12, pady=10,
+                text_color=c.secondary, font=FONTS["subtitle"],
+                fg_color=c.highlight, hover_color=c.accent,
                 command=self._on_rate_change,
             )
-            rb.pack(side="left", fill="x", expand=True)
+            rb.pack(side="left", fill="x", expand=True, padx=12, pady=10)
 
-            val_label = tk.Label(
-                frame, text="—", bg=c.card, fg=color,
-                font=("Segoe UI", 10, "bold"), padx=12,
+            val_label = ctk.CTkLabel(
+                frame, text="—", text_color=color,
+                font=("Segoe UI", 11, "bold"),
             )
             if key == "bcv_lunes":
-                val_label.config(cursor="hand2")
+                val_label.configure(cursor="hand2")
                 val_label.bind("<Button-1>", lambda _e: self._edit_bcv_lunes())
-            val_label.pack(side="right")
+            val_label.pack(side="right", padx=12)
             self._rate_value_labels[key] = val_label
 
-        # Converter card
-        conv_card = tk.Frame(
-            conv_content, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        conv_card = ctk.CTkFrame(conv_content, fg_color=c.card, corner_radius=8)
         conv_card.pack(fill="x", pady=(8, 0))
-        inner = tk.Frame(conv_card, bg=c.card)
+        inner = ctk.CTkFrame(conv_card, fg_color=c.card, corner_radius=0)
         inner.pack(padx=16, pady=16, fill="x")
 
-        # Mode toggle
-        self.conv_mode = tk.StringVar(value="usd_to_bs")
-        mode_frame = tk.Frame(inner, bg=c.input_bg)
+        self.conv_mode = ctk.StringVar(value="usd_to_bs")
+        mode_frame = ctk.CTkFrame(inner, fg_color=c.input_bg, corner_radius=6)
         mode_frame.pack(fill="x", pady=(0, 14))
 
         accent_bg = c.accent
-        self.btn_usd = tk.Button(
+        self.btn_usd = ctk.CTkButton(
             mode_frame, text="USD → Bs.", font=FONTS["button"],
-            bg=accent_bg, fg=c.primary,
-            activebackground=accent_bg, activeforeground=c.primary,
-            relief="flat", padx=20, pady=6,
+            fg_color=accent_bg, text_color=c.primary,
+            hover_color=c.highlight, corner_radius=6,
             command=lambda: self._set_mode("usd_to_bs"),
         )
         self.btn_usd.pack(side="left", fill="x", expand=True, padx=(2, 1), pady=2)
 
-        self.btn_bs = tk.Button(
+        self.btn_bs = ctk.CTkButton(
             mode_frame, text="Bs. → USD", font=FONTS["button"],
-            bg=c.input_bg, fg=c.muted,
-            activebackground=accent_bg, activeforeground=c.primary,
-            relief="flat", padx=20, pady=6,
+            fg_color=c.input_bg, text_color=c.muted,
+            hover_color=accent_bg, corner_radius=6,
             command=lambda: self._set_mode("bs_to_usd"),
         )
         self.btn_bs.pack(side="right", fill="x", expand=True, padx=(1, 2), pady=2)
 
-        # Input
-        tk.Label(
-            inner, text="MONTO", bg=c.card, fg=c.secondary,
+        ctk.CTkLabel(
+            inner, text="MONTO", text_color=c.secondary,
             font=FONTS["small"], anchor="w",
         ).pack(fill="x", pady=(0, 4))
 
-        entry_frame = tk.Frame(
-            inner, bg=c.input_bg,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        entry_frame = ctk.CTkFrame(inner, fg_color=c.input_bg, corner_radius=6)
         entry_frame.pack(fill="x")
 
-        self.amount_entry = tk.Entry(
-            entry_frame, bg=c.input_bg, fg=c.input_text,
-            font=("Segoe UI", 20, "bold"), relief="flat",
-            insertbackground=c.primary, justify="center",
+        self.amount_entry = ctk.CTkEntry(
+            entry_frame,             font=("Segoe UI", 22, "bold"),
+            justify="center", fg_color=c.input_bg, text_color=c.input_text,
+            border_width=0,
         )
-        self.amount_entry.pack(side="left", fill="x", expand=True, padx=12, pady=10, ipady=4)
+        self.amount_entry.pack(side="left", fill="x", expand=True, padx=12, pady=10)
         self.amount_entry.insert(0, "100")
         self.amount_entry.bind("<Return>", lambda _e: self.do_conversion())
 
-        # Paste button
-        paste_btn = tk.Button(
+        paste_btn = ctk.CTkButton(
             entry_frame, text="📋 Pegar", font=FONTS["section"],
-            bg=c.input_bg, fg=c.muted,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=8, pady=4, cursor="hand2",
-            command=self._paste_from_clipboard,
+            fg_color=c.input_bg, text_color=c.muted,
+            hover_color=c.accent, corner_radius=6,
+            command=self._paste_from_clipboard, width=60,
         )
         paste_btn.pack(side="right", padx=(0, 6))
         self._paste_btn = paste_btn
 
-        # Quick amounts
-        quick_frame = tk.Frame(inner, bg=c.card)
+        quick_frame = ctk.CTkFrame(inner, fg_color=c.card, corner_radius=0)
         quick_frame.pack(fill="x", pady=(8, 0))
 
         QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000, 50000]
         for val in QUICK_AMOUNTS:
-            btn = tk.Button(
+            btn = ctk.CTkButton(
                 quick_frame, text=f"{val:,}".replace(",", "."),
                 font=FONTS["section"],
-                bg=c.input_bg, fg=c.secondary,
-                activebackground=c.accent, activeforeground=c.primary,
-                relief="flat", padx=10, pady=4, cursor="hand2",
+                fg_color=c.input_bg, text_color=c.secondary,
+                hover_color=c.accent, corner_radius=6, height=28,
                 command=lambda v=val: self._set_quick_amount(v),
             )
             btn.pack(side="left", fill="x", expand=True, padx=1)
 
-        # Convert button
-        self.convert_btn = tk.Button(
+        self.convert_btn = ctk.CTkButton(
             inner, text="💱  Convertir", font=FONTS["button"],
-            bg=c.accent, fg=c.primary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=20, pady=10, cursor="hand2",
+            fg_color=c.accent, text_color=c.primary,
+            hover_color=c.highlight, corner_radius=8,
             command=self.do_conversion,
         )
         self.convert_btn.pack(fill="x", pady=(12, 0))
 
-        # Result
-        result_frame = tk.Frame(
-            inner, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        result_frame = ctk.CTkFrame(inner, fg_color=c.card, corner_radius=8)
         result_frame.pack(fill="x", pady=(12, 0))
-        result_inner = tk.Frame(result_frame, bg=c.card)
+        result_inner = ctk.CTkFrame(result_frame, fg_color=c.card, corner_radius=0)
         result_inner.pack(padx=16, pady=14, fill="x")
 
-        tk.Label(
-            result_inner, text="RESULTADO", bg=c.card, fg=c.secondary,
+        ctk.CTkLabel(
+            result_inner, text="RESULTADO", text_color=c.secondary,
             font=FONTS["small"], anchor="w",
         ).pack(fill="x")
 
-        self.result_from = tk.Label(
-            result_inner, text="", bg=c.card, fg=c.primary,
+        self.result_from = ctk.CTkLabel(
+            result_inner, text="", text_color=c.primary,
             font=FONTS["result"], anchor="center", cursor="hand2",
         )
         self.result_from.pack(fill="x", pady=(6, 0))
@@ -686,15 +587,15 @@ class TasaDelDiaApp:
             lambda _e: self._copy_result_text(self.result_from.cget("text")),
         )
 
-        arrow_frame2 = tk.Frame(result_inner, bg=c.card)
-        arrow_frame2.pack(fill="x", pady=2)
-        tk.Label(
-            arrow_frame2, text="▼", bg=c.card, fg=c.highlight,
-            font=("Segoe UI", 14),
+        arrow_frame2 = ctk.CTkFrame(result_inner, fg_color=c.card, corner_radius=0)
+        arrow_frame2.pack(fill="x", pady=4)
+        ctk.CTkLabel(
+            arrow_frame2, text="▼", text_color=c.highlight,
+            font=("Segoe UI", 16),
         ).pack()
 
-        self.result_to = tk.Label(
-            result_inner, text="", bg=c.card, fg=c.highlight,
+        self.result_to = ctk.CTkLabel(
+            result_inner, text="", text_color=c.highlight,
             font=FONTS["result"], anchor="center", cursor="hand2",
         )
         self.result_to.pack(fill="x")
@@ -703,21 +604,20 @@ class TasaDelDiaApp:
             lambda _e: self._copy_result_text(self.result_to.cget("text")),
         )
 
-        self.result_info = tk.Label(
-            result_inner, text="", bg=c.card, fg=c.muted,
+        self.result_info = ctk.CTkLabel(
+            result_inner, text="", text_color=c.muted,
             font=FONTS["small"], anchor="center",
         )
         self.result_info.pack(fill="x", pady=(4, 0))
 
-        self.result_copy_feedback = tk.Label(
-            result_inner, text="", bg=c.card, fg=c.success,
+        self.result_copy_feedback = ctk.CTkLabel(
+            result_inner, text="", text_color=c.success,
             font=("Segoe UI", 8, "bold"), anchor="center",
         )
         self.result_copy_feedback.pack(fill="x", pady=(2, 0))
         self._result_copy_timer: Optional[str] = None
 
-        # Spread indicators in Converter tab
-        cv_spread_frame = tk.Frame(cv_scroll, bg=c.bg)
+        cv_spread_frame = ctk.CTkFrame(cv_scroll, fg_color=c.bg, corner_radius=0)
         cv_spread_frame.pack(fill="x", padx=12, pady=(0, 12))
 
         self.cv_spread_bcv = SpreadIndicator(
@@ -737,104 +637,63 @@ class TasaDelDiaApp:
     # ─── Historial (reemplaza Tendencia) ───────────────────────────
 
     def _build_history_tab(self) -> None:
-        """Construye la pestaña de historial con selector de fechas y detalle."""
         c = self.actual_theme
-        self.tab_history = tk.Frame(self.notebook, bg=c.bg)
-        self.notebook.add(self.tab_history, text="📅  Historial")
+        tab = self.notebook.tab("📅  Historial")
+        hist_scroll = ctk.CTkScrollableFrame(tab, fg_color=c.bg, corner_radius=0)
+        hist_scroll.pack(fill="both", expand=True)
 
-        # Scrollable
-        hist_canvas = tk.Canvas(self.tab_history, bg=c.bg, highlightthickness=0)
-        hist_scroll = tk.Frame(hist_canvas, bg=c.bg)
-        hist_sbar = tk.Scrollbar(self.tab_history, orient="vertical", command=hist_canvas.yview)
-        hist_canvas.configure(yscrollcommand=hist_sbar.set)
-        hist_sbar.pack(side="right", fill="y")
-        hist_canvas.pack(side="left", fill="both", expand=True)
-        hist_canvas.create_window((0, 0), window=hist_scroll, anchor="nw", tags="inner_hist")
-
-        def _cfg_hist(_e: object = None) -> None:
-            hist_canvas.configure(scrollregion=hist_canvas.bbox("all"))
-            hist_canvas.itemconfig("inner_hist", width=hist_canvas.winfo_width())
-
-        hist_scroll.bind("<Configure>", _cfg_hist)
-        hist_canvas.bind("<Configure>", _cfg_hist)
-
-        def _on_enter_hist(_e: object) -> None:
-            hist_canvas.bind_all(
-                "<MouseWheel>",
-                lambda e: hist_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units"),
-            )
-
-        def _on_leave_hist(_e: object) -> None:
-            hist_canvas.unbind_all("<MouseWheel>")
-
-        hist_canvas.bind("<Enter>", _on_enter_hist)
-        hist_canvas.bind("<Leave>", _on_leave_hist)
-
-        # ─── Date selector ───
-        hist_header = tk.Frame(hist_scroll, bg=c.bg)
+        hist_header = ctk.CTkFrame(hist_scroll, fg_color=c.bg, corner_radius=0)
         hist_header.pack(fill="x", padx=12, pady=(12, 4))
 
-        tk.Label(
-            hist_header, text="SELECCIONAR FECHA", bg=c.bg,
-            fg=c.muted, font=FONTS["section"], anchor="w",
+        ctk.CTkLabel(
+            hist_header, text="SELECCIONAR FECHA", text_color=c.muted,
+            font=FONTS["section"], anchor="w",
         ).pack(fill="x")
 
-        # Chips row
-        self._hist_chips_frame = tk.Frame(hist_scroll, bg=c.bg)
+        self._hist_chips_frame = ctk.CTkFrame(hist_scroll, fg_color=c.bg, corner_radius=0)
         self._hist_chips_frame.pack(fill="x", padx=12, pady=(4, 8))
 
-        # Custom date row
-        custom_row = tk.Frame(hist_scroll, bg=c.bg)
+        custom_row = ctk.CTkFrame(hist_scroll, fg_color=c.bg, corner_radius=0)
         custom_row.pack(fill="x", padx=12, pady=(0, 4))
 
-        self._hist_custom_var = tk.StringVar()
-        self._hist_custom_entry = tk.Entry(
+        self._hist_custom_var = ctk.StringVar()
+        self._hist_custom_entry = ctk.CTkEntry(
             custom_row, textvariable=self._hist_custom_var,
-            bg=c.input_bg, fg=c.input_text,
-            font=("Segoe UI", 12, "bold"), relief="flat",
-            insertbackground=c.primary, justify="center",
+            font=("Segoe UI", 12, "bold"), justify="center",
+            fg_color=c.input_bg, text_color=c.input_text,
+            border_width=0,
         )
-        self._hist_custom_entry.pack(side="left", fill="x", expand=True, ipady=4, padx=(0, 6))
+        self._hist_custom_entry.pack(side="left", fill="x", expand=True, padx=(0, 6))
         self._hist_custom_entry.insert(0, datetime.now().strftime("%d/%m/%Y"))
         self._hist_custom_entry.bind("<Return>", lambda _e: self._hist_search_date())
 
-        tk.Button(
+        ctk.CTkButton(
             custom_row, text="🔍 Ver", font=FONTS["section"],
-            bg=c.info, fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=14, pady=4, cursor="hand2",
+            fg_color=c.info, text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=self._hist_search_date,
         ).pack(side="right")
 
-        # ─── Detail card (hidden by default) ───
-        self._hist_detail_card = tk.Frame(
-            hist_scroll, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
+        self._hist_detail_card = ctk.CTkFrame(
+            hist_scroll, fg_color=c.card, corner_radius=8,
         )
-        # Will be packed when a date is selected
 
-        # ─── Chart container (visible when no date selected) ───
-        self._hist_chart_container = tk.Frame(
-            hist_scroll, bg=c.card,
-            highlightbackground=c.card_border, highlightthickness=1,
+        self._hist_chart_container = ctk.CTkFrame(
+            hist_scroll, fg_color=c.card, corner_radius=8,
         )
         self._hist_chart_container.pack(fill="x", padx=12, pady=(0, 8))
 
-        # ─── List container ───
-        self._hist_list_container = tk.Frame(hist_scroll, bg=c.bg)
+        self._hist_list_container = ctk.CTkFrame(hist_scroll, fg_color=c.bg, corner_radius=0)
         self._hist_list_container.pack(fill="x", padx=12, pady=(0, 12))
 
         self._hist_selected_date: Optional[str] = None
         self._hist_copied_field: Optional[str] = None
         self._hist_copy_timer: Optional[str] = None
 
-        # Initial render
         self._update_history_tab()
 
     def _update_history_tab(self) -> None:
         """Actualiza la pestaña de historial con los datos actuales."""
-        if not hasattr(self, "tab_history"):
-            return
         c = self.actual_theme
         historical = get_historical_rates()
 
@@ -844,12 +703,11 @@ class TasaDelDiaApp:
 
         logger.info("_update_history_tab: %d fechas en histórico", len(sorted_dates))
 
-        # ── Update chips ──
         for w in self._hist_chips_frame.winfo_children():
             w.destroy()
 
         if last_5:
-            chips_row = tk.Frame(self._hist_chips_frame, bg=c.bg)
+            chips_row = ctk.CTkFrame(self._hist_chips_frame, fg_color=c.bg, corner_radius=0)
             chips_row.pack(fill="x")
 
             for date_key in last_5:
@@ -864,33 +722,32 @@ class TasaDelDiaApp:
                 if is_today:
                     label_text = f"{day}\n¡Hoy!"
 
-                btn = tk.Button(
+                btn = ctk.CTkButton(
                     chips_row, text=label_text,
                     font=("Segoe UI", 9, "bold"),
-                    bg=c.accent if is_selected else c.card,
-                    fg=c.primary if is_selected else c.secondary,
-                    activebackground=c.info, activeforeground=c.primary,
-                    relief="flat", padx=10, pady=6, cursor="hand2",
-                    width=6, height=2,
+                    fg_color=c.accent if is_selected else c.card,
+                    text_color=c.primary if is_selected else c.secondary,
+                    hover_color=c.info, corner_radius=6,
+                    width=60, height=48,
                     command=lambda dk=date_key: self._hist_select_date(dk),
                 )
                 btn.pack(side="left", padx=(0, 6))
 
-                # Green dot if has data
                 has_data = any([
                     entry.get("bcv"), entry.get("paralelo"),
                     entry.get("binance_p2p"), entry.get("euro"),
                 ])
                 if has_data:
-                    dot = tk.Label(
-                        chips_row, text="●", bg=c.bg,
-                        fg=c.success, font=("Segoe UI", 6),
+                    dot = ctk.CTkLabel(
+                        chips_row, text="●", text_color=c.success,
+                        font=("Segoe UI", 6), fg_color="transparent",
                     )
                     dot.pack(side="left", padx=(0, 8), anchor="s")
         else:
-            tk.Label(
+            ctk.CTkLabel(
                 self._hist_chips_frame, text="No hay fechas guardadas aún",
-                bg=c.bg, fg=c.muted, font=FONTS["small"],
+                text_color=c.muted, font=FONTS["small"],
+                fg_color="transparent",
             ).pack()
 
         # ── Update detail card ──
@@ -907,28 +764,25 @@ class TasaDelDiaApp:
             w.destroy()
 
         if not self._hist_selected_date and len(sorted_dates) >= 2:
-            # Simple bar chart for last 5 days
             recent = sorted(historical.items(), key=lambda x: x[0])[-5:]
-            chart_inner = tk.Frame(self._hist_chart_container, bg=c.card, padx=14, pady=12)
-            chart_inner.pack(fill="x")
+            chart_inner = ctk.CTkFrame(self._hist_chart_container, fg_color=c.card, corner_radius=0)
+            chart_inner.pack(fill="x", padx=14, pady=12)
 
-            tk.Label(
-                chart_inner, text="📈 ÚLTIMOS 5 DÍAS", bg=c.card,
-                fg=c.muted, font=FONTS["section"], anchor="w",
+            ctk.CTkLabel(
+                chart_inner, text="📈 ÚLTIMOS 5 DÍAS",
+                text_color=c.muted, font=FONTS["section"], anchor="w", fg_color="transparent",
             ).pack(fill="x", pady=(0, 8))
 
-            # Legend
-            legend = tk.Frame(chart_inner, bg=c.card)
+            legend = ctk.CTkFrame(chart_inner, fg_color=c.card, corner_radius=0)
             legend.pack(fill="x", pady=(0, 8))
             for lbl, clr in [("BCV", c.success), ("Paralelo", c.highlight)]:
-                lf = tk.Frame(legend, bg=c.card)
+                lf = ctk.CTkFrame(legend, fg_color="transparent", corner_radius=0)
                 lf.pack(side="left", padx=(0, 12))
-                tk.Label(lf, text="●", bg=c.card, fg=clr,
-                         font=("Segoe UI", 8)).pack(side="left")
-                tk.Label(lf, text=lbl, bg=c.card, fg=c.muted,
-                         font=FONTS["small"]).pack(side="left", padx=(2, 0))
+                ctk.CTkLabel(lf, text="●", text_color=clr,
+                             font=("Segoe UI", 8), fg_color="transparent").pack(side="left")
+                ctk.CTkLabel(lf, text=lbl, text_color=c.muted,
+                             font=FONTS["small"], fg_color="transparent").pack(side="left", padx=(2, 0))
 
-            # Bars
             bcv_vals = [v.get("bcv", 0) or 0 for _, v in recent]
             par_vals = [v.get("paralelo", 0) or 0 for _, v in recent]
             all_vals = [x for x in bcv_vals + par_vals if x > 0]
@@ -939,26 +793,25 @@ class TasaDelDiaApp:
                 rng = max_val - min_val or 1
                 chart_h = 100
 
-                bars_frame = tk.Frame(chart_inner, bg=c.card)
+                bars_frame = ctk.CTkFrame(chart_inner, fg_color=c.card, corner_radius=0)
                 bars_frame.pack(fill="x")
 
                 for i, (date_key, _) in enumerate(recent):
-                    col = tk.Frame(bars_frame, bg=c.card)
+                    col = ctk.CTkFrame(bars_frame, fg_color="transparent", corner_radius=0)
                     col.pack(side="left", fill="x", expand=True, padx=1)
 
                     for val, clr in [(bcv_vals[i], c.success), (par_vals[i], c.highlight)]:
                         if val and val > 0:
                             pct = ((val - min_val) / rng) * 0.8 + 0.2
                             bh = max(int(pct * chart_h), 6)
-                            bar = tk.Frame(col, bg=clr, height=bh)
+                            bar = ctk.CTkFrame(col, fg_color=clr, corner_radius=0, height=bh)
                             bar.pack(fill="x", pady=1, padx=2)
 
-                    # Date label
                     parts = date_key.split("-")
                     lbl = f"{parts[2]}/{parts[1]}"
-                    tk.Label(
-                        col, text=lbl, bg=c.card, fg=c.muted,
-                        font=("Segoe UI", 7), anchor="center",
+                    ctk.CTkLabel(
+                        col, text=lbl, text_color=c.muted,
+                        font=("Segoe UI", 7), anchor="center", fg_color="transparent",
                     ).pack(fill="x")
 
         # ── Update list (when no date selected) ──
@@ -969,40 +822,34 @@ class TasaDelDiaApp:
             if sorted_dates:
                 for date_key in sorted_dates:
                     entry = historical[date_key]
-                    card = tk.Frame(
-                        self._hist_list_container, bg=c.card,
-                        highlightbackground=c.card_border, highlightthickness=1,
+                    card = ctk.CTkFrame(
+                        self._hist_list_container, fg_color=c.card,
+                        border_color=c.card_border, border_width=1, corner_radius=6,
                     )
                     card.pack(fill="x", pady=(0, 6))
-                    card.pack_propagate(False)
-                    inner = tk.Frame(card, bg=c.card, padx=12, pady=8)
-                    inner.pack(fill="x")
+                    inner = ctk.CTkFrame(card, fg_color="transparent", corner_radius=0)
+                    inner.pack(fill="x", padx=12, pady=8)
 
-                    # Header row
-                    hdr = tk.Frame(inner, bg=c.card)
+                    hdr = ctk.CTkFrame(inner, fg_color="transparent", corner_radius=0)
                     hdr.pack(fill="x", pady=(0, 6))
-                    tk.Label(
+                    ctk.CTkLabel(
                         hdr, text=f"📅 {format_date_key(date_key)}",
-                        bg=c.card, fg=c.primary,
-                        font=("Segoe UI", 11, "bold"),
+                        text_color=c.primary, font=("Segoe UI", 11, "bold"), fg_color="transparent",
                     ).pack(side="left")
                     if entry.get("manual"):
-                        tk.Label(
-                            hdr, text="  ✏️ Manual", bg=c.card,
-                            fg=c.muted, font=("Segoe UI", 8),
+                        ctk.CTkLabel(
+                            hdr, text="  ✏️ Manual", text_color=c.muted,
+                            font=("Segoe UI", 8), fg_color="transparent",
                         ).pack(side="left", padx=(4, 0))
 
-                    # View button
-                    tk.Button(
+                    ctk.CTkButton(
                         hdr, text="Ver detalle", font=FONTS["section"],
-                        bg=c.accent, fg=c.primary,
-                        activebackground=c.info, activeforeground=c.primary,
-                        relief="flat", padx=8, pady=2, cursor="hand2",
+                        fg_color=c.accent, text_color=c.primary,
+                        hover_color=c.info, corner_radius=6, height=24,
                         command=lambda dk=date_key: self._hist_select_date(dk),
                     ).pack(side="right")
 
-                    # Rates row
-                    rates_row = tk.Frame(inner, bg=c.card)
+                    rates_row = ctk.CTkFrame(inner, fg_color="transparent", corner_radius=0)
                     rates_row.pack(fill="x")
                     fields = [
                         ("BCV", entry.get("bcv"), c.success),
@@ -1011,25 +858,25 @@ class TasaDelDiaApp:
                         ("Euro", entry.get("euro"), c.info),
                     ]
                     for lbl, val, clr in fields:
-                        col = tk.Frame(rates_row, bg=c.card)
+                        col = ctk.CTkFrame(rates_row, fg_color="transparent", corner_radius=0)
                         col.pack(side="left", fill="x", expand=True)
-                        tk.Label(
-                            col, text=lbl, bg=c.card, fg=c.muted,
-                            font=("Segoe UI", 8),
+                        ctk.CTkLabel(
+                            col, text=lbl, text_color=c.muted,
+                            font=("Segoe UI", 8), fg_color="transparent",
                         ).pack()
                         val_text = f"Bs. {val:,.2f}" if val else "—"
-                        tk.Label(
-                            col, text=val_text, bg=c.card,
-                            fg=clr if val else c.muted,
-                            font=("Segoe UI", 10, "bold"),
+                        ctk.CTkLabel(
+                            col, text=val_text,
+                            text_color=clr if val else c.muted,
+                            font=("Segoe UI", 10, "bold"), fg_color="transparent",
                         ).pack()
             else:
-                tk.Label(
+                ctk.CTkLabel(
                     self._hist_list_container,
                     text="No hay tasas históricas guardadas aún.\n"
                          "Se guardarán automáticamente al obtener las tasas del día.",
-                    bg=c.bg, fg=c.muted, font=FONTS["small"],
-                    justify="center", wraplength=350,
+                    text_color=c.muted, font=FONTS["small"],
+                    justify="center", wraplength=350, fg_color="transparent",
                 ).pack(pady=20)
 
     def _hist_select_date(self, date_key: str) -> None:
@@ -1041,7 +888,6 @@ class TasaDelDiaApp:
         self._update_history_tab()
 
     def _hist_search_date(self) -> None:
-        """Busca la fecha ingresada en el campo personalizado."""
         raw = self._hist_custom_var.get().strip()
         date_key = parse_date_from_display(raw)
         if date_key is None:
@@ -1057,37 +903,33 @@ class TasaDelDiaApp:
         c = self.actual_theme
         card = self._hist_detail_card
 
-        inner = tk.Frame(card, bg=c.card, padx=14, pady=12)
-        inner.pack(fill="x")
+        inner = ctk.CTkFrame(card, fg_color=c.card, corner_radius=0)
+        inner.pack(fill="x", padx=14, pady=12)
 
-        # Header
-        hdr = tk.Frame(inner, bg=c.card)
+        hdr = ctk.CTkFrame(inner, fg_color=c.card, corner_radius=0)
         hdr.pack(fill="x", pady=(0, 10))
-        tk.Label(
+        ctk.CTkLabel(
             hdr, text=f"📅 {format_date_key(self._hist_selected_date)}",
-            bg=c.card, fg=c.primary, font=("Segoe UI", 14, "bold"),
+            text_color=c.primary, font=("Segoe UI", 14, "bold"), fg_color="transparent",
         ).pack(side="left")
         if self._hist_selected_date == get_today_key():
-            tk.Label(
-                hdr, text="  HOY", bg=c.card,
-                fg=c.success, font=("Segoe UI", 8, "bold"),
+            ctk.CTkLabel(
+                hdr, text="  HOY", text_color=c.success,
+                font=("Segoe UI", 8, "bold"), fg_color="transparent",
             ).pack(side="left", padx=(4, 0))
         if entry.get("manual"):
-            tk.Label(
-                hdr, text="  ✏️ Manual", bg=c.card,
-                fg=c.muted, font=("Segoe UI", 8),
+            ctk.CTkLabel(
+                hdr, text="  ✏️ Manual", text_color=c.muted,
+                font=("Segoe UI", 8), fg_color="transparent",
             ).pack(side="left", padx=(4, 0))
 
-        # Close button
-        tk.Button(
+        ctk.CTkButton(
             hdr, text="✕", font=("Segoe UI", 10, "bold"),
-            bg=c.card, fg=c.muted,
-            activebackground=c.highlight, activeforeground="#ffffff",
-            relief="flat", padx=6, pady=1, cursor="hand2",
+            fg_color=c.card, text_color=c.muted,
+            hover_color=c.highlight, corner_radius=4, width=30, height=24,
             command=lambda: self._hist_select_date(self._hist_selected_date or ""),
         ).pack(side="right")
 
-        # Rates rows
         rates = [
             ("BCV (Oficial)", entry.get("bcv"), c.success),
             ("Paralelo", entry.get("paralelo"), c.highlight),
@@ -1096,49 +938,43 @@ class TasaDelDiaApp:
         ]
 
         for label_text, val, color in rates:
-            row = tk.Frame(inner, bg=c.input_bg)
+            row = ctk.CTkFrame(inner, fg_color=c.input_bg, corner_radius=0)
             row.pack(fill="x", pady=(0, 4))
 
-            tk.Label(
-                row, text=f"●  {label_text}", bg=c.input_bg,
-                fg=color if val else c.muted,
-                font=("Segoe UI", 10), anchor="w", padx=8, pady=6,
-            ).pack(side="left", fill="x", expand=True)
+            ctk.CTkLabel(
+                row, text=f"●  {label_text}", text_color=color if val else c.muted,
+                font=("Segoe UI", 10), anchor="w", fg_color="transparent",
+            ).pack(side="left", fill="x", expand=True, padx=8, pady=6)
 
             val_str = f"Bs. {val:,.2f}" if val else "—"
-            tk.Label(
-                row, text=val_str, bg=c.input_bg,
-                fg=color if val else c.muted,
-                font=("Segoe UI", 12, "bold"), padx=4,
-            ).pack(side="right")
+            ctk.CTkLabel(
+                row, text=val_str, text_color=color if val else c.muted,
+                font=("Segoe UI", 12, "bold"), fg_color="transparent",
+            ).pack(side="right", padx=4)
 
-            # Copy button per rate
             if val:
                 field_key = f"hist_{label_text.lower().split()[0]}"
                 is_copied = self._hist_copied_field == field_key
-                copy_btn = tk.Button(
+                copy_btn = ctk.CTkButton(
                     row, text="📋" if not is_copied else "✓",
                     font=("Segoe UI", 8),
-                    bg=c.accent if not is_copied else c.success,
-                    fg=c.primary if not is_copied else "#ffffff",
-                    activebackground=c.info, activeforeground=c.primary,
-                    relief="flat", padx=4, pady=2, cursor="hand2",
+                    fg_color=c.accent if not is_copied else c.success,
+                    text_color=c.primary if not is_copied else "#ffffff",
+                    hover_color=c.info, corner_radius=4, width=28, height=20,
                     command=lambda fk=field_key, v=val:
                         self._hist_copy_rate(fk, f"Bs. {v:,.2f}"),
                 )
                 copy_btn.pack(side="right", padx=(2, 6))
 
-        # Copy all button
-        all_btn_row = tk.Frame(inner, bg=c.card, pady=(8, 0))
-        all_btn_row.pack(fill="x")
+        all_btn_row = ctk.CTkFrame(inner, fg_color=c.card, corner_radius=0)
+        all_btn_row.pack(fill="x", pady=(8, 0))
         is_all_copied = self._hist_copied_field == "hist_all"
-        tk.Button(
+        ctk.CTkButton(
             all_btn_row, text="📋  Copiar todo" if not is_all_copied else "✓  ¡Copiado!",
             font=FONTS["button"],
-            bg=c.info if not is_all_copied else c.success,
-            fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=12, pady=6, cursor="hand2",
+            fg_color=c.info if not is_all_copied else c.success,
+            text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=self._hist_copy_all,
         ).pack(fill="x")
 
@@ -1185,10 +1021,9 @@ class TasaDelDiaApp:
         c = self.actual_theme
         historical = get_historical_rates()
 
-        dialog = tk.Toplevel(self.window)
+        dialog = ctk.CTkToplevel(self.window)
         self._active_dialog = dialog
         dialog.title("Tasas Históricas")
-        dialog.configure(bg=c.card)
         dialog.resizable(False, False)
         dialog.transient(self.window)
 
@@ -1196,56 +1031,47 @@ class TasaDelDiaApp:
         y = self.window.winfo_y() + (self.window.winfo_height() - 480) // 2
         dialog.geometry(f"380x480+{x}+{y}")
 
-        frame = tk.Frame(dialog, bg=c.card, padx=20, pady=18)
-        frame.pack(fill="both", expand=True)
+        frame = ctk.CTkFrame(dialog, fg_color=c.card, corner_radius=0)
+        frame.pack(fill="both", expand=True, padx=20, pady=18)
 
-        tk.Label(
-            frame, text="Tasas Históricas", bg=c.card, fg=c.primary,
-            font=("Segoe UI", 16, "bold"),
+        ctk.CTkLabel(
+            frame, text="Tasas Históricas", text_color=c.primary,
+            font=("Segoe UI", 16, "bold"), fg_color="transparent",
         ).pack(anchor="w")
-        tk.Label(
+        ctk.CTkLabel(
             frame,
             text="Ingresa una fecha (DD/MM/AAAA) para ver o guardar tasas",
-            bg=c.card, fg=c.secondary, font=("Segoe UI", 9),
-            anchor="w", wraplength=340,
+            text_color=c.secondary, font=("Segoe UI", 9),
+            anchor="w", wraplength=340, fg_color="transparent",
         ).pack(fill="x", pady=(2, 10))
 
-        # Date input
-        date_entry_frame = tk.Frame(
-            frame, bg=c.input_bg,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        date_entry_frame = ctk.CTkFrame(frame, fg_color=c.input_bg, corner_radius=6)
         date_entry_frame.pack(fill="x")
 
-        date_var = tk.StringVar()
-        date_entry = tk.Entry(
+        date_var = ctk.StringVar()
+        date_entry = ctk.CTkEntry(
             date_entry_frame, textvariable=date_var,
-            bg=c.input_bg, fg=c.input_text,
-            font=("Segoe UI", 14, "bold"), relief="flat",
-            insertbackground=c.primary, justify="center",
+            font=("Segoe UI", 14, "bold"), justify="center",
+            fg_color=c.input_bg, text_color=c.input_text,
+            border_width=0,
         )
-        date_entry.pack(fill="x", padx=12, pady=8, ipady=4)
+        date_entry.pack(fill="x", padx=12, pady=8)
         date_entry.insert(0, datetime.now().strftime("%d/%m/%Y"))
 
-        # Today shortcut
-        today_btn = tk.Button(
+        ctk.CTkButton(
             frame, text="📅 Hoy", font=FONTS["section"],
-            bg=c.input_bg, fg=c.info,
-            activebackground=c.accent, activeforeground=c.info,
-            relief="flat", padx=8, pady=2, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.info,
+            hover_color=c.accent, corner_radius=6, height=24,
             command=lambda: date_var.set(datetime.now().strftime("%d/%m/%Y")),
-        )
-        today_btn.pack(anchor="w", pady=(4, 8))
+        ).pack(anchor="w", pady=(4, 8))
 
-        # Search button
-        search_frame = tk.Frame(frame, bg=c.card)
+        search_frame = ctk.CTkFrame(frame, fg_color=c.card, corner_radius=0)
         search_frame.pack(fill="x", pady=(0, 8))
 
-        tk.Button(
+        ctk.CTkButton(
             search_frame, text="🔍 Buscar", font=FONTS["section"],
-            bg=c.info, fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=4, cursor="hand2",
+            fg_color=c.info, text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=lambda: self._update_hist_display(
                 result_container, c, date_var, get_historical_rates(), dialog
             ),
@@ -1262,32 +1088,25 @@ class TasaDelDiaApp:
 
         date_var.trace_add("write", _on_date_change)
 
-        # Results area
-        result_container = tk.Frame(
-            frame, bg=c.input_bg,
-            highlightbackground=c.card_border, highlightthickness=1,
-        )
+        result_container = ctk.CTkFrame(frame, fg_color=c.input_bg, corner_radius=6)
         result_container.pack(fill="both", expand=True, pady=(0, 10))
 
         self._update_hist_display(result_container, c, date_var, historical, dialog)
 
-        # Buttons
-        btn_frame = tk.Frame(frame, bg=c.card)
+        btn_frame = ctk.CTkFrame(frame, fg_color=c.card, corner_radius=0)
         btn_frame.pack(fill="x")
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="📁 Exportar CSV", font=FONTS["section"],
-            bg=c.info, fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.info, text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=lambda: self._export_historical_csv(),
         ).pack(side="left", fill="x", expand=True, padx=(0, 2))
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Cerrar", font=FONTS["section"],
-            bg=c.input_bg, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=6,
             command=lambda: (dialog.destroy(), setattr(self, "_active_dialog", None)),
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
@@ -1297,54 +1116,48 @@ class TasaDelDiaApp:
 
     def _update_hist_display(
         self,
-        container: tk.Frame,
+        container: ctk.CTkFrame,
         c: Theme,
-        date_var: tk.StringVar,
+        date_var: ctk.StringVar,
         historical: Dict[str, Any],
-        parent_dialog: tk.Toplevel,
+        parent_dialog: ctk.CTkToplevel,
     ) -> None:
-        """Actualiza el área de visualización de tasas históricas."""
-        # Clear container
         for w in container.winfo_children():
             w.destroy()
 
         raw = date_var.get().strip()
         if not raw:
-            tk.Label(
-                container, text="Ingresa una fecha", bg=c.input_bg,
-                fg=c.muted, font=("Segoe UI", 10),
+            ctk.CTkLabel(
+                container, text="Ingresa una fecha",
+                text_color=c.muted, font=("Segoe UI", 10), fg_color="transparent",
             ).pack(expand=True)
             return
 
-        # Parse date using the validated parser
         date_key = parse_date_from_display(raw)
         if date_key is None:
-            tk.Label(
-                container, text="Fecha inválida. Usa DD/MM/AAAA", bg=c.input_bg,
-                fg=c.highlight, font=("Segoe UI", 10),
+            ctk.CTkLabel(
+                container, text="Fecha inválida. Usa DD/MM/AAAA",
+                text_color=c.highlight, font=("Segoe UI", 10), fg_color="transparent",
             ).pack(expand=True)
             return
 
         today_key = get_today_key()
         is_today = date_key == today_key
 
-        # Title row
-        title_row = tk.Frame(container, bg=c.input_bg)
+        title_row = ctk.CTkFrame(container, fg_color=c.input_bg, corner_radius=0)
         title_row.pack(fill="x", padx=10, pady=(8, 4))
-
-        tk.Label(
-            title_row, text=format_date_key(date_key), bg=c.input_bg,
-            fg=c.primary, font=("Segoe UI", 12, "bold"),
+        ctk.CTkLabel(
+            title_row, text=format_date_key(date_key), text_color=c.primary,
+            font=("Segoe UI", 12, "bold"), fg_color="transparent",
         ).pack(side="left")
         if is_today:
-            tk.Label(
-                title_row, text="  HOY", bg=c.input_bg,
-                fg=c.success, font=("Segoe UI", 8, "bold"),
+            ctk.CTkLabel(
+                title_row, text="  HOY", text_color=c.success,
+                font=("Segoe UI", 8, "bold"), fg_color="transparent",
             ).pack(side="left", padx=(4, 0))
 
         entry = historical.get(date_key, {})
         if entry:
-            # Display saved rates
             fields = [
                 ("BCV (Oficial)", entry.get("bcv"), c.success),
                 ("Paralelo", entry.get("paralelo"), c.highlight),
@@ -1353,61 +1166,57 @@ class TasaDelDiaApp:
             ]
 
             for label_text, val, color in fields:
-                row = tk.Frame(container, bg=c.input_bg)
+                row = ctk.CTkFrame(container, fg_color=c.input_bg, corner_radius=0)
                 row.pack(fill="x", padx=10, pady=1)
-                dot = tk.Label(
-                    row, text="●", bg=c.input_bg,
-                    fg=color if val is not None else c.muted,
-                    font=("Segoe UI", 8),
-                )
-                dot.pack(side="left", padx=(0, 4))
-                tk.Label(
-                    row, text=label_text, bg=c.input_bg, fg=c.secondary,
-                    font=("Segoe UI", 9), anchor="w",
+                ctk.CTkLabel(
+                    row, text="●", text_color=color if val is not None else c.muted,
+                    font=("Segoe UI", 8), fg_color="transparent",
+                ).pack(side="left", padx=(0, 4))
+                ctk.CTkLabel(
+                    row, text=label_text, text_color=c.secondary,
+                    font=("Segoe UI", 9), anchor="w", fg_color="transparent",
                 ).pack(side="left", fill="x", expand=True)
                 val_text = f"Bs. {val:,.2f}" if val is not None else "—"
-                tk.Label(
-                    row, text=val_text, bg=c.input_bg,
-                    fg=color if val is not None else c.muted,
-                    font=("Segoe UI", 10, "bold"),
+                ctk.CTkLabel(
+                    row, text=val_text, text_color=color if val is not None else c.muted,
+                    font=("Segoe UI", 10, "bold"), fg_color="transparent",
                 ).pack(side="right")
 
             if entry.get("manual"):
-                tk.Label(
-                    container, text="✏️ Ingresado manualmente", bg=c.input_bg,
-                    fg=c.muted, font=("Segoe UI", 8),
+                ctk.CTkLabel(
+                    container, text="✏️ Ingresado manualmente",
+                    text_color=c.muted, font=("Segoe UI", 8),
+                    fg_color="transparent",
                 ).pack(pady=(4, 0))
 
-            # Edit button
-            edit_frame = tk.Frame(container, bg=c.input_bg)
+            edit_frame = ctk.CTkFrame(container, fg_color=c.input_bg, corner_radius=0)
             edit_frame.pack(fill="x", padx=10, pady=(6, 8))
-            tk.Button(
+            ctk.CTkButton(
                 edit_frame, text="✏️ Editar tasas", font=FONTS["section"],
-                bg=c.card, fg=c.secondary,
-                activebackground=c.accent, activeforeground=c.primary,
-                relief="flat", padx=10, pady=4, cursor="hand2",
+                fg_color=c.card, text_color=c.secondary,
+                hover_color=c.accent, corner_radius=6,
                 command=lambda: self._show_hist_manual_entry(
                     date_key, entry, parent_dialog, container, date_var, historical, c
                 ),
             ).pack(fill="x")
         else:
-            # No rates for this date
-            empty_frame = tk.Frame(container, bg=c.input_bg)
+            empty_frame = ctk.CTkFrame(container, fg_color=c.input_bg, corner_radius=0)
             empty_frame.pack(expand=True, fill="both")
-            tk.Label(
+            ctk.CTkLabel(
                 empty_frame, text="No hay tasas guardadas para esta fecha",
-                bg=c.input_bg, fg=c.warning, font=("Segoe UI", 10, "bold"),
+                text_color=c.warning, font=("Segoe UI", 10, "bold"),
+                fg_color="transparent",
             ).pack(pady=(20, 2))
-            tk.Label(
+            ctk.CTkLabel(
                 empty_frame, text="Puedes ingresarlas manualmente",
-                bg=c.input_bg, fg=c.muted, font=("Segoe UI", 9),
+                text_color=c.muted, font=("Segoe UI", 9),
+                fg_color="transparent",
             ).pack()
-            tk.Button(
+            ctk.CTkButton(
                 empty_frame, text="📝 Ingresar tasas manualmente",
                 font=FONTS["button"],
-                bg=c.info, fg="#ffffff",
-                activebackground=c.info, activeforeground="#ffffff",
-                relief="flat", padx=14, pady=6, cursor="hand2",
+                fg_color=c.info, text_color="#ffffff",
+                hover_color=c.highlight, corner_radius=6,
                 command=lambda: self._show_hist_manual_entry(
                     date_key, {}, parent_dialog, container, date_var, historical, c
                 ),
@@ -1417,16 +1226,15 @@ class TasaDelDiaApp:
         self,
         date_key: str,
         entry: Dict[str, Any],
-        parent_dialog: tk.Toplevel,
-        container: tk.Frame,
-        date_var: tk.StringVar,
+        parent_dialog: ctk.CTkToplevel,
+        container: ctk.CTkFrame,
+        date_var: ctk.StringVar,
         historical: Dict[str, Any],
         c: Theme,
     ) -> None:
         """Muestra un sub-diálogo para ingresar/editar tasas históricas."""
-        sub = tk.Toplevel(parent_dialog)
+        sub = ctk.CTkToplevel(parent_dialog)
         sub.title("Ingresar tasas")
-        sub.configure(bg=c.card)
         sub.resizable(False, False)
         sub.transient(parent_dialog)
 
@@ -1434,45 +1242,44 @@ class TasaDelDiaApp:
         y = parent_dialog.winfo_y() + 30
         sub.geometry(f"320x300+{x}+{y}")
 
-        sf = tk.Frame(sub, bg=c.card, padx=20, pady=18)
-        sf.pack(fill="both", expand=True)
+        sf = ctk.CTkFrame(sub, fg_color=c.card, corner_radius=0)
+        sf.pack(fill="both", expand=True, padx=20, pady=18)
 
-        tk.Label(
+        ctk.CTkLabel(
             sf, text=f"Tasas para {format_date_key(date_key)}",
-            bg=c.card, fg=c.primary, font=("Segoe UI", 14, "bold"),
+            text_color=c.primary, font=("Segoe UI", 14, "bold"), fg_color="transparent",
         ).pack(anchor="w")
-        tk.Label(
+        ctk.CTkLabel(
             sf, text="Ingresa las tasas que recuerdes (puedes dejar vacío)",
-            bg=c.card, fg=c.secondary, font=("Segoe UI", 9),
-            anchor="w", wraplength=280,
+            text_color=c.secondary, font=("Segoe UI", 9),
+            anchor="w", wraplength=280, fg_color="transparent",
         ).pack(fill="x", pady=(2, 10))
 
-        # Fields
         fields_def = [
             ("BCV (Oficial)", "bcv", c.success),
             ("Paralelo", "paralelo", c.highlight),
             ("Euro (BCV)", "euro", c.info),
         ]
-        field_vars: Dict[str, tk.StringVar] = {}
+        field_vars: Dict[str, ctk.StringVar] = {}
 
         for label_text, key, color in fields_def:
-            frow = tk.Frame(sf, bg=c.card)
+            frow = ctk.CTkFrame(sf, fg_color=c.card, corner_radius=0)
             frow.pack(fill="x", pady=(0, 8))
-            tk.Label(
-                frow, text=label_text, bg=c.card, fg=c.secondary,
-                font=("Segoe UI", 9), anchor="w",
+            ctk.CTkLabel(
+                frow, text=label_text, text_color=c.secondary,
+                font=("Segoe UI", 9), anchor="w", fg_color="transparent",
             ).pack(fill="x")
             val = entry.get(key)
-            var = tk.StringVar(value=f"{val:,.2f}" if val else "")
+            var = ctk.StringVar(value=f"{val:,.2f}" if val else "")
             field_vars[key] = var
-            e = tk.Entry(
-                frow, textvariable=var, bg=c.input_bg, fg=color,
-                font=("Segoe UI", 14, "bold"), relief="flat",
-                insertbackground=c.primary, justify="center",
+            e = ctk.CTkEntry(
+                frow, textvariable=var, fg_color=c.input_bg, text_color=color,
+                font=("Segoe UI", 14, "bold"), justify="center",
+                border_width=0,
             )
-            e.pack(fill="x", ipady=4)
+            e.pack(fill="x")
 
-        btn_row = tk.Frame(sf, bg=c.card)
+        btn_row = ctk.CTkFrame(sf, fg_color=c.card, corner_radius=0)
         btn_row.pack(fill="x", pady=(10, 0))
 
         def on_save_hist() -> None:
@@ -1495,23 +1302,20 @@ class TasaDelDiaApp:
                 return
 
             set_manual_historical_rate(date_key, bcv=bcv, paralelo=paralelo, euro=euro)
-            # Refresh display
             updated_historical = get_historical_rates()
             self._update_hist_display(container, c, date_var, updated_historical, parent_dialog)
             sub.destroy()
 
-        tk.Button(
+        ctk.CTkButton(
             btn_row, text="Cancelar", font=FONTS["section"],
-            bg=c.input_bg, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=6,
             command=sub.destroy,
         ).pack(side="left", fill="x", expand=True, padx=(0, 2))
-        tk.Button(
+        ctk.CTkButton(
             btn_row, text="Guardar", font=FONTS["section"],
-            bg=c.info, fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.info, text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=on_save_hist,
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
@@ -1639,10 +1443,9 @@ class TasaDelDiaApp:
     def _edit_bcv_lunes(self) -> None:
         """Abre un diálogo para editar la tasa BCV del lunes."""
         c = self.actual_theme
-        dialog = tk.Toplevel(self.window)
+        dialog = ctk.CTkToplevel(self.window)
         self._active_dialog = dialog
         dialog.title("Editar BCV (Lunes)")
-        dialog.configure(bg=c.card)
         dialog.resizable(False, False)
         dialog.transient(self.window)
 
@@ -1650,28 +1453,29 @@ class TasaDelDiaApp:
         y = self.window.winfo_y() + (self.window.winfo_height() - 200) // 2
         dialog.geometry(f"320x200+{x}+{y}")
 
-        frame = tk.Frame(dialog, bg=c.card, padx=20, pady=20)
-        frame.pack(fill="both", expand=True)
+        frame = ctk.CTkFrame(dialog, fg_color=c.card, corner_radius=0)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(
-            frame, text="BCV (Lunes)", bg=c.card, fg=c.primary,
-            font=("Segoe UI", 14, "bold"),
+        ctk.CTkLabel(
+            frame, text="BCV (Lunes)", text_color=c.primary,
+            font=("Segoe UI", 14, "bold"), fg_color="transparent",
         ).pack(anchor="w")
-        tk.Label(
+        ctk.CTkLabel(
             frame, text="Ingresa la tasa publicada por el BCV para el lunes:",
-            bg=c.card, fg=c.secondary, font=("Segoe UI", 9),
-            anchor="w", wraplength=280,
+            text_color=c.secondary, font=("Segoe UI", 9),
+            anchor="w", wraplength=280, fg_color="transparent",
         ).pack(fill="x", pady=(4, 12))
 
-        entry_var = tk.StringVar(value=f"{self.bcv_lunes:,.2f}" if self.bcv_lunes else "")
-        entry = tk.Entry(
-            frame, textvariable=entry_var, bg=c.input_bg, fg=c.input_text,
-            font=("Segoe UI", 18, "bold"), relief="flat",
-            insertbackground=c.primary, justify="center",
+        entry_var = ctk.StringVar(value=f"{self.bcv_lunes:,.2f}" if self.bcv_lunes else "")
+        entry = ctk.CTkEntry(
+            frame, textvariable=entry_var,
+            font=("Segoe UI", 18, "bold"), justify="center",
+            fg_color=c.input_bg, text_color=c.input_text,
+            border_width=0,
         )
-        entry.pack(fill="x", ipady=6)
+        entry.pack(fill="x")
 
-        btn_frame = tk.Frame(frame, bg=c.card)
+        btn_frame = ctk.CTkFrame(frame, fg_color=c.card, corner_radius=0)
         btn_frame.pack(fill="x", pady=(12, 0))
 
         def on_save() -> None:
@@ -1679,6 +1483,14 @@ class TasaDelDiaApp:
             try:
                 val = float(raw)
                 if val > 0:
+                    if val > 500:
+                        from tkinter import messagebox
+                        messagebox.showwarning(
+                            "Valor alto",
+                            "La tasa ingresada es muy alta ({:,.2f}). Verifica que sea correcta.".format(val),
+                            parent=dialog,
+                        )
+                        return
                     self.bcv_lunes = val
                     self.bcv_lunes_updated_at = datetime.now().isoformat()
                     save_config(val)
@@ -1713,28 +1525,25 @@ class TasaDelDiaApp:
             self.do_conversion()
             dialog.destroy()
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Cancelar", font=FONTS["section"],
-            bg=c.input_bg, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=6,
             command=on_cancel,
         ).pack(side="left", fill="x", expand=True, padx=(0, 2))
 
         if self.bcv_lunes is not None:
-            tk.Button(
+            ctk.CTkButton(
                 btn_frame, text="Borrar", font=FONTS["section"],
-                bg=c.highlight, fg="#ffffff",
-                activebackground=c.highlight, activeforeground="#ffffff",
-                relief="flat", padx=16, pady=6, cursor="hand2",
+                fg_color=c.highlight, text_color="#ffffff",
+                hover_color=c.highlight, corner_radius=6,
                 command=on_delete,
             ).pack(side="left", fill="x", expand=True, padx=(1, 1))
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Guardar", font=FONTS["section"],
-            bg=c.bcv_lunes, fg="#ffffff",
-            activebackground=c.bcv_lunes, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.bcv_lunes, text_color="#ffffff",
+            hover_color=c.bcv_lunes, corner_radius=6,
             command=on_save,
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
@@ -1793,9 +1602,8 @@ class TasaDelDiaApp:
     def _show_reminder_popup(self, already_entered: bool) -> None:
         """Muestra un popup de recordatorio con estilo premium."""
         c = self.actual_theme
-        popup = tk.Toplevel(self.window)
+        popup = ctk.CTkToplevel(self.window)
         popup.title("Recordatorio BCV (Lunes)")
-        popup.configure(bg=c.card)
         popup.resizable(False, False)
         popup.transient(self.window)
         popup.attributes("-topmost", True)
@@ -1804,49 +1612,46 @@ class TasaDelDiaApp:
         y = self.window.winfo_y() + (self.window.winfo_height() - 180) // 2
         popup.geometry(f"340x180+{x}+{y}")
 
-        frame = tk.Frame(popup, bg=c.card, padx=20, pady=20)
-        frame.pack(fill="both", expand=True)
+        frame = ctk.CTkFrame(popup, fg_color=c.card, corner_radius=0)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
         icon_text = "✅" if already_entered else "📅"
-        tk.Label(
-            frame, text=icon_text, bg=c.card, font=("Segoe UI", 28),
+        ctk.CTkLabel(
+            frame, text=icon_text, font=("Segoe UI", 28), fg_color="transparent",
         ).pack(pady=(0, 8))
 
         if already_entered:
-            tk.Label(
-                frame, text="Ya ingresaste la tasa de hoy", bg=c.card,
-                fg=c.primary, font=("Segoe UI", 12, "bold"),
+            ctk.CTkLabel(
+                frame, text="Ya ingresaste la tasa de hoy",
+                text_color=c.primary, font=("Segoe UI", 12, "bold"), fg_color="transparent",
             ).pack()
-            tk.Label(
+            ctk.CTkLabel(
                 frame, text="Recuerda revisar si el BCV publicó una nueva.",
-                bg=c.card, fg=c.secondary, font=("Segoe UI", 9), wraplength=280,
+                text_color=c.secondary, font=("Segoe UI", 9), wraplength=280, fg_color="transparent",
             ).pack(pady=(4, 0))
         else:
-            tk.Label(
-                frame, text="¿Ya viste la tasa del lunes?", bg=c.card,
-                fg=c.primary, font=("Segoe UI", 12, "bold"),
+            ctk.CTkLabel(
+                frame, text="¿Ya viste la tasa del lunes?",
+                text_color=c.primary, font=("Segoe UI", 12, "bold"), fg_color="transparent",
             ).pack()
-            tk.Label(
+            ctk.CTkLabel(
                 frame, text="El BCV publicó la tasa del lunes. ¡Ingrésala en la app!",
-                bg=c.card, fg=c.secondary, font=("Segoe UI", 9), wraplength=280,
+                text_color=c.secondary, font=("Segoe UI", 9), wraplength=280, fg_color="transparent",
             ).pack(pady=(4, 0))
 
-        btn_frame = tk.Frame(frame, bg=c.card)
-        btn_frame.pack(fill="x", pady=(10, 0))
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0)
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Ingresar tasa", font=FONTS["button"],
-            bg=c.bcv_lunes, fg="#ffffff",
-            activebackground=c.bcv_lunes, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.bcv_lunes, text_color="#ffffff",
+            hover_color=c.bcv_lunes, corner_radius=6,
             command=lambda: self._edit_bcv_lunes() or popup.destroy(),
         ).pack(side="left", fill="x", expand=True, padx=(0, 4))
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Recordar después", font=FONTS["section"],
-            bg=c.input_bg, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=6,
             command=popup.destroy,
         ).pack(side="right", fill="x", expand=True, padx=(4, 0))
 
@@ -1879,11 +1684,11 @@ class TasaDelDiaApp:
         c = self.actual_theme
         accent_bg = c.accent
         if mode == "usd_to_bs":
-            self.btn_usd.config(bg=accent_bg, fg=c.primary)
-            self.btn_bs.config(bg=c.input_bg, fg=c.muted)
+            self.btn_usd.configure(fg_color=accent_bg, text_color=c.primary)
+            self.btn_bs.configure(fg_color=c.input_bg, text_color=c.muted)
         else:
-            self.btn_bs.config(bg=accent_bg, fg=c.primary)
-            self.btn_usd.config(bg=c.input_bg, fg=c.muted)
+            self.btn_bs.configure(fg_color=accent_bg, text_color=c.primary)
+            self.btn_usd.configure(fg_color=c.input_bg, text_color=c.muted)
         self.do_conversion()
 
     def _on_rate_change(self) -> None:
@@ -1894,8 +1699,8 @@ class TasaDelDiaApp:
         """Inicia la verificación periódica del tema del sistema."""
         def _poll() -> None:
             if self.theme_mode == "system":
-                new_system = get_system_theme()  # "dark" o "light"
-                current_name = self.actual_theme.name  # "oscuro" o "claro"
+                new_system = ctk.get_appearance_mode().lower()
+                current_name = self.actual_theme.name
                 expected_name = "oscuro" if new_system == "dark" else "claro"
                 if current_name != expected_name:
                     logger.info("Tema del sistema cambió a %s, reconstruyendo UI", new_system)
@@ -1903,7 +1708,6 @@ class TasaDelDiaApp:
                     return
             self._theme_poll_timer = self.window.after(5000, _poll)
 
-        # NO llamar _poll() directamente — programar con after para evitar recursión
         self._theme_poll_timer = self.window.after(5000, _poll)
 
     def _bind_events(self) -> None:
@@ -1926,7 +1730,7 @@ class TasaDelDiaApp:
     def _copy_bcv_rate(self) -> None:
         """Copia la tasa BCV al portapapeles (Ctrl+C)."""
         # No interferir con copia de texto en inputs
-        if isinstance(self.window.focus_get(), tk.Entry):
+        if isinstance(self.window.focus_get(), ctk.CTkEntry):
             return
         rate_text = self.card_bcv.rate_var.get()
         if rate_text and rate_text not in ("—", "Cargando...", "Error"):
@@ -1966,24 +1770,28 @@ class TasaDelDiaApp:
 
     def _show_toast(self, title: str, message: str) -> None:
         """Muestra un toast temporal de feedback."""
-        toast = tk.Toplevel(self.window)
+        toast = ctk.CTkToplevel(self.window)
         toast.overrideredirect(True)
         toast.attributes("-topmost", True)
-        toast.configure(bg=self.actual_theme.card)
+        toast.configure(fg_color=self.actual_theme.bg)
 
-        x = self.window.winfo_x() + (self.window.winfo_width() - 200) // 2
+        x = self.window.winfo_x() + (self.window.winfo_width() - 220) // 2
         y = self.window.winfo_y() + 40
-        toast.geometry(f"200x36+{x}+{y}")
+        toast.geometry(f"220x38+{x}+{y}")
 
-        frame = tk.Frame(toast, bg=self.actual_theme.accent, padx=12, pady=6)
-        frame.pack(fill="both", expand=True)
+        frame = ctk.CTkFrame(
+            toast, fg_color=self.actual_theme.card,
+            corner_radius=10, border_width=1,
+            border_color=self.actual_theme.card_border,
+        )
+        frame.pack(fill="both", expand=True, padx=0, pady=0)
 
-        tk.Label(
-            frame, text=f"✓ {message}", bg=self.actual_theme.accent,
-            fg=self.actual_theme.primary, font=("Segoe UI", 9),
-        ).pack()
+        ctk.CTkLabel(
+            frame, text=f"✓ {message}", text_color=self.actual_theme.primary,
+            font=("Segoe UI", 10), fg_color="transparent",
+        ).pack(padx=16, pady=8)
 
-        toast.after(1500, lambda: toast.destroy() if toast.winfo_exists() else None)
+        toast.after(1800, lambda: toast.destroy() if toast.winfo_exists() else None)
 
     # ─── System Tray ─────────────────────────────────────────────
 
@@ -1992,6 +1800,7 @@ class TasaDelDiaApp:
         self.window.after(2000, lambda: start_tray(
             on_show=self._restore_from_tray,
             on_quit=self._quit_from_tray,
+            on_refresh=self.refresh_rates,
         ))
 
     def _restore_from_tray(self) -> None:
@@ -2003,6 +1812,7 @@ class TasaDelDiaApp:
     def _quit_from_tray(self) -> None:
         """Cierra la app desde la bandeja."""
         self._cancel_timers()
+        self._executor.shutdown(wait=False)
         if self.widget:
             self.widget.destroy()
         stop_tray()
@@ -2036,10 +1846,10 @@ class TasaDelDiaApp:
             try:
                 result = check_for_updates()
                 if result and result.get("has_update"):
-                    self._show_update_available(result)
+                    self.window.after(0, self._show_update_available, result)
             except Exception as e:
                 logger.debug("Error checking updates: %s", e)
-        threading.Thread(target=_check, daemon=True).start()
+        self._executor.submit(_check)
 
     def _check_updates_manual(self) -> None:
         """Verifica actualizaciones manualmente (desde botón)."""
@@ -2061,10 +1871,9 @@ class TasaDelDiaApp:
         from tkinter import messagebox
         c = self.actual_theme
 
-        dialog = tk.Toplevel(self.window)
+        dialog = ctk.CTkToplevel(self.window)
         self._active_dialog = dialog
         dialog.title("Actualización disponible")
-        dialog.configure(bg=c.card)
         dialog.resizable(False, False)
         dialog.transient(self.window)
 
@@ -2072,29 +1881,29 @@ class TasaDelDiaApp:
         y = self.window.winfo_y() + (self.window.winfo_height() - 220) // 2
         dialog.geometry(f"360x220+{x}+{y}")
 
-        frame = tk.Frame(dialog, bg=c.card, padx=20, pady=20)
-        frame.pack(fill="both", expand=True)
+        frame = ctk.CTkFrame(dialog, fg_color=c.card, corner_radius=0)
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        tk.Label(
-            frame, text="🚀 Nueva versión disponible", bg=c.card,
-            fg=c.primary, font=("Segoe UI", 14, "bold"),
+        ctk.CTkLabel(
+            frame, text="🚀 Nueva versión disponible", text_color=c.primary,
+            font=("Segoe UI", 14, "bold"), fg_color="transparent",
         ).pack(anchor="w")
 
-        tk.Label(
+        ctk.CTkLabel(
             frame,
             text=f"Versión actual: {APP_VERSION}\nNueva versión: {result.get('latest_version', '?')}",
-            bg=c.card, fg=c.secondary, font=("Segoe UI", 10),
-            anchor="w", justify="left",
+            text_color=c.secondary, font=("Segoe UI", 10),
+            anchor="w", justify="left", fg_color="transparent",
         ).pack(fill="x", pady=(8, 4))
 
         if result.get("release_notes"):
-            tk.Label(
+            ctk.CTkLabel(
                 frame, text=result["release_notes"][:200],
-                bg=c.card, fg=c.muted, font=("Segoe UI", 8),
-                anchor="w", wraplength=320, justify="left",
+                text_color=c.muted, font=("Segoe UI", 8),
+                anchor="w", wraplength=320, justify="left", fg_color="transparent",
             ).pack(fill="x")
 
-        btn_frame = tk.Frame(frame, bg=c.card)
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent", corner_radius=0)
         btn_frame.pack(fill="x", pady=(12, 0))
 
         def _download() -> None:
@@ -2105,19 +1914,17 @@ class TasaDelDiaApp:
             dialog.destroy()
             self._active_dialog = None
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="📥 Descargar", font=FONTS["button"],
-            bg=c.info, fg="#ffffff",
-            activebackground=c.info, activeforeground="#ffffff",
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.info, text_color="#ffffff",
+            hover_color=c.highlight, corner_radius=6,
             command=_download,
         ).pack(side="left", fill="x", expand=True, padx=(0, 2))
 
-        tk.Button(
+        ctk.CTkButton(
             btn_frame, text="Recordar después", font=FONTS["section"],
-            bg=c.input_bg, fg=c.secondary,
-            activebackground=c.accent, activeforeground=c.primary,
-            relief="flat", padx=16, pady=6, cursor="hand2",
+            fg_color=c.input_bg, text_color=c.secondary,
+            hover_color=c.accent, corner_radius=6,
             command=lambda: (dialog.destroy(), setattr(self, "_active_dialog", None)),
         ).pack(side="right", fill="x", expand=True, padx=(2, 0))
 
@@ -2140,11 +1947,11 @@ class TasaDelDiaApp:
                 except (ValueError, TypeError):
                     pass
             if time_str:
-                self.offline_label.config(
+                self.offline_label.configure(
                     text=f"Sin conexión — Mostrando últimas tasas ({time_str})"
                 )
             else:
-                self.offline_label.config(text="Sin conexión — Mostrando últimas tasas")
+                self.offline_label.configure(text="Sin conexión — Mostrando últimas tasas")
             try:
                 info_bar = self.info_label.master.master
                 if info_bar.winfo_exists():
@@ -2153,12 +1960,30 @@ class TasaDelDiaApp:
                     self.offline_banner.pack(fill="x", padx=12, pady=(0, 2))
             except Exception:
                 self.offline_banner.pack(fill="x", padx=12, pady=(0, 2))
-            self.info_label.config(text="Las tasas se actualizarán cuando haya conexión")
+            self.info_label.configure(text="Las tasas se actualizarán cuando haya conexión")
         else:
             self.offline_banner.pack_forget()
-            self.info_label.config(text="Las tasas se actualizan cada 25 minutos")
+            self.info_label.configure(text="Las tasas se actualizan cada 25 minutos")
 
     # ─── API ────────────────────────────────────────────────────────
+
+    def _poll_queue(self) -> None:
+        """Procesa resultados de la API desde el hilo secundario."""
+        try:
+            while True:
+                kind, data = self._result_queue.get_nowait()
+                logger.debug("_poll_queue: procesando %s", kind)
+                if kind == "rates":
+                    self._on_rates_loaded(data)
+                elif kind == "error":
+                    self._on_rates_error(data)
+                else:
+                    logger.warning("_poll_queue: tipo desconocido %s", kind)
+        except queue.Empty:
+            pass
+        except Exception:
+            logger.exception("_poll_queue: error procesando resultados")
+        self.window.after(200, self._poll_queue)
 
     def refresh_rates(self) -> None:
         """Inicia la actualización de tasas en segundo plano."""
@@ -2171,24 +1996,25 @@ class TasaDelDiaApp:
         self.card_eur.show_loading()
         self.card_binance.show_loading()
         self._update_conv_rate_labels({})
-        thread = threading.Thread(target=self._fetch_rates_thread, daemon=True)
-        thread.start()
+        self._executor.submit(self._fetch_rates_thread)
         logger.info("Iniciando actualización de tasas...")
 
     def _fetch_rates_thread(self) -> None:
         """Hilo que obtiene las tasas de la API."""
         try:
             rates = fetch_all_rates()
-            self.window.after(0, self._on_rates_loaded, rates)
+            self._result_queue.put(("rates", rates))
         except ApiError as e:
             logger.error("Error de API al obtener tasas: %s", e)
-            self.window.after(0, self._on_rates_error, str(e))
+            self._result_queue.put(("error", str(e)))
         except Exception as e:
             logger.exception("Error inesperado obteniendo tasas: %s", e)
-            self.window.after(0, self._on_rates_error, str(e))
+            self._result_queue.put(("error", str(e)))
 
     def _on_rates_loaded(self, rates: RatesDict) -> None:
         """Procesa las tasas recibidas exitosamente."""
+        logger.info("_on_rates_loaded INVOCADO con BCV=%s, Paralelo=%s",
+                     rates.get("bcv"), rates.get("parallel"))
         c = self.actual_theme
         self.rates = rates
         self.converter_rates = {
@@ -2222,7 +2048,7 @@ class TasaDelDiaApp:
                 fetched = str(rates["fetched_at"]).replace("Z", "+00:00")
                 dt = datetime.fromisoformat(fetched)
                 time_str = dt.strftime("%d/%m/%Y %I:%M %p")
-                self.info_label.config(text=f"✓ Actualizado: {time_str}")
+                self.info_label.configure(text=f"✓ Actualizado: {time_str}")
             except (ValueError, TypeError) as e:
                 logger.warning("Error formateando fetched_at: %s", e)
 
@@ -2336,7 +2162,7 @@ class TasaDelDiaApp:
             self.card_parallel.show_error()
             self.card_eur.show_error()
             self.card_binance.show_error()
-            self.info_label.config(text=f"⚠ Error: {error_msg}")
+            self.info_label.configure(text=f"⚠ Error: {error_msg}")
 
         if self._refresh_timer:
             self.window.after_cancel(self._refresh_timer)
@@ -2350,9 +2176,9 @@ class TasaDelDiaApp:
             if key == "bcv_lunes":
                 val = self.bcv_lunes
             if val is not None:
-                label.config(text=f"Bs. {val:,.2f}")
+                label.configure(text=f"Bs. {val:,.2f}")
             else:
-                label.config(text="—")
+                label.configure(text="—")
 
     # ─── Conversion ────────────────────────────────────────────────
 
@@ -2366,9 +2192,9 @@ class TasaDelDiaApp:
             if amount <= 0:
                 return
         except ValueError:
-            self.result_from.config(text="")
-            self.result_to.config(text="Monto inválido")
-            self.result_info.config(text="")
+            self.result_from.configure(text="")
+            self.result_to.configure(text="Monto inválido")
+            self.result_info.configure(text="")
             return
 
         rate_key = self.rate_var_conv.get()
@@ -2379,22 +2205,22 @@ class TasaDelDiaApp:
             rate = self.converter_rates.get(rate_key)
 
         if rate is None or rate <= 0:
-            self.result_from.config(text="")
-            self.result_to.config(text="Tasa no disponible")
-            self.result_info.config(text="")
+            self.result_from.configure(text="")
+            self.result_to.configure(text="Tasa no disponible")
+            self.result_info.configure(text="")
             return
 
         mode = self.conv_mode.get()
         if mode == "usd_to_bs":
             result = amount * rate
-            self.result_from.config(text=f"${amount:,.2f} USD")
-            self.result_to.config(text=f"Bs. {result:,.2f}")
-            self.result_info.config(text=f"Tasa: 1 USD = Bs. {rate:,.2f}")
+            self.result_from.configure(text=f"${amount:,.2f} USD")
+            self.result_to.configure(text=f"Bs. {result:,.2f}")
+            self.result_info.configure(text=f"Tasa: 1 USD = Bs. {rate:,.2f}")
         else:
             result = amount / rate
-            self.result_from.config(text=f"Bs. {amount:,.2f}")
-            self.result_to.config(text=f"${result:,.2f} USD")
-            self.result_info.config(text=f"Tasa: Bs. {rate:,.2f} = 1 USD")
+            self.result_from.configure(text=f"Bs. {amount:,.2f}")
+            self.result_to.configure(text=f"${result:,.2f} USD")
+            self.result_info.configure(text=f"Tasa: Bs. {rate:,.2f} = 1 USD")
 
     # ─── Converter Spreads ────────────────────────────────────────
 
@@ -2431,11 +2257,11 @@ class TasaDelDiaApp:
                     self.amount_entry.delete(0, tk.END)
                     self.amount_entry.insert(0, cleaned)
                     # Flash feedback
-                    old_bg = self._paste_btn.cget("bg")
-                    self._paste_btn.config(bg=self.actual_theme.success, fg="#ffffff")
+                    old_bg = self._paste_btn.cget("fg_color")
+                    self._paste_btn.configure(fg_color=self.actual_theme.success, text_color="#ffffff")
                     self.window.after(
                         500,
-                        lambda: self._paste_btn.config(bg=old_bg, fg=self.actual_theme.muted)
+                        lambda: self._paste_btn.configure(fg_color=old_bg, text_color=self.actual_theme.muted)
                         if self._paste_btn.winfo_exists()
                         else None,
                     )
@@ -2450,10 +2276,10 @@ class TasaDelDiaApp:
             self.window.clipboard_append(text.strip())
             if self._result_copy_timer:
                 self.window.after_cancel(self._result_copy_timer)
-            self.result_copy_feedback.config(text="✓ Copiado al portapapeles")
+            self.result_copy_feedback.configure(text="✓ Copiado al portapapeles")
             self._result_copy_timer = self.window.after(
                 2000,
-                lambda: self.result_copy_feedback.config(text="")
+                lambda: self.result_copy_feedback.configure(text="")
                 if self.result_copy_feedback.winfo_exists()
                 else None,
             )

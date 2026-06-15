@@ -1,22 +1,16 @@
-"""
-Sistema de temas: Oscuro, Claro y Sigue el tema del sistema.
-Soporta detección automática del tema de Windows vía registro.
-"""
-
 from __future__ import annotations
 
 import logging
 from typing import Dict, Tuple
 
+import customtkinter as ctk
+
 logger = logging.getLogger(__name__)
 
-# ─── Tipo de datos ───────────────────────────────────────────────
 ThemeDict = Dict[str, object]
 
 
 class Theme:
-    """Contenedor de un tema con todos sus colores y metadatos."""
-
     def __init__(self, data: ThemeDict) -> None:
         self._data = data
 
@@ -92,114 +86,80 @@ class Theme:
 
     @property
     def card_bg_rgb(self) -> Tuple[int, int, int]:
-        return tuple(self._data["card_bg_rgb"])  # type: ignore
+        return tuple(self._data["card_bg_rgb"])
 
-
-# ─── Datos de temas ──────────────────────────────────────────────
 
 _DARK_DATA: ThemeDict = {
     "name": "oscuro",
     "icon": "🌙",
-    "bg": "#0a0a14",
-    "card": "#16162a",
-    "card_border": "#2a2a45",
-    "primary": "#ffffff",
-    "secondary": "#a0aec0",
-    "muted": "#636e82",
-    "accent": "#1a1a3e",
-    "highlight": "#e94560",
-    "success": "#00b894",
-    "warning": "#f39c12",
-    "info": "#4fc3f7",
-    "bcvLunes": "#a855f7",
-    "input_bg": "#111126",
-    "input_text": "#ffffff",
-    "card_bg_rgb": (0x16, 0x16, 0x2A),
+    "bg": "#07070d",
+    "card": "#111120",
+    "card_border": "#1e1e3a",
+    "primary": "#f0f0ff",
+    "secondary": "#8888b0",
+    "muted": "#55557a",
+    "accent": "#1c1c38",
+    "highlight": "#ff4060",
+    "success": "#00d4a0",
+    "warning": "#fbbf24",
+    "info": "#38bdf8",
+    "bcvLunes": "#c084fc",
+    "input_bg": "#0d0d1a",
+    "input_text": "#f0f0ff",
+    "card_bg_rgb": (0x11, 0x11, 0x20),
 }
 
 _LIGHT_DATA: ThemeDict = {
     "name": "claro",
     "icon": "☀️",
-    "bg": "#f0f2f5",
+    "bg": "#f4f6fa",
     "card": "#ffffff",
-    "card_border": "#d1d5db",
-    "primary": "#1a1a2e",
-    "secondary": "#4a5568",
-    "muted": "#9ca3af",
-    "accent": "#e2e8f0",
-    "highlight": "#e94560",
+    "card_border": "#e2e4ee",
+    "primary": "#0f0f1a",
+    "secondary": "#4a4a6a",
+    "muted": "#9494b8",
+    "accent": "#e8ecf4",
+    "highlight": "#e93555",
     "success": "#059669",
     "warning": "#d97706",
     "info": "#0284c7",
     "bcvLunes": "#7c3aed",
-    "input_bg": "#f1f5f9",
-    "input_text": "#1a1a2e",
+    "input_bg": "#eef0f6",
+    "input_text": "#0f0f1a",
     "card_bg_rgb": (0xFF, 0xFF, 0xFF),
 }
-
-
-# ─── Temas disponibles ──────────────────────────────────────────
 
 DARK = Theme(_DARK_DATA)
 LIGHT = Theme(_LIGHT_DATA)
 
 
 def get_system_theme() -> str:
-    """Detecta el tema del sistema en Windows.
-
-    Returns:
-        'dark' o 'light' según la configuración de Windows.
-        'dark' como fallback si no se puede detectar.
-    """
-    try:
-        import winreg  # noqa: PLC0415
-        key = winreg.OpenKey(
-            winreg.HKEY_CURRENT_USER,
-            r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-        )
-        value, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
-        winreg.CloseKey(key)
-        theme = "light" if value == 1 else "dark"
-        logger.debug("Tema del sistema detectado: %s", theme)
-        return theme
-    except ImportError:
-        logger.debug("winreg no disponible (no es Windows), usando tema oscuro por defecto")
-        return "dark"
-    except Exception as e:
-        logger.warning("Error detectando tema del sistema: %s", e)
-        return "dark"
+    return ctk.get_appearance_mode().lower()
 
 
 def resolve_theme(mode: str) -> Theme:
-    """Resuelve el tema según el modo seleccionado.
-
-    Args:
-        mode: 'dark', 'light' o 'system'.
-
-    Returns:
-        Instancia de Theme correspondiente.
-    """
     if mode == "dark":
         return DARK
     elif mode == "light":
         return LIGHT
-    else:  # system
-        system = get_system_theme()
-        return DARK if system == "dark" else LIGHT
+    else:
+        return DARK if ctk.get_appearance_mode().lower() == "dark" else LIGHT
 
 
-# ─── Fuentes ─────────────────────────────────────────────────────
+def apply_ctk_theme(mode: str) -> None:
+    ctk.set_appearance_mode(mode)
+
 
 FONTS: Dict[str, Tuple[str, int, str]] = {
-    "title": ("Segoe UI", 20, "bold"),
+    "title": ("Segoe UI", 22, "bold"),
     "subtitle": ("Segoe UI", 10),
     "card_title": ("Segoe UI", 13, "bold"),
-    "rate": ("Segoe UI", 26, "bold"),
+    "rate": ("Segoe UI", 28, "bold"),
     "small": ("Segoe UI", 9),
     "button": ("Segoe UI", 11, "bold"),
-    "result": ("Segoe UI", 22, "bold"),
-    "section": ("Segoe UI", 9, "bold"),
+    "result": ("Segoe UI", 24, "bold"),
+    "section": ("Segoe UI", 10, "bold"),
     "timer": ("Segoe UI", 11),
-    "spread_big": ("Segoe UI", 18, "bold"),
+    "spread_big": ("Segoe UI", 20, "bold"),
     "spread_small": ("Segoe UI", 9),
 }

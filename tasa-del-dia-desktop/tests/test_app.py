@@ -47,6 +47,8 @@ def _make_app(tk_root):
     app.window = tk_root
 
     # ─── Atributos de estado básicos ───
+    from concurrent.futures import ThreadPoolExecutor
+    app._executor = ThreadPoolExecutor(max_workers=2)
     app.offline_mode = False
     app.cached_rates = None
     app.theme_mode = "dark"
@@ -179,11 +181,11 @@ class TestBlendBg:
     def test_blend_with_dark_bg(self, app) -> None:
         """Mezcla con fondo oscuro de la app."""
         result = app._blend_bg("#ff0000", 0.5)
-        # Fondo oscuro: #0a0a14 → rgb(10, 10, 20)
-        # r = int(255*0.5 + 10*0.5) = 132 = 0x84
-        # g = int(0*0.5 + 10*0.5) = 5 = 0x05
-        # b = int(0*0.5 + 20*0.5) = 10 = 0x0a
-        assert result == "#84050a"
+        # Fondo oscuro: #07070d → rgb(7, 7, 13)
+        # r = int(255*0.5 + 7*0.5) = 131 = 0x83
+        # g = int(0*0.5 + 7*0.5) = 3 = 0x03
+        # b = int(0*0.5 + 13*0.5) = 6 = 0x06
+        assert result == "#830306"
 
     def test_blend_full_alpha(self, app) -> None:
         """Alpha=1.0 → color original."""
@@ -204,11 +206,11 @@ class TestBlendBg:
         """Mezcla con tema claro."""
         app.actual_theme = LIGHT
         result = app._blend_bg("#ff0000", 0.5)
-        # Fondo claro: #f0f2f5 → rgb(240, 242, 245)
-        # r = int(255*0.5 + 240*0.5) = 247 = 0xf7
-        # g = int(0*0.5 + 242*0.5) = 121 = 0x79
-        # b = int(0*0.5 + 245*0.5) = 122 = 0x7a
-        assert result == "#f7797a"
+        # Fondo claro: #f4f6fa → rgb(244, 246, 250)
+        # r = int(255*0.5 + 244*0.5) = 249 = 0xf9
+        # g = int(0*0.5 + 246*0.5) = 123 = 0x7b
+        # b = int(0*0.5 + 250*0.5) = 125 = 0x7d
+        assert result == "#f97b7d"
 
 
 class TestCancelTimers:
@@ -530,30 +532,29 @@ class TestCopyBcvRate:
 
     def test_copy_bcv_rate_ignores_entry_focus(self, app) -> None:
         """No copia si el foco está en un Entry."""
-        import tkinter as tk
+        import customtkinter as ctk
 
         app.window.clipboard_clear = MagicMock()
         app.window.clipboard_append = MagicMock()
-        entry = tk.Entry(app.window)
+        entry = MagicMock(spec=ctk.CTkEntry)
         app.window.focus_get = MagicMock(return_value=entry)
         app.card_bcv = MagicMock()
-        app.card_bcv.rate_var = tk.StringVar(value="60.50")
+        app.card_bcv.rate_var = ctk.StringVar(value="60.50")
 
         app._copy_bcv_rate()
 
         app.window.clipboard_clear.assert_not_called()
         app.window.clipboard_append.assert_not_called()
-        entry.destroy()
 
     def test_copy_bcv_rate_dash(self, app) -> None:
         """No copia si la tasa es '—'."""
-        import tkinter as tk
+        import customtkinter as ctk
 
         app.window.clipboard_clear = MagicMock()
         app.window.clipboard_append = MagicMock()
         app.window.focus_get = MagicMock(return_value="not_an_entry")
         app.card_bcv = MagicMock()
-        app.card_bcv.rate_var = tk.StringVar(value="—")
+        app.card_bcv.rate_var = ctk.StringVar(value="—")
 
         app._copy_bcv_rate()
 
@@ -763,7 +764,7 @@ class TestSetOfflineMode:
 
         app._set_offline_mode(True, "2025-03-15T10:30:00Z")
 
-        text_arg = app.offline_label.config.call_args[1]["text"]
+        text_arg = app.offline_label.configure.call_args[1]["text"]
         assert "Sin conexión" in text_arg
         assert "15/03" in text_arg
 
@@ -781,7 +782,7 @@ class TestSetOfflineMode:
 
         app._set_offline_mode(True, "")
 
-        text_arg = app.offline_label.config.call_args[1]["text"]
+        text_arg = app.offline_label.configure.call_args[1]["text"]
         assert "Sin conexión" in text_arg
         assert "15/03" not in text_arg
 
@@ -1252,17 +1253,14 @@ class TestRefreshRates:
 
         app.card_bcv.show_loading.assert_not_called()
 
-    @patch("app.app.threading.Thread")
-    def test_refresh_starts_thread(self, mock_thread, app) -> None:
-        """Inicia un hilo para obtener tasas."""
+    def test_refresh_submits_to_executor(self, app) -> None:
+        """Envía la tarea al ThreadPoolExecutor."""
         app.card_bcv = MagicMock()
         app.card_parallel = MagicMock()
         app.card_eur = MagicMock()
         app.card_binance = MagicMock()
 
+        app._executor = MagicMock()
         app.refresh_rates()
 
-        mock_thread.assert_called_once()
-        assert mock_thread.call_args[1]["target"] == app._fetch_rates_thread
-        assert mock_thread.call_args[1]["daemon"] is True
-        mock_thread.return_value.start.assert_called_once()
+        app._executor.submit.assert_called_once_with(app._fetch_rates_thread)
