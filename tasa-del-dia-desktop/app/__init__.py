@@ -8,3 +8,6 @@ Módulos:
   - widgets:   Componentes UI (RateCard, SpreadIndicator, TimerBar)
   - app:       Clase principal TasaDelDiaApp
 """
+
+__version__ = "1.0.3"
+__app_name__ = "Tasa del Día"

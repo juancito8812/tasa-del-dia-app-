@@ -17,7 +17,6 @@ from urllib import error as urllib_error
 logger = logging.getLogger(__name__)
 
 # ─── Configuración ────────────────────────────────────────────
-# Versión actual de la app (semver)
 APP_VERSION = "1.0.3"
 
 # Repositorio en GitHub

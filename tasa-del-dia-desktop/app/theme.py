@@ -3,7 +3,10 @@ from __future__ import annotations
 import logging
 from typing import Dict, Tuple
 
-import customtkinter as ctk
+try:
+    import customtkinter as ctk
+except ImportError:
+    ctk = None
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +137,9 @@ LIGHT = Theme(_LIGHT_DATA)
 
 
 def get_system_theme() -> str:
-    return ctk.get_appearance_mode().lower()
+    if ctk is not None:
+        return ctk.get_appearance_mode().lower()
+    return "dark"
 
 
 def resolve_theme(mode: str) -> Theme:

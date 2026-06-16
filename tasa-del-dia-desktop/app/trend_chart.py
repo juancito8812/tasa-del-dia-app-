@@ -1,21 +1,12 @@
-"""
-Gráfico de tendencia histórica con matplotlib embebido en Tkinter.
-
-Muestra la evolución de BCV y Paralelo a lo largo del tiempo
-usando los datos guardados en el histórico.
-"""
-
 from __future__ import annotations
 
 import logging
+import customtkinter as ctk
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-import tkinter as tk
-
 logger = logging.getLogger(__name__)
 
-# Verificar disponibilidad de matplotlib
 _matplotlib_available = False
 try:
     import matplotlib
@@ -28,12 +19,10 @@ except ImportError:
     logger.warning("matplotlib no disponible — gráfico desactivado")
 
 
-class TrendChart(tk.Frame):
-    """Gráfico de tendencia histórica embebido en un Frame de Tkinter."""
-
+class TrendChart(ctk.CTkFrame):
     def __init__(
         self,
-        parent: tk.Widget,
+        parent: ctk.CTkBaseClass,
         theme: Any,
         **kwargs: object,
     ) -> None:
@@ -45,54 +34,44 @@ class TrendChart(tk.Frame):
             self._show_unavailable()
             return
 
-        # Contenedor para el gráfico + info
-        self._container = tk.Frame(self, bg=theme.bg)
+        self._container = ctk.CTkFrame(self, fg_color=theme.bg, corner_radius=0)
         self._container.pack(fill="both", expand=True)
 
-        # Crear figura matplotlib
         self._fig = Figure(figsize=(6, 4), dpi=100)
         self._fig.patch.set_facecolor(theme.card)
         self._ax = self._fig.add_subplot(111)
         self._ax.set_facecolor(theme.card)
 
-        # Canvas TkAgg
         self._canvas = FigureCanvasTkAgg(self._fig, master=self._container)
         self._canvas.get_tk_widget().pack(fill="both", expand=True, padx=8, pady=8)
 
-        # Info label
-        self._info_label = tk.Label(
-            self._container, text="", bg=theme.bg, fg=theme.muted,
-            font=("Segoe UI", 9),
+        self._info_label = ctk.CTkLabel(
+            self._container, text="", text_color=theme.muted,
+            font=("Segoe UI", 9), fg_color="transparent",
         )
         self._info_label.pack(fill="x", padx=16, pady=(0, 8))
 
     def _show_unavailable(self) -> None:
-        """Muestra mensaje si matplotlib no está instalado."""
         c = self._theme
-        tk.Label(
+        ctk.CTkLabel(
             self, text="📈 Gráfico no disponible",
-            bg=c.bg, fg=c.warning, font=("Segoe UI", 14, "bold"),
+            text_color=c.warning, font=("Segoe UI", 14, "bold"),
+            fg_color="transparent",
         ).pack(expand=True, pady=(20, 4))
-        tk.Label(
+        ctk.CTkLabel(
             self, text="Instala matplotlib para ver la tendencia:\n"
                        "pip install matplotlib",
-            bg=c.bg, fg=c.muted, font=("Segoe UI", 10),
-            justify="center",
+            text_color=c.muted, font=("Segoe UI", 10),
+            justify="center", fg_color="transparent",
         ).pack(expand=True)
 
     def update_chart(self, historical: Dict[str, Any]) -> None:
-        """Actualiza el gráfico con los datos históricos.
-
-        Args:
-            historical: Diccionario fecha -> {bcv, paralelo, ...}
-        """
         if not _matplotlib_available or self._canvas is None:
             return
 
         c = self._theme
         self._ax.clear()
 
-        # Preparar datos
         dates: List[datetime] = []
         bcv_values: List[float] = []
         par_values: List[float] = []
@@ -127,28 +106,25 @@ class TrendChart(tk.Frame):
             )
             self._apply_style(c)
             self._canvas.draw()
-            self._info_label.config(text="Guarda tasas para ver la tendencia")
+            self._info_label.configure(text="Guarda tasas para ver la tendencia")
             return
 
-        # Graficar líneas
         if bcv_values:
             self._ax.plot(
                 dates, bcv_values,
                 color=c.success, linewidth=2, marker="o", markersize=4,
                 label="BCV (Oficial)", zorder=3,
             )
-        if par_values and any(not (v != v) for v in par_values):  # hay valores no-NaN
+        if par_values and any(not (v != v) for v in par_values):
             self._ax.plot(
                 dates, par_values,
                 color=c.highlight, linewidth=2, marker="s", markersize=4,
                 label="Dólar Paralelo", zorder=3,
             )
 
-        # Formato de fechas
         self._ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m"))
         self._ax.xaxis.set_major_locator(mdates.DayLocator(interval=max(1, len(dates) // 6)))
 
-        # Rotar etiquetas
         for label in self._ax.get_xticklabels():
             label.set_rotation(30)
             label.set_ha("right")
@@ -167,15 +143,13 @@ class TrendChart(tk.Frame):
         self._fig.tight_layout()
         self._canvas.draw()
 
-        # Actualizar info
         fecha_min = dates[0].strftime("%d/%m/%Y")
         fecha_max = dates[-1].strftime("%d/%m/%Y")
-        self._info_label.config(
+        self._info_label.configure(
             text=f"📊 {len(dates)} días · {fecha_min} → {fecha_max}"
         )
 
     def _apply_style(self, c: Any) -> None:
-        """Aplica el estilo del tema al gráfico."""
         self._ax.spines["top"].set_visible(False)
         self._ax.spines["right"].set_visible(False)
         self._ax.spines["bottom"].set_color(c.card_border)
@@ -185,21 +159,19 @@ class TrendChart(tk.Frame):
         self._ax.grid(True, alpha=0.15, color=c.secondary)
 
     def apply_theme(self, theme: Any) -> None:
-        """Actualiza el tema del gráfico."""
         self._theme = theme
         if _matplotlib_available and hasattr(self, "_fig"):
             self._fig.patch.set_facecolor(theme.card)
             self._ax.set_facecolor(theme.card)
             self._apply_style(theme)
-            self._container.configure(bg=theme.bg)
-            self._info_label.configure(bg=theme.bg, fg=theme.muted)
+            self._container.configure(fg_color=theme.bg)
+            self._info_label.configure(text_color=theme.muted)
             try:
                 self._canvas.draw()
             except Exception:
                 pass
 
     def destroy(self) -> None:
-        """Limpia recursos de matplotlib al destruir."""
         try:
             if hasattr(self, "_fig"):
                 import matplotlib.pyplot as plt

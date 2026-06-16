@@ -80,9 +80,10 @@ class TestTrendChartNoMatplotlib:
     @patch("app.trend_chart._matplotlib_available", False)
     def test_show_unavailable_message(self, tk_root: tk.Tk) -> None:
         """Muestra mensaje 'gráfico no disponible'."""
+        import customtkinter as ctk
         chart = TrendChart(tk_root, DARK)
 
-        labels = [w for w in chart.winfo_children() if isinstance(w, tk.Label)]
+        labels = [w for w in chart.winfo_children() if isinstance(w, ctk.CTkLabel)]
         texts = [l.cget("text") for l in labels]
 
         assert any("no disponible" in t.lower() for t in texts)
@@ -355,9 +356,8 @@ class TestTrendChartApplyTheme:
         chart, _, _ = _make_mocked_chart(fresh_root)
         chart.apply_theme(LIGHT)
 
-        # _info_label es un tk.Label real — usar cget para verificar colores
-        assert chart._info_label.cget("bg") == LIGHT.bg
-        assert chart._info_label.cget("fg") == LIGHT.muted
+        assert chart._info_label.cget("fg_color") == LIGHT.bg
+        assert chart._info_label.cget("text_color") == LIGHT.muted
 
     def test_apply_theme_calls_apply_style(self, fresh_root: tk.Tk) -> None:
         """apply_theme re-aplica el estilo con el nuevo tema."""
