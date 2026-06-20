@@ -1,119 +1,96 @@
 # Documento de Traspaso (AI Handoff Document)
 
-Este documento proporciona contexto a futuros agentes que retomen el trabajo.
+> **LEE ESTE ARCHIVO PRIMERO** — Contiene el estado actual del proyecto, lo último que se hizo y los specs/planes disponibles.
 
 ## 📌 Contexto del Proyecto
 
 **Tasa del Día** — App multiplataforma para consultar tasas de cambio en Venezuela.
 
-| Parte | Stack | Estado |
-|-------|-------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | ✅ Activa (Android) |
-| `tasa-del-dia-desktop/` | Python + Flet 0.85 | ✅ Flet activa; Legacy/WinUp deprecadas |
+| Parte | Stack | Rama | Estado |
+|-------|-------|------|--------|
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android) |
+| `tasa-del-dia-desktop/` | Python + Flet 0.85 | `main` | ✅ Activa |
 
-API: `https://api.cotizave.com` — key: `COTIZAVE_API_KEY` en `.env`
+API: `https://api.cotizave.com` — key en `.env` (`COTIZAVE_API_KEY`)
+
+**Skills usadas:** brainstorming → spec → writing-plans → subagent-driven-development → finishing-a-development-branch  
+**Método de trabajo:** git worktree (`.worktrees/` ignorado via `.gitignore`)
 
 ---
 
-## 🚀 Últimos Cambios (Sesión 20-Jun-2026)
+## 🚀 Últimos Cambios (Sesión 21-Jun-2026)
 
-### 🐛 Bugs críticos corregidos — Móvil
+### ✨ Features nuevas
 
-| Bug | Archivo | Fix |
-|-----|---------|-----|
-| **"Sin conexión" constante** — `Promise.all` mataba ambos endpoints si uno fallaba | `api.js:fetchAllData` | `Promise.all` → `Promise.allSettled`. USD rates siguen cargando aunque BCV endpoint falle |
-| **Retry cada 30s fijo** — Bombardeaba la API y mantenía banner constante | `RatesScreen.js` | Backoff exponencial: 30s, 45s, 67s... máx 5min, máx 10 reintentos |
-| **`fetchBCVCurrencies` duplicada** — Definida 2 veces en el mismo archivo | `api.js` | Eliminada la segunda definición |
-| **BCV Lunes no persistía en histórico** | `RatesScreen.js:handleSaveBCVLunes` | Agregado `saveHistoricalRate(getTodayKey(), { bcv: parsed })` |
-| **Triple auto-refresh** — 3 intervalos de 20min concurrentes | `RatesScreen.js`, `ConverterScreen.js` | Eliminado `useAutoRefresh` de ambos screens |
-| **Error "Sin conexión" genérico** — No distinguía entre error de red vs API | `api.js:fetchWithOfflineFallback` | Ahora muestra "Error de API: HTTP 401" vs "Sin conexión — datos guardados" |
+| Feature | Archivo | Spec | Plan |
+|---------|---------|------|------|
+| **Card Gasolina (BCV)** en Tasas — muestra 1L,5L,10L,20L,30L en Bs | `RatesScreen.js` (+28 ln) | `docs/superpowers/specs/2026-06-21-gasolina-bcv-design.md` | `docs/superpowers/plans/2026-06-21-gasolina-bcv-plan.md` |
+| **Conversor Gasolina** en Conversor — input de litros → Bs | `ConverterScreen.js` (+41 ln) | `docs/superpowers/specs/2026-06-21-gasolina-conversor-design.md` | — |
 
-### 🐛 Bugs críticos corregidos — Desktop
+### 🐛 Bugs corregidos (sesiones anteriores)
 
 | Bug | Archivo | Fix |
 |-----|---------|-----|
-| **API sin auth** — No enviaba `X-API-Key` header | `app/api.py` | Agregado header desde `COTIZAVE_API_KEY` env var |
-| **Import inexistente** — `from app.utils import resource_path` no existe | `app/app.py:_set_window_icon` | Reemplazado por `os.path.join` directo |
-| **Dependencias faltantes** — `pyperclip` y `darkdetect` no estaban en requirements | `requirements.txt` | Agregadas ambas |
-| **UI freeze al cambiar tema** — `_rebuild_ui` recreaba 2285 widgets sincrónicamente | `app/app.py:_switch_theme_mode` | `window.after(1)` + flag `_rebuilding` para evitar concurrencia |
+| **Data loss en historial** — `saveHistoricalRate` sobreescribía todo | `api.js` | Merge: `...all[dateKey], bcv: rates.bcv ?? old` |
+| **`handleSaveBCVLunes` truncaba decimales** | `RatesScreen.js` | Normaliza formato español antes de `parseFloat` |
+| **`parseDDMMYYYY` duplicada** en `api.js` e `HistoryScreen.js` | `HistoryScreen.js` | Eliminada la local, mejorada la de `api.js` |
+
+### 🗑️ Código eliminado
+
+| Archivo | Qué |
+|---------|-----|
+| `AutoRefreshBar.js` + test | Temporizador visual eliminado; auto-refresh silencioso en bg |
+| `api.js` — `setManualHistoricalRate()` | Dead code — nunca se llamaba |
 
 ### 🔧 Mejoras
 
 | Archivo | Cambio |
 |---------|--------|
-| `flet_app/main.py` | Thread safety: `threading.Lock()` en todas las escrituras a estado global |
-| `winup_app/app.py` | Thread safety: `threading.Lock()` en todas las escrituras a estado global |
-| `api.js:fetchAllRates` | Mensaje de error más descriptivo: "HTTP 401 — el servidor rechazó la solicitud" |
-| `api.js:fetchBCVCurrencies` | Mensaje de error más descriptivo: "HTTP 401 — error al obtener tasas BCV" |
-| `constants/index.js` | Warning de seguridad: API key visible al decompilar el APK |
-
-### 🗑️ Deprecaciones (Desktop)
-
-14 archivos marcados como `[DEPRECATED] Use flet_app/main.py instead`:
-- `app/app.py`, `app/widgets.py`, `app/widget_window.py`, `app/system_tray.py`
-- `main.py`, `build.py`, `build_winup.py`, `tasa_del_dia.py`
-- `winup_app/app.py`, `winup_app/main.py`, `winup_app/winup_shim.py`
-- `TasaDelDia.spec`, `TasaDelDiaFlet.spec`, `TasaDelDiaWinUp.spec`
-- `AGENTS.md` y `README.md` actualizados — Flet es la única UI activa
-- `build.bat` ahora buildéa Flet por defecto
-
-### 🤖 CI/CD
-
-3 workflows nuevos en `.github/workflows/`:
-- `mobile-ci.yml` — Node.js 22 + npm test en `tasa-del-dia/`
-- `desktop-ci.yml` — Python 3.14 + pytest en `tasa-del-dia-desktop/`
-- `android-build.yml` — Manual trigger con EAS Build
-
-### 🧪 Tests
-
-| Suite | Resultado |
-|-------|-----------|
-| Mobile (9 suites, 62 tests) | ✅ **62/62 pass** |
-| Desktop core (api + storage, 32 tests) | ✅ **32/32 pass** |
-| Desktop full (42 suites) | ✅ 255/255 pass (9 failures pre-existentes en system_tray, trend_chart, widget_window) |
+| `useAutoRefresh.js` | Simplificado: solo intervalo, sin countdown |
+| `RatesScreen.js`, `ConverterScreen.js` | `#a8557f` → `C.bcvLunes` |
+| `RatesScreen.js` | Gasolina card al final del scroll (visible con `tasaBCV != null`) |
+| `ConverterScreen.js` | Conversor gasolina con input y copia al portapapeles |
 
 ---
 
-## 📋 Estado Actual del Proyecto
+## 📋 Estado Actual
 
-### Móvil
-- `.env` tiene API key válida: `ctz_live_64Nym3Qa8PZixs5TsZ1UahDDJWMkG6hpVt4oka`
-- **EAS Build free plan agotado** hasta el 1-Jul-2026
-- Build local con Gradle falla: path de Windows muy largo (>250 chars en CMake)
-- Expo dev server corriendo en `localhost:8081`
-- Para test: usar **Expo Go** escaneando QR desde `http://localhost:8081`
+### Móvil (`tasa-del-dia/`)
+- **62 tests, 9 suites — 100% passing** ✅
+- `.env` tiene API key válida de Cotizave
+- Para desarrollo: `npx expo start --tunnel` (exponer QR via tunnel)
+- Build APK: GitHub Action `Build APK (React Native)` — disparar con `gh workflow run`
+- `git worktree` para aislar features: `git worktree add .worktrees/<branch> -b <branch>`
 
-### Desktop
+### Desktop (`tasa-del-dia-desktop/`)
 - Flet es la única UI activa
-- Build: `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe`
-- WinUp y Legacy: no modificar, solo mantener por referencia
+- Build: `python build_flet.py --quick`
 
-### iOS
-- Configuración lista en `app.config.js` (bundle ID, soporte tablet)
-- **Requiere Apple Developer Account ($99/año)** — pospuesto
+### Skills repo
+- Skills en `skills/` (40+ skills: ponytail, superpowers, brainstorming, etc.)
+- Config global en `~/.config/opencode/opencode.json` apunta a `tasa-del-dia-app-/skills`
+- Flujo: brainstorming → spec → writing-plans → subagent-driven-development → finishing
+
+---
+
+## 📂 Docs de referencia
+
+| Archivo | Qué contiene |
+|---------|-------------|
+| `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
+| `docs/superpowers/specs/` | Specs de features diseñadas |
+| `docs/superpowers/plans/` | Planes de implementación |
 
 ---
 
 ## ⏭️ Próximos Pasos Posibles
 
-1. Esperar reset EAS Build (1-Jul) o upgradear plan
-2. Probar la app con Expo Go desde localhost:8081
-3. Buildear APK manual cuando EAS se resetee: `npx eas build --platform android --profile preview`
-4. Arreglar build local (Windows path length >250 chars en node_modules)
-5. Proxy backend para ocultar API key del bundle APK
-6. Migrar de JavaScript a TypeScript
-7. Agregar Sentry para monitoreo de errores en producción
+1. Revisar build de APK en GitHub Actions (workflow corriendo)
+2. Probar APK compilada instalándola directo en Android
+3. Proxy backend para ocultar API key del bundle APK
+4. Build local con EAS cuando se resetee el plan free
+5. Más features en la app
 
 ---
 
-## 🔑 API Key
-
-```
-COTIZAVE_API_KEY=ctz_live_64Nym3Qa8PZixs5TsZ1UahDDJWMkG6hpVt4oka
-```
-
-⚠️ Esta key está visible en el bundle de la app. Para producción, implementar un proxy backend.
-
----
-
-*Fin del documento de traspaso — Última actualización: 20-Jun-2026*
+*Fin del documento de traspaso — Última actualización: 21-Jun-2026*
