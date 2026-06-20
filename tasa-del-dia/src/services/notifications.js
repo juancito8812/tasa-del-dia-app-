@@ -46,18 +46,24 @@ function wasEnteredToday(updatedAt) {
  * @param {string|null} bcvLunesUpdatedAt - ISO timestamp de cuándo se ingresó la última tasa
  */
 export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
-  await cancelFridayReminder();
-
   const granted = await requestNotificationPermissions();
   if (!granted) return false;
+
+  // Solo cancelar la existente si vamos a crear una nueva
+  // (evita error innecesario si no hay notificación previa)
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const hasExisting = scheduled.some(n => n.identifier === REMINDER_NOTIFICATION_ID);
+    if (hasExisting) {
+      await Notifications.cancelScheduledNotificationAsync(REMINDER_NOTIFICATION_ID);
+    }
+  } catch {}
 
   const now = new Date();
   const isFriday = now.getDay() === 5;
   const alreadyEntered = isFriday && wasEnteredToday(bcvLunesUpdatedAt);
 
-  // Si hoy es viernes y ya ingresó la tasa, el weekly trigger se disparará el próximo viernes automáticamente
-  // (Expo WEEKLY usa: 1=Dom, 2=Lun, 3=Mar, 4=Mie, 5=Jue, 6=Vie, 7=Sáb)
-
+  // Expo WEEKLY weekday: 1=Dom, 2=Lun, 3=Mar, 4=Mie, 5=Jue, 6=Vie, 7=Sáb
   await Notifications.scheduleNotificationAsync({
     identifier: REMINDER_NOTIFICATION_ID,
     content: {
@@ -69,7 +75,7 @@ export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: 6, // 6 = Viernes (Expo: 1=Dom, 7=Sáb)
+      weekday: 6, // Viernes
       hour: 18,
       minute: 0,
       repeats: true,

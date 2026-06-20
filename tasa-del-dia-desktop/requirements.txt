@@ -5,7 +5,6 @@ plyer>=2.1
 pystray>=0.19
 Pillow>=10.0
 matplotlib>=3.7
-requests>=2.28
 
 # ─── Dependencias de desarrollo ─────────────────────────────────
 pytest>=8.0.0

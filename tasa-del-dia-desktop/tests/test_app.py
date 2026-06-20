@@ -309,9 +309,9 @@ class TestDoConversion:
         _setup_converter(app, tk_root)
         app.do_conversion()
 
-        app.result_from.config.assert_called_with(text="$100.00 USD")
-        app.result_to.config.assert_called_with(text="Bs. 6,050.00")
-        app.result_info.config.assert_called_with(text="Tasa: 1 USD = Bs. 60.50")
+        app.result_from.configure.assert_called_with(text="$100.00 USD")
+        app.result_to.configure.assert_called_with(text="Bs. 6,050.00")
+        app.result_info.configure.assert_called_with(text="Tasa: 1 USD = Bs. 60.50")
 
     def test_bs_to_usd(self, app, tk_root) -> None:
         """Bs → USD con tasa Paralelo."""
@@ -321,9 +321,9 @@ class TestDoConversion:
 
         app.do_conversion()
 
-        app.result_from.config.assert_called_with(text="Bs. 100.00")
-        app.result_to.config.assert_called_with(text="$1.38 USD")
-        app.result_info.config.assert_called_with(text="Tasa: Bs. 72.30 = 1 USD")
+        app.result_from.configure.assert_called_with(text="Bs. 100.00")
+        app.result_to.configure.assert_called_with(text="$1.38 USD")
+        app.result_info.configure.assert_called_with(text="Tasa: Bs. 72.30 = 1 USD")
 
     def test_rate_not_available(self, app, tk_root) -> None:
         """Tasa no disponible → mensaje de error."""
@@ -333,7 +333,7 @@ class TestDoConversion:
 
         app.do_conversion()
 
-        app.result_to.config.assert_called_with(text="Tasa no disponible")
+        app.result_to.configure.assert_called_with(text="Tasa no disponible")
 
     def test_invalid_amount(self, app, tk_root) -> None:
         """Monto inválido → mensaje de error."""
@@ -343,14 +343,14 @@ class TestDoConversion:
 
         app.do_conversion()
 
-        app.result_to.config.assert_called_with(text="Monto inválido")
+        app.result_to.configure.assert_called_with(text="Monto inválido")
 
     def test_empty_amount(self, app, tk_root) -> None:
         """Monto vacío → no hace nada."""
         _setup_converter(app, tk_root)
         app.amount_entry.delete(0, "end")
-        app.result_from.config.reset_mock()
-        app.result_to.config.reset_mock()
+        app.result_from.configure.reset_mock()
+        app.result_to.configure.reset_mock()
 
         app.do_conversion()
 
@@ -362,8 +362,8 @@ class TestDoConversion:
         _setup_converter(app, tk_root)
         app.amount_entry.delete(0, "end")
         app.amount_entry.insert(0, "0")
-        app.result_from.config.reset_mock()
-        app.result_to.config.reset_mock()
+        app.result_from.configure.reset_mock()
+        app.result_to.configure.reset_mock()
 
         app.do_conversion()
 
@@ -375,8 +375,8 @@ class TestDoConversion:
         _setup_converter(app, tk_root)
         app.amount_entry.delete(0, "end")
         app.amount_entry.insert(0, "-50")
-        app.result_from.config.reset_mock()
-        app.result_to.config.reset_mock()
+        app.result_from.configure.reset_mock()
+        app.result_to.configure.reset_mock()
 
         app.do_conversion()
 
@@ -391,8 +391,8 @@ class TestDoConversion:
 
         app.do_conversion()
 
-        app.result_from.config.assert_called_with(text="$100.00 USD")
-        app.result_to.config.assert_called_with(text="Bs. 5,850.00")
+        app.result_from.configure.assert_called_with(text="$100.00 USD")
+        app.result_to.configure.assert_called_with(text="Bs. 5,850.00")
 
     def test_bs_to_usd_with_euro(self, app, tk_root) -> None:
         """Bs → USD usando tasa Euro."""
@@ -402,7 +402,7 @@ class TestDoConversion:
 
         app.do_conversion()
 
-        app.result_to.config.assert_called_with(text="$1.54 USD")
+        app.result_to.configure.assert_called_with(text="$1.54 USD")
 
     def test_uses_comma_as_decimal(self, app, tk_root) -> None:
         """Monto con coma decimal se convierte a punto."""
@@ -413,7 +413,7 @@ class TestDoConversion:
         app.do_conversion()
 
         # 100.50 * 60.5 = 6080.25
-        app.result_to.config.assert_called_with(text="Bs. 6,080.25")
+        app.result_to.configure.assert_called_with(text="Bs. 6,080.25")
 
 
 class TestSetMode:

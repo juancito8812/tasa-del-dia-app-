@@ -495,9 +495,11 @@ def build_history_tab():
 def hist_search_date():
     inp = ctrl.get("hist_date_input")
     if inp and inp.value:
-        global _hist_selected_date
-        _hist_selected_date = inp.value.strip()
-        update_history_tab()
+        date_key = parse_date_from_display(inp.value.strip())
+        if date_key:
+            global _hist_selected_date
+            _hist_selected_date = date_key
+            update_history_tab()
 
 
 def update_history_tab():
@@ -510,7 +512,7 @@ def update_history_tab():
     if chips:
         chips.controls.clear()
         for d in dates[:20]:
-            lbl = ft.TextButton(text=d, on_click=lambda e, dt=d: select_hist_date(dt))
+            lbl = ft.TextButton(text=format_date_key(d), on_click=lambda e, dt=d: select_hist_date(dt))
             chips.controls.append(lbl)
         page.update()
 
@@ -538,8 +540,8 @@ def edit_bcv_lunes():
             if val > 0:
                 _bcv_lunes = val
                 _bcv_lunes_updated_at = datetime.now().isoformat()
-                save_config(bcv_lunes=val, bcv_lunes_updated_at=_bcv_lunes_updated_at)
-                set_manual_historical_rate(val, _bcv_lunes_updated_at)
+                save_config(bcv_lunes_value=val)
+                set_manual_historical_rate(get_today_key(), bcv=val)
                 update_rate_cards(_rates)
                 update_spreads(_rates.get("bcv"), _rates.get("parallel"))
                 if page:

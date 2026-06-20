@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -363,6 +363,7 @@ function createStyles(C) {
 // ─── Helpers ──────────────────────────────────────────────────────
 
 function parseDDMMYYYY(text) {
+  // Acepta DD/MM/AAAA, DDMMAAAA o con separadores varios
   const cleaned = text.replace(/[^0-9]/g, '');
   if (cleaned.length !== 8) return null;
   const dd = parseInt(cleaned.slice(0, 2), 10);
@@ -398,7 +399,7 @@ function formatCurrency(v) {
 
 export default function HistoryScreen() {
   const { colors: C, isDark } = useTheme();
-  const styles = createStyles(C);
+  const styles = useMemo(() => createStyles(C), [C]);
 
   const [ratesData, setRatesData] = useState([]);
   const [selectedDateKey, setSelectedDateKey] = useState(null);
@@ -465,7 +466,7 @@ export default function HistoryScreen() {
     Keyboard.dismiss();
     const parsed = parseDDMMYYYY(customDateText);
     if (!parsed) {
-      Alert.alert('Fecha inválida', 'Ingresa 8 dígitos (ej: 13062026 para 13/06/2026)');
+      Alert.alert('Fecha inválida', 'Ingresa la fecha en formato DD/MM/AAAA (ej: 13/06/2026)');
       return;
     }
     const exists = ratesData.find(r => r.dateKey === parsed);
@@ -669,7 +670,7 @@ export default function HistoryScreen() {
                 <View style={styles.customDateRow}>
                   <TextInput
                     style={styles.customDateInput}
-                    placeholder="DDMMAAAA (ej: 13062026)"
+                    placeholder="DD/MM/AAAA (ej: 13/06/2026)"
                     placeholderTextColor={C.textMuted}
                     value={customDateText}
                     onChangeText={setCustomDateText}

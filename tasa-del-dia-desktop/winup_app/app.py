@@ -1383,6 +1383,81 @@ def _check_reminder():
         return
     global _reminder_shown_this_friday
     _reminder_shown_this_friday = True
+    _show_reminder_popup()
+
+
+# ─── Reminder Popup ────────────────────────────────────────────
+
+def _show_reminder_popup():
+    """Muestra un popup de recordatorio de viernes."""
+    from PySide6.QtWidgets import QDialog, QPushButton, QVBoxLayout, QHBoxLayout, QLabel
+    cols = c()
+    entered_today = _was_entered_today()
+
+    dialog = QDialog()
+    dialog.setWindowTitle("Recordatorio BCV (Lunes)")
+    dialog.setFixedSize(340, 200)
+    dialog.setStyleSheet(f"background-color: {cols['bg']};")
+    dialog.setWindowFlags(dialog.windowFlags() | Qt.WindowType.WindowStaysOnTopHint)
+
+    layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(20, 20, 20, 20)
+    layout.setAlignment(Qt.AlignCenter)
+
+    icon = QLabel("✅" if entered_today else "📅")
+    icon.setStyleSheet(f"font-size: 28px; background: transparent;")
+    icon.setAlignment(Qt.AlignCenter)
+    layout.addWidget(icon)
+
+    if entered_today:
+        title = _ql("Ya ingresaste la tasa de hoy",
+                     f"font-size: 12px; font-weight: bold; color: {cols['primary']};")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        sub = _ql("Recuerda revisar si el BCV publico una nueva.",
+                   f"font-size: 9px; color: {cols['secondary']};")
+        sub.setAlignment(Qt.AlignCenter)
+        sub.setWordWrap(True)
+        layout.addWidget(sub)
+    else:
+        title = _ql("¿Ya viste la tasa del lunes?",
+                     f"font-size: 12px; font-weight: bold; color: {cols['primary']};")
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
+        sub = _ql("El BCV publico la tasa del lunes. ¡Ingresala en la app!",
+                   f"font-size: 9px; color: {cols['secondary']};")
+        sub.setAlignment(Qt.AlignCenter)
+        sub.setWordWrap(True)
+        layout.addWidget(sub)
+
+    btn_row = QFrame()
+    btn_row.setStyleSheet("background: transparent;")
+    bl = QHBoxLayout(btn_row)
+    bl.setContentsMargins(0, 12, 0, 0)
+
+    enter_btn = QPushButton("Ingresar tasa")
+    enter_btn.setStyleSheet(f"background-color: {cols['bcv_lunes']}; color: #ffffff; border-radius: 6px; padding: 6px 12px;")
+    enter_btn.clicked.connect(lambda: (_edit_bcv_lunes_dialog(), dialog.accept()))
+    bl.addWidget(enter_btn)
+
+    later_btn = QPushButton("Recordar despues")
+    later_btn.setStyleSheet(f"background-color: {cols['input_bg']}; color: {cols['secondary']}; border-radius: 6px; padding: 6px 12px;")
+    later_btn.clicked.connect(dialog.reject)
+    bl.addWidget(later_btn)
+
+    layout.addWidget(btn_row)
+    dialog.exec()
+
+
+def _was_entered_today() -> bool:
+    """Verifica si la tasa BCV Lunes fue ingresada hoy."""
+    if not _bcv_lunes_updated_at:
+        return False
+    try:
+        updated = datetime.fromisoformat(_bcv_lunes_updated_at.replace("Z", "+00:00"))
+        return updated.date() == datetime.now().date()
+    except (ValueError, TypeError):
+        return False
 
 
 # ─── BCV Lunes Dialog ──────────────────────────────────────────

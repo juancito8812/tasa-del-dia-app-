@@ -526,6 +526,8 @@ export default function ConverterScreen() {
   const copyTimeoutRef = useRef(null);
   const pasteTimeoutRef = useRef(null);
 
+  const mountedRef = useRef(true);
+
   const loadRates = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
@@ -535,6 +537,7 @@ export default function ConverterScreen() {
         fetchWithOfflineFallback(),
         getStoredBCVLunes(),
       ]);
+      if (!mountedRef.current) return;
 
       const { data: apiData, fromCache, error: fetchError, cacheInfo } = result;
 
@@ -574,9 +577,11 @@ export default function ConverterScreen() {
   }, []);
 
   useEffect(() => {
-    const mounted = { current: true };
+    mountedRef.current = true;
     loadRates();
-    return () => { mounted.current = false; };
+    return () => {
+      mountedRef.current = false;
+    };
   }, [loadRates]);
 
   // Recargar BCV Lunes cada vez que se enfoca la pestaña (sincronización con RatesScreen)

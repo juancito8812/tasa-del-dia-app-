@@ -20,25 +20,25 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     }
     return BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (error) {
-    console.log("Background task error:", error);
+    // Silently fail — background task errors are expected when offline
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
 
 export async function registerBackgroundFetchAsync() {
   try {
-    return BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
+    return await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
       minimumInterval: 60 * 60 * 4, // 4 hours
       stopOnTerminate: false, 
       startOnBoot: true,
     });
   } catch (err) {
-    console.log("Task registration failed:", err);
+    // Silently fail — may not be available on all devices
   }
 }
 
 export async function unregisterBackgroundFetchAsync() {
   try {
-    return BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
+    return await BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
   } catch (err) {}
 }

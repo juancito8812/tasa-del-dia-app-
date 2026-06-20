@@ -21,7 +21,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
-import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled, saveHistoricalRate, getTodayKey } from '../services/api';
+import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled as persistReminderEnabled, saveHistoricalRate, getTodayKey } from '../services/api';
 import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
 import AutoRefreshBar from '../components/AutoRefreshBar';
@@ -142,7 +142,7 @@ export default function RatesScreen() {
   });
   const [tasaBCVLunes, setTasaBCVLunes] = useState(null);
   const [bcvLunesUpdatedAt, setBcvLunesUpdatedAt] = useState(null);
-  const [reminderEnabled, setReminderEnabledState] = useState(false);
+  const [reminderEnabled, setReminderEnabledLocal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -208,7 +208,7 @@ export default function RatesScreen() {
     });
     getReminderEnabled().then((enabled) => {
       if (mounted.current) {
-        setReminderEnabledState(enabled);
+        setReminderEnabledLocal(enabled);
         if (enabled) {
           ensureReminderScheduled();
         }
@@ -331,15 +331,15 @@ export default function RatesScreen() {
     if (value) {
       const success = await scheduleFridayReminder(bcvLunesUpdatedAt);
       if (success) {
-        setReminderEnabledState(true);
-        setReminderEnabled(true);
+        setReminderEnabledLocal(true);
+        persistReminderEnabled(true);
       } else {
         Alert.alert('Permiso requerido', 'Para activar el recordatorio, debes permitir las notificaciones en la configuración del dispositivo.');
       }
     } else {
       await cancelFridayReminder();
-      setReminderEnabledState(false);
-      setReminderEnabled(false);
+      setReminderEnabledLocal(false);
+      persistReminderEnabled(false);
     }
   };
 

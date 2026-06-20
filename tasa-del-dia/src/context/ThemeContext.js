@@ -12,6 +12,7 @@ const ThemeContext = createContext({
   setTheme: () => {},
   isDark: true,
   isSystem: true,
+  loaded: true,
 });
 
 export function ThemeProvider({ children }) {
