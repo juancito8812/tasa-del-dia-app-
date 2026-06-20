@@ -21,7 +21,6 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
-import AutoRefreshBar from '../components/AutoRefreshBar';
 import useAutoRefresh from '../hooks/useAutoRefresh';
 
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000, 50000];
@@ -128,7 +127,7 @@ function getRateTypes(C) {
     { key: 'paralelo', label: 'Paralelo', color: C.highlight },
     { key: 'binance_p2p', label: 'Binance P2P', color: C.warning },
     { key: 'euro', label: 'Euro (BCV)', color: C.info },
-    { key: 'bcv_lunes', label: 'BCV (Lunes)', color: C.bcvLunes || '#a855f7' },
+    { key: 'bcv_lunes', label: 'BCV (Lunes)', color: C.bcvLunes },
   ];
 }
 
@@ -603,7 +602,7 @@ export default function ConverterScreen() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
-  const { countdown, resetCountdown } = useAutoRefresh(useCallback(() => loadRates(true), [loadRates]));
+  useAutoRefresh(useCallback(() => loadRates(true), [loadRates]));
   const getCurrentRate = () => rates[selectedRate];
 
   const handleConvert = () => {
@@ -664,7 +663,7 @@ export default function ConverterScreen() {
     return { diff, diffPercent, barPercent: Math.min((diffPercent / 30) * 100, 100), barColor: isHigh ? C.highlight : isMedium ? C.warning : C.success };
   })();
 
-  const bcvLunesColor = C.bcvLunes || '#a855f7';
+  const bcvLunesColor = C.bcvLunes;
 
   const handleChangeText = (text) => { setRawAmount(extractRawDigits(text)); };
   const displayAmount = rawAmount ? formatRawDisplay(rawAmount) : '';
@@ -677,7 +676,7 @@ export default function ConverterScreen() {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + insets.bottom : 0}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { loadRates(true); resetCountdown(); }} tintColor={C.highlight} colors={[C.highlight]} progressBackgroundColor={C.secondary} />}>
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadRates(true)} tintColor={C.highlight} colors={[C.highlight]} progressBackgroundColor={C.secondary} />}>
           <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }) }] }}>
           <View style={styles.header}>
             <View style={styles.headerRow}>
@@ -697,8 +696,6 @@ export default function ConverterScreen() {
               </View>
             )}
           </View>
-
-          <AutoRefreshBar countdown={countdown} compact />
 
           <View style={styles.converterCard}>
             <View style={[styles.cardGlow, { backgroundColor: currentColor }]} />

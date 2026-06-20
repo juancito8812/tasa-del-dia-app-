@@ -24,7 +24,6 @@ import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled as persistReminderEnabled, saveHistoricalRate, getTodayKey } from '../services/api';
 import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
-import AutoRefreshBar from '../components/AutoRefreshBar';
 import useAutoRefresh from '../hooks/useAutoRefresh';
 
 function createStyles(C) {
@@ -261,14 +260,11 @@ export default function RatesScreen() {
     };
   }, [offlineMode, fetchWithOfflineFallback]);
 
+  useAutoRefresh(useCallback(() => loadRates(true), [loadRates]));
+
   const onRefresh = () => {
     loadRates(true);
-    resetCountdown();
   };
-
-  const { countdown, resetCountdown } = useAutoRefresh(
-    useCallback(() => loadRates(true), [loadRates])
-  );
 
   const handleEditBCVLunes = () => {
     setEditValue(tasaBCVLunes ? String(tasaBCVLunes) : '');
@@ -276,7 +272,9 @@ export default function RatesScreen() {
   };
 
   const handleSaveBCVLunes = () => {
-    const parsed = parseFloat(editValue.replace(',', '.'));
+    // Normaliza formato español (ej: "28.028,33" → 28028.33)
+    const normalized = editValue.replace(/\./g, '').replace(',', '.');
+    const parsed = parseFloat(normalized);
     if (!isNaN(parsed) && parsed > 0) {
       setTasaBCVLunes(parsed);
       const now = new Date().toISOString();
@@ -322,7 +320,7 @@ export default function RatesScreen() {
         : C.success
       : C.textMuted;
 
-  const bcvLunesColor = C.bcvLunes || '#a855f7';
+  const bcvLunesColor = C.bcvLunes;
 
 
   const handleToggleReminder = async (value) => {
@@ -388,8 +386,6 @@ export default function RatesScreen() {
             </View>
           )}
         </View>
-
-        <AutoRefreshBar countdown={countdown} compact />
 
         <ScrollView
           style={styles.scrollView}

@@ -112,6 +112,7 @@ Cuando no hay conexión:
 - ✅ El conversor Bs/USD sigue funcionando
 - ✅ Aparece un banner indicando modo offline
 - ✅ Se reintenta cada 30 segundos hasta recuperar conexión
+- ✅ Las tasas se actualizan automáticamente en background cada 20 minutos
 
 ---
 
@@ -198,7 +199,7 @@ skills/
 <div align="center">
   <p>Hecho con ❤️ para Venezuela
 
-<!-- Última actualización: 20-06-2026 --></p>
+<!-- Última actualización: 21-06-2026 --></p>
   <p>
     <a href="https://github.com/juancito8812/tasa-del-dia-app-/issues">Reportar un problema</a>
     ·

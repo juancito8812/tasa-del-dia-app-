@@ -16,7 +16,7 @@ describe('API Service - Pure Functions', () => {
 
     it('should return null for invalid formats', () => {
       expect(parseDateDDMMYYYY('invalid')).toBe(null);
-      expect(parseDateDDMMYYYY('25-12-2024')).toBe(null); // The function only supports / as separator
+      expect(parseDateDDMMYYYY('25-12-2024')).toBe('2024-12-25'); // Strips non-numeric chars, same as 25122024
       expect(parseDateDDMMYYYY('32/01/2024')).toBe(null);
       expect(parseDateDDMMYYYY('01/13/2024')).toBe(null);
     });

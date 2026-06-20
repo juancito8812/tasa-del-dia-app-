@@ -253,35 +253,13 @@ export async function getHistoricalRates() {
 export async function saveHistoricalRate(dateKey, rates) {
   try {
     const all = await getHistoricalRates();
-    // Solo sobreescribe si no existe o si los nuevos datos son más completos
-    if (!all[dateKey] || rates.bcv !== null) {
-      all[dateKey] = {
-        bcv: rates.bcv ?? null,
-        paralelo: rates.paralelo ?? null,
-        binance_p2p: rates.binance_p2p ?? null,
-        euro: rates.euro ?? null,
-        fetchedAt: rates.fetchedAt ?? new Date().toISOString(),
-      };
-      await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
-    }
-  } catch {}
-}
-
-/**
- * Guarda manualmente las tasas para una fecha (ingreso manual del usuario).
- * @param {string} dateKey - "YYYY-MM-DD"
- * @param {{ bcv, paralelo, binance_p2p, euro }} rates
- */
-export async function setManualHistoricalRate(dateKey, rates) {
-  try {
-    const all = await getHistoricalRates();
     all[dateKey] = {
-      bcv: rates.bcv ?? null,
-      paralelo: rates.paralelo ?? null,
-      binance_p2p: rates.binance_p2p ?? null,
-      euro: rates.euro ?? null,
-      fetchedAt: new Date().toISOString(),
-      manual: true,
+      ...all[dateKey],
+      bcv: rates.bcv ?? all[dateKey]?.bcv ?? null,
+      paralelo: rates.paralelo ?? all[dateKey]?.paralelo ?? null,
+      binance_p2p: rates.binance_p2p ?? all[dateKey]?.binance_p2p ?? null,
+      euro: rates.euro ?? all[dateKey]?.euro ?? null,
+      fetchedAt: rates.fetchedAt ?? all[dateKey]?.fetchedAt ?? new Date().toISOString(),
     };
     await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
   } catch {}
@@ -299,13 +277,15 @@ export function getTodayKey() {
 }
 
 /**
- * Convierte fecha en formato DD/MM/AAAA a YYYY-MM-DD.
+ * Convierte DDMMAAAA o DD/MM/AAAA a YYYY-MM-DD.
  */
 export function parseDateDDMMYYYY(text) {
-  const parts = text.replace(/[^0-9/]/g, '').split('/');
-  if (parts.length !== 3) return null;
-  const [dd, mm, yyyy] = parts.map(Number);
-  if (!dd || !mm || !yyyy || dd > 31 || mm > 12 || yyyy < 2020 || yyyy > 2030) return null;
+  const cleaned = text.replace(/[^0-9]/g, '');
+  if (cleaned.length !== 8) return null;
+  const dd = parseInt(cleaned.slice(0, 2), 10);
+  const mm = parseInt(cleaned.slice(2, 4), 10);
+  const yyyy = parseInt(cleaned.slice(4, 8), 10);
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > 2030) return null;
   return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
 }
 

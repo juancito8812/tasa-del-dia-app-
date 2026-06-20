@@ -20,30 +20,34 @@ El proyecto se divide en dos partes:
 
 ## 🚀 Últimos Cambios Realizados (Sesión Actual - Junio 2026)
 
-Esta sesión aplicó **Ponytail Ultra** — limpieza YAGNI extremista en ambos proyectos.
+### 🐛 Bugs corregidos (app móvil)
 
----
+| Bug | Archivo | Fix |
+|-----|---------|-----|
+| **Data loss en historial** — `saveHistoricalRate` sobreescribía todo si BCV llegaba no-null, perdiendo paralelo/binance/euro | `api.js:253` | Ahora hace merge: `...all[dateKey], bcv: rates.bcv ?? old` |
+| **`handleSaveBCVLunes` truncaba decimales** — `parseFloat("28.028,33")` daba 28.028 en vez de 28028.33 | `RatesScreen.js:279` | Normaliza formato español antes de parsear |
+| **`parseDDMMYYYY` duplicada** — dos funciones con lógica similar en `api.js` y `HistoryScreen.js` | `HistoryScreen.js:365` | Eliminada la local, mejorada la de `api.js` para aceptar DDMMAAAA sin separadores |
 
-### 🗑️ Ponytail Ultra — Código eliminado/simplificado
+### 🗑️ Código eliminado
 
 | Archivo | Qué | Por qué |
 |---------|-----|--------|
-| `constants/index.js` | `export const COLORS` | **Dead export** — no se importaba en ningún lado |
-| `ThemeContext.js` | `tick` state + `Appearance.addChangeListener` | **Redundante** — `useColorScheme()` ya re-renderiza al cambiar el tema del sistema |
-| `App.js` | `AnimatedTabIcon` → `TabIcon` simple | **Flourish innecesario** — bounce animation que nadie nota (20 líneas → 8) |
-| `RatesScreen.js` | Variable `mounted` muerta en auto-save useEffect | **Dead code** — declarada pero nunca usada |
+| `AutoRefreshBar.js` + test | Componente visual de cuenta regresiva | El timer se veía mal; se reemplazó por auto-refresh silencioso en background |
+| `api.js` — `setManualHistoricalRate()` | Función de ingreso manual de historial | Nunca se llamaba desde ningún lado (dead code) |
 
-### 📦 Skills cargadas desde mi-repo-de-skills
+### 🔧 Mejoras
 
-Se copiaron **14 skills nuevas** de Superpowers + Ponytail al proyecto:
-- `brainstorming`, `dispatching-parallel-agents`, `executing-plans`, `finishing-a-development-branch`, `ponytail`, `receiving-code-review`, `requesting-code-review`, `subagent-driven-development`, `systematic-debugging`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `writing-plans`, `writing-skills`
-
-Ahora el proyecto tiene **40+ skills** en total.
+| Archivo | Qué |
+|---------|-----|
+| `useAutoRefresh.js` | Simplificado: solo el intervalo de refresh, sin state de countdown ni reset |
+| `RatesScreen.js`, `ConverterScreen.js` | `#a8557f` → `C.bcvLunes` (magic string eliminado) |
+| `useAutoRefresh.js` | Comentario corregido: 1200s = 20min (antes decía 1500s = 25min) |
+| `api.test.js` | Test actualizado para nueva `parseDateDDMMYYYY` más flexible |
 
 ### 🧪 Tests
 
-**Mobile:** 73 tests, 10 suites — **100% passing** ✅
-**Desktop:** 255 tests passing, 9 pre-existing failures (no changes) ✅
+**Mobile:** 62 tests, 9 suites — **100% passing** ✅
+**Desktop:** sin cambios en esta sesión
 
 ---
 

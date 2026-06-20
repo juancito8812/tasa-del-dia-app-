@@ -16,7 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
-import { getHistoricalRates, formatDateKey } from '../services/api';
+import { getHistoricalRates, formatDateKey, parseDateDDMMYYYY } from '../services/api';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -362,17 +362,6 @@ function createStyles(C) {
 
 // ─── Helpers ──────────────────────────────────────────────────────
 
-function parseDDMMYYYY(text) {
-  // Acepta DD/MM/AAAA, DDMMAAAA o con separadores varios
-  const cleaned = text.replace(/[^0-9]/g, '');
-  if (cleaned.length !== 8) return null;
-  const dd = parseInt(cleaned.slice(0, 2), 10);
-  const mm = parseInt(cleaned.slice(2, 4), 10);
-  const yyyy = parseInt(cleaned.slice(4, 8), 10);
-  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > 2030) return null;
-  return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
-}
-
 function getWeekDay(dateKey) {
   const [y, m, d] = dateKey.split('-').map(Number);
   const date = new Date(y, m - 1, d);
@@ -464,7 +453,7 @@ export default function HistoryScreen() {
 
   const handleCustomDate = () => {
     Keyboard.dismiss();
-    const parsed = parseDDMMYYYY(customDateText);
+    const parsed = parseDateDDMMYYYY(customDateText);
     if (!parsed) {
       Alert.alert('Fecha inválida', 'Ingresa la fecha en formato DD/MM/AAAA (ej: 13/06/2026)');
       return;
