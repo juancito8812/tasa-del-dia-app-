@@ -87,11 +87,14 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Generar proyecto nativo (prebuild)
+        env:
+          COTIZAVE_API_KEY: ${{ secrets.COTIZAVE_API_KEY }}
         run: npx expo prebuild --clean --non-interactive
 
       - name: Compilar APK localmente (GitHub Runner)
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          COTIZAVE_API_KEY: ${{ secrets.COTIZAVE_API_KEY }}
         timeout-minutes: 60
         run: |
           npx eas build \
