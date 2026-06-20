@@ -1,0 +1,15 @@
+🐎 Ponytail Ultra: limpieza YAGNI y carga de skills
+
+Mobile App (Expo):
+- constants/index.js: eliminado COLORS dead export (no usado)
+- ThemeContext.js: eliminado tick state + Appearance listener redundante
+- App.js: AnimatedTabIcon simplificado a TabIcon (sin bounce animation)
+- RatesScreen.js: eliminado mounted muerto en auto-save useEffect
+
+Docs:
+- README.md: actualizado conteo de skills (24→40+) y fecha
+- AI_HANDOFF.md: resumido con cambios Ponytail y skills cargadas
+
+Skills:
+- 14 nuevas skills cargadas desde mi-repo-de-skills (Superpowers+Ponytail)
+- rates_tab.py eliminado (código muerto, duplicado de app.py)

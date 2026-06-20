@@ -167,22 +167,26 @@ Cuando no hay conexión:
 
 ## 🧠 Agent Skills
 
-Este proyecto incluye **24 skills** del repositorio [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) — workflows estructurados para que agentes de IA sigan buenas prácticas de ingeniería de producción.
+Este proyecto incluye **40+ skills** combinando:
+- Skills base de [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills)
+- **Superpowers + Ponytail** skills de [mi-repo-de-skills](.agents/)
 
 | Ciclo | Skills incluidos |
 |-------|-----------------|
-| **🔍 Define** | `interview-me`, `idea-refine`, `spec-driven-development` |
-| **📋 Plan** | `planning-and-task-breakdown` |
-| **🛠 Build** | `incremental-implementation`, `test-driven-development`, `context-engineering`, `source-driven-development`, `doubt-driven-development`, `frontend-ui-engineering`, `api-and-interface-design` |
-| **✅ Verify** | `browser-testing-with-devtools`, `debugging-and-error-recovery` |
-| **👁️ Review** | `code-review-and-quality`, `code-simplification`, `security-and-hardening`, `performance-optimization` |
-| **🚢 Ship** | `git-workflow-and-versioning`, `ci-cd-and-automation`, `deprecation-and-migration`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch` |
+| **🔍 Define** | `interview-me`, `idea-refine`, `spec-driven-development`, `brainstorming`, `writing-plans` |
+| **📋 Plan** | `planning-and-task-breakdown`, `executing-plans`, `verification-before-completion` |
+| **🛠 Build** | `incremental-implementation`, `test-driven-development`, `context-engineering`, `source-driven-development`, `doubt-driven-development`, `frontend-ui-engineering`, `api-and-interface-design`, `subagent-driven-development` |
+| **✅ Verify** | `browser-testing-with-devtools`, `debugging-and-error-recovery`, `systematic-debugging` |
+| **👁️ Review** | `code-review-and-quality`, `code-simplification`, `security-and-hardening`, `performance-optimization`, `receiving-code-review`, `requesting-code-review` |
+| **🐎 Ponytail** | `ponytail` (minimalismo extremo: YAGNI, stdlib, one-liners) con modos `lite` / `full` / `ultra` |
+| **🚢 Ship** | `git-workflow-and-versioning`, `ci-cd-and-automation`, `deprecation-and-migration`, `documentation-and-adrs`, `observability-and-instrumentation`, `shipping-and-launch`, `finishing-a-development-branch`, `using-git-worktrees` |
+| **⚡ Superpowers** | `using-superpowers`, `dispatching-parallel-agents`, `writing-skills` |
 
 ### 📁 Estructura
 
 ```
 skills/
-├── 24 skills/           # Cada skill es un directorio con SKILL.md
+├── 40+ skills/          # Cada skill es un directorio con SKILL.md
 ├── agents/              # 4 personas especialistas (code-reviewer, security, test, webperf)
 ├── references/          # 5 checklists de referencia
 ├── commands/            # 8 comandos slash
@@ -194,7 +198,7 @@ skills/
 <div align="center">
   <p>Hecho con ❤️ para Venezuela
 
-<!-- Última actualización: 11-06-2026 --></p>
+<!-- Última actualización: 20-06-2026 --></p>
   <p>
     <a href="https://github.com/juancito8812/tasa-del-dia-app-/issues">Reportar un problema</a>
     ·

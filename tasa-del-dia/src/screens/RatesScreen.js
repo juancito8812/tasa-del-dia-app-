@@ -219,7 +219,6 @@ export default function RatesScreen() {
 
   // Auto-guardar tasas de hoy cada vez que se carguen exitosamente
   useEffect(() => {
-    const mounted = { current: true };
     if (data.tasaBCV !== null || data.tasaParalelo !== null) {
       const todayKey = getTodayKey();
       saveHistoricalRate(todayKey, {
@@ -230,7 +229,6 @@ export default function RatesScreen() {
         fetchedAt: data.usdFetchedAt,
       });
     }
-    return () => { mounted.current = false; };
   }, [data.tasaBCV, data.tasaParalelo, data.tasaBinanceP2P, data.tasaEuro, data.usdFetchedAt]);
 
   // ─── Retry automático cuando estamos offline ───────────────────

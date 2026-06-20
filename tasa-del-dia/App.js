@@ -13,23 +13,7 @@ import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
 
 const Tab = createBottomTabNavigator();
 
-function AnimatedTabIcon({ routeName, focused, color, size }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const prevFocused = useRef(focused);
-
-  useEffect(() => {
-    if (focused && !prevFocused.current) {
-      scaleAnim.setValue(0.75);
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 3,
-        tension: 200,
-        useNativeDriver: true,
-      }).start();
-    }
-    prevFocused.current = focused;
-  }, [focused, scaleAnim]);
-
+function TabIcon({ routeName, focused, color, size }) {
   let iconName;
   if (routeName === 'Tasas') {
     iconName = focused ? 'pulse' : 'pulse-outline';
@@ -38,12 +22,7 @@ function AnimatedTabIcon({ routeName, focused, color, size }) {
   } else if (routeName === 'Historial') {
     iconName = focused ? 'stats-chart' : 'stats-chart-outline';
   }
-
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Ionicons name={iconName} size={size} color={color} />
-    </Animated.View>
-  );
+  return <Ionicons name={iconName} size={size} color={color} />;
 }
 
 function AnimatedAppContent() {
@@ -96,7 +75,7 @@ function AnimatedAppContent() {
           screenOptions={({ route }) => ({
             headerShown: false,
             tabBarIcon: ({ focused, color, size }) => (
-              <AnimatedTabIcon routeName={route.name} focused={focused} color={color} size={size} />
+              <TabIcon routeName={route.name} focused={focused} color={color} size={size} />
             ),
             tabBarActiveTintColor: C.highlight,
             tabBarInactiveTintColor: C.textMuted,

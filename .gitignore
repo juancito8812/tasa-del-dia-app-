@@ -50,3 +50,4 @@ Desktop.ini
 # ─── Environment ───
 .env.local
 .env.production
+nul

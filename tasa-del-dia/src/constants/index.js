@@ -2,9 +2,6 @@ import Constants from 'expo-constants';
 import { darkTheme, lightTheme } from './themes';
 export { darkTheme, lightTheme };
 
-// Default export for backward compatibility (dark theme)
-export const COLORS = { ...darkTheme };
-
 const apiKeyFromConfig = Constants.expoConfig?.extra?.apiKey;
 
 if (!apiKeyFromConfig) {

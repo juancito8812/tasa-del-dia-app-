@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { useColorScheme, Appearance } from 'react-native';
+import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { darkTheme, lightTheme } from '../constants/themes';
 
@@ -19,16 +19,6 @@ export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
   const [themePref, setThemePref] = useState('system');
   const [loaded, setLoaded] = useState(false);
-  // Force re-render counter for Appearance changes
-  const [tick, setTick] = useState(0);
-
-  // Listen for system appearance changes and force re-render
-  useEffect(() => {
-    const subscription = Appearance.addChangeListener(() => {
-      setTick((t) => t + 1);
-    });
-    return () => subscription.remove();
-  }, []);
 
   // Load saved preference on mount
   useEffect(() => {
@@ -54,8 +44,7 @@ export function ThemeProvider({ children }) {
       return systemScheme === 'light' ? 'light' : 'dark';
     }
     return themePref;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [themePref, systemScheme, tick]);
+  }, [themePref, systemScheme]);
 
   const colors = useMemo(() => {
     return effectiveTheme === 'light' ? lightTheme : darkTheme;
