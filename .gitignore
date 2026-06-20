@@ -52,4 +52,7 @@ Desktop.ini
 .env.production
 nul
 
+# ─── Worktrees ───
+.worktrees/
+
 tasa-del-dia/android/
