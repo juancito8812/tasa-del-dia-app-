@@ -1,3 +1,8 @@
+"""
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+"""
+
 import sys
 import os
 import traceback

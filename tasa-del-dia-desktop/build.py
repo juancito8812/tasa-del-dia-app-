@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+[DEPRECATED] Use `build_flet.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
 Tasa del Día — Build .EXE
 --------------------------
 Script Python que compila la aplicación de escritorio a .EXE.

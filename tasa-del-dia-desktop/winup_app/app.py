@@ -1,4 +1,10 @@
+"""
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+"""
+
 import logging
+import threading
 from datetime import datetime
 from typing import Optional, Dict, Any, List, Tuple
 
@@ -58,6 +64,8 @@ theme_colors = {
         "input_text": "#0f0f1a",
     },
 }
+
+_lock = threading.Lock()
 
 current_theme_mode = "system"
 _current_theme = "dark"
@@ -858,9 +866,10 @@ def _update_conv_ui():
 
 def refresh_rates():
     global _is_loading
-    if _is_loading:
-        return
-    _is_loading = True
+    with _lock:
+        if _is_loading:
+            return
+        _is_loading = True
 
     _set_card_loading("card_bcv")
     _set_card_loading("card_parallel")
@@ -877,7 +886,8 @@ def refresh_rates():
     except Exception as e:
         _on_rates_error(str(e))
     finally:
-        _is_loading = False
+        with _lock:
+            _is_loading = False
 
 
 def _set_card_loading(key: str):
@@ -888,30 +898,32 @@ def _set_card_loading(key: str):
 
 def _on_rates_loaded(rates):
     global _rates, _converter_rates, _brecha_notified, _is_loading
-    _is_loading = False
-    _rates = rates
-    _converter_rates = {
-        "bcv": rates.get("bcv"),
-        "binance_p2p": rates.get("binance_p2p"),
-        "eur": rates.get("eur"),
-        "parallel": rates.get("parallel"),
-        "bcv_lunes": _bcv_lunes,
-    }
+    with _lock:
+        _is_loading = False
+        _rates = rates
+        _converter_rates = {
+            "bcv": rates.get("bcv"),
+            "binance_p2p": rates.get("binance_p2p"),
+            "eur": rates.get("eur"),
+            "parallel": rates.get("parallel"),
+            "bcv_lunes": _bcv_lunes,
+        }
     _update_rate_cards(rates)
     _update_converter_rate_labels()
     _update_spreads(rates.get("bcv"), rates.get("parallel"))
     _update_info_label(f"✓ Actualizado: {_format_time(rates.get('fetched_at'))}")
-
     bcv = rates.get("bcv")
     paralelo = rates.get("parallel")
     if bcv and paralelo and bcv > 0:
         brecha = ((paralelo - bcv) / bcv) * 100
         if brecha > 20 and not _brecha_notified:
             send_notification("⚠️ Brecha BCV vs Paralelo alta",
-                              f"La brecha es de {brecha:.1f}%.\nBCV: Bs. {bcv:,.2f} | Paralelo: Bs. {paralelo:,.2f}")
-            _brecha_notified = True
+                               f"La brecha es de {brecha:.1f}%.\nBCV: Bs. {bcv:,.2f} | Paralelo: Bs. {paralelo:,.2f}")
+            with _lock:
+                _brecha_notified = True
         elif brecha <= 20:
-            _brecha_notified = False
+            with _lock:
+                _brecha_notified = False
 
     save_cache_rates(rates)
     save_today_historical_rate(
@@ -927,12 +939,14 @@ def _on_rates_loaded(rates):
 
 def _on_rates_error(error_msg: str):
     global _is_loading
-    _is_loading = False
+    with _lock:
+        _is_loading = False
 
     cache = load_cache_rates()
     if cache and cache.get("bcv") is not None:
-        _rates = cache
-        _converter_rates = {
+        with _lock:
+            _rates = cache
+            _converter_rates = {
             "bcv": cache.get("bcv"),
             "binance_p2p": cache.get("binance_p2p"),
             "eur": cache.get("euro"),
@@ -1038,7 +1052,8 @@ def _update_info_label(text):
 
 def _set_offline_mode(offline, cached_at=""):
     global _offline_mode
-    _offline_mode = offline
+    with _lock:
+        _offline_mode = offline
     banner = _widgets.get("offline_banner")
     label = _widgets.get("offline_label")
     info = _widgets.get("info_label")

@@ -36,7 +36,7 @@ export async function fetchAllRates() {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `Error HTTP ${response.status}`);
+    throw new Error(error.message || `HTTP ${response.status} — el servidor rechazó la solicitud`);
   }
 
   const data = await response.json();
@@ -61,17 +61,13 @@ export async function fetchAllRates() {
   };
 }
 
-/**
- * Fetch BCV non-USD currencies (EUR, CNY, TRY, RUB).
- * Returns: { EUR: 96.45, ... }
- */
 export async function fetchBCVCurrencies() {
   const url = `${BASE_URL}/v1/fx/bcv/currencies`;
   const response = await fetchWithTimeout(url, { headers });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `Error HTTP ${response.status}`);
+    throw new Error(error.message || `HTTP ${response.status} — error al obtener tasas BCV`);
   }
 
   const data = await response.json();
@@ -141,24 +137,31 @@ export async function setReminderEnabled(enabled) {
 
 /**
  * Fetch all data needed for the app in parallel.
+ * Uses allSettled so one endpoint failing doesn't kill the other.
  */
 export async function fetchAllData() {
-  const [usdRates, bcvCurrencies] = await Promise.all([
+  const [usdResult, bcvResult] = await Promise.allSettled([
     fetchAllRates(),
     fetchBCVCurrencies(),
   ]);
+
+  const usdRates = usdResult.status === 'fulfilled' ? usdResult.value : null;
+  const bcvCurrencies = bcvResult.status === 'fulfilled' ? bcvResult.value : null;
+
+  if (!usdRates) {
+    throw new Error(usdResult.reason?.message || 'Error al obtener tasas USD');
+  }
 
   const result = {
     tasaBCV: usdRates.rates.reference?.mid ?? null,
     tasaParalelo: usdRates.rates.parallel?.mid ?? null,
     tasaBinanceP2P: usdRates.rates.binance?.mid ?? null,
-    tasaEuro: bcvCurrencies.rates.EUR ?? null,
+    tasaEuro: bcvCurrencies?.rates?.EUR ?? null,
     usdFetchedAt: usdRates.fetchedAt,
-    eurReferenceDate: bcvCurrencies.referenceDate,
-    eurCapturedAt: bcvCurrencies.capturedAt,
+    eurReferenceDate: bcvCurrencies?.referenceDate ?? null,
+    eurCapturedAt: bcvCurrencies?.capturedAt ?? null,
   };
 
-  // Save to offline cache on success
   saveCacheRates(result);
 
   return result;
@@ -173,18 +176,18 @@ export async function fetchWithOfflineFallback() {
     const data = await fetchAllData();
     return { data, fromCache: false, error: null };
   } catch (error) {
-    // Try loading from cache
+    const msg = error.message || '';
+    const isNetworkError = msg.includes('abort') || msg.includes('Network request failed') || msg.includes('fetch');
     const cache = await loadCacheRates();
     if (cache && (cache.tasaBCV !== null || cache.tasaParalelo !== null)) {
       return {
         data: cache,
         fromCache: true,
-        error: error.message || 'Error al obtener las tasas',
+        error: isNetworkError ? 'Sin conexión — mostrando datos guardados' : `Error de API: ${msg}`,
         cacheInfo: { cachedAt: cache.cachedAt },
       };
     }
-    // No cache available
-    return { data: null, fromCache: false, error: error.message || 'Error al obtener las tasas' };
+    return { data: null, fromCache: false, error: msg || 'Error al obtener las tasas' };
   }
 }
 

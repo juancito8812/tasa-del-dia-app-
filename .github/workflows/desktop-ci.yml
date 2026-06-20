@@ -1,0 +1,27 @@
+name: Desktop CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['tasa-del-dia-desktop/**']
+  pull_request:
+    branches: [main]
+    paths: ['tasa-del-dia-desktop/**']
+
+jobs:
+  test:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: tasa-del-dia-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: tasa-del-dia-desktop/requirements.txt
+      - run: pip install -r requirements.txt
+      - run: python -m pytest tests/ -v --cov=app --cov-report=term-missing
+        env:
+          CI: true

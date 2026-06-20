@@ -1,0 +1,33 @@
+name: Mobile CI
+
+on:
+  push:
+    branches: [main]
+    paths: ['tasa-del-dia/**']
+  pull_request:
+    branches: [main]
+    paths: ['tasa-del-dia/**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tasa-del-dia
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: tasa-del-dia/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npx expo lint
+        continue-on-error: true
+      - name: Typecheck
+        run: npx tsc --noEmit
+        continue-on-error: true
+      - run: npm test -- --ci --coverage
+        env:
+          CI: true

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+[DEPRECATED] Use `build_flet.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
 Tasa del Dia (WinUp) -- Build .EXE
 -----------------------------------
 Compila la version WinUp (PySide6) a .EXE.

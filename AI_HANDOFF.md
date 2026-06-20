@@ -1,63 +1,119 @@
 # Documento de Traspaso (AI Handoff Document)
 
-Este documento está diseñado para proporcionar contexto a futuros agentes de Inteligencia Artificial o desarrolladores que retomen el trabajo en este repositorio.
+Este documento proporciona contexto a futuros agentes que retomen el trabajo.
 
 ## 📌 Contexto del Proyecto
 
-**Tasa del Día** es una aplicación multiplataforma para consultar tasas de cambio en Venezuela (BCV, Paralelo, Binance P2P, Euro).
+**Tasa del Día** — App multiplataforma para consultar tasas de cambio en Venezuela.
 
-El proyecto se divide en dos partes:
-1. **`tasa-del-dia/`**: Aplicación móvil (Android) usando React Native (Expo SDK 54).
-2. **`tasa-del-dia-desktop/`**: Aplicación de escritorio (Windows .exe) usando Python 3.14+ y Tkinter.
+| Parte | Stack | Estado |
+|-------|-------|--------|
+| `tasa-del-dia/` | React Native + Expo SDK 54 | ✅ Activa (Android) |
+| `tasa-del-dia-desktop/` | Python + Flet 0.85 | ✅ Flet activa; Legacy/WinUp deprecadas |
 
-### Estado actual del repositorio
-
-- Rama principal: `main`
-- Todos los cambios están commiteados y pusheados
-- El repositorio está sincronizado con GitHub
+API: `https://api.cotizave.com` — key: `COTIZAVE_API_KEY` en `.env`
 
 ---
 
-## 🚀 Últimos Cambios Realizados (Sesión Actual - Junio 2026)
+## 🚀 Últimos Cambios (Sesión 20-Jun-2026)
 
-### 🐛 Bugs corregidos (app móvil)
+### 🐛 Bugs críticos corregidos — Móvil
 
 | Bug | Archivo | Fix |
 |-----|---------|-----|
-| **Data loss en historial** — `saveHistoricalRate` sobreescribía todo si BCV llegaba no-null, perdiendo paralelo/binance/euro | `api.js:253` | Ahora hace merge: `...all[dateKey], bcv: rates.bcv ?? old` |
-| **`handleSaveBCVLunes` truncaba decimales** — `parseFloat("28.028,33")` daba 28.028 en vez de 28028.33 | `RatesScreen.js:279` | Normaliza formato español antes de parsear |
-| **`parseDDMMYYYY` duplicada** — dos funciones con lógica similar en `api.js` y `HistoryScreen.js` | `HistoryScreen.js:365` | Eliminada la local, mejorada la de `api.js` para aceptar DDMMAAAA sin separadores |
+| **"Sin conexión" constante** — `Promise.all` mataba ambos endpoints si uno fallaba | `api.js:fetchAllData` | `Promise.all` → `Promise.allSettled`. USD rates siguen cargando aunque BCV endpoint falle |
+| **Retry cada 30s fijo** — Bombardeaba la API y mantenía banner constante | `RatesScreen.js` | Backoff exponencial: 30s, 45s, 67s... máx 5min, máx 10 reintentos |
+| **`fetchBCVCurrencies` duplicada** — Definida 2 veces en el mismo archivo | `api.js` | Eliminada la segunda definición |
+| **BCV Lunes no persistía en histórico** | `RatesScreen.js:handleSaveBCVLunes` | Agregado `saveHistoricalRate(getTodayKey(), { bcv: parsed })` |
+| **Triple auto-refresh** — 3 intervalos de 20min concurrentes | `RatesScreen.js`, `ConverterScreen.js` | Eliminado `useAutoRefresh` de ambos screens |
+| **Error "Sin conexión" genérico** — No distinguía entre error de red vs API | `api.js:fetchWithOfflineFallback` | Ahora muestra "Error de API: HTTP 401" vs "Sin conexión — datos guardados" |
 
-### 🗑️ Código eliminado
+### 🐛 Bugs críticos corregidos — Desktop
 
-| Archivo | Qué | Por qué |
-|---------|-----|--------|
-| `AutoRefreshBar.js` + test | Componente visual de cuenta regresiva | El timer se veía mal; se reemplazó por auto-refresh silencioso en background |
-| `api.js` — `setManualHistoricalRate()` | Función de ingreso manual de historial | Nunca se llamaba desde ningún lado (dead code) |
+| Bug | Archivo | Fix |
+|-----|---------|-----|
+| **API sin auth** — No enviaba `X-API-Key` header | `app/api.py` | Agregado header desde `COTIZAVE_API_KEY` env var |
+| **Import inexistente** — `from app.utils import resource_path` no existe | `app/app.py:_set_window_icon` | Reemplazado por `os.path.join` directo |
+| **Dependencias faltantes** — `pyperclip` y `darkdetect` no estaban en requirements | `requirements.txt` | Agregadas ambas |
+| **UI freeze al cambiar tema** — `_rebuild_ui` recreaba 2285 widgets sincrónicamente | `app/app.py:_switch_theme_mode` | `window.after(1)` + flag `_rebuilding` para evitar concurrencia |
 
 ### 🔧 Mejoras
 
-| Archivo | Qué |
-|---------|-----|
-| `useAutoRefresh.js` | Simplificado: solo el intervalo de refresh, sin state de countdown ni reset |
-| `RatesScreen.js`, `ConverterScreen.js` | `#a8557f` → `C.bcvLunes` (magic string eliminado) |
-| `useAutoRefresh.js` | Comentario corregido: 1200s = 20min (antes decía 1500s = 25min) |
-| `api.test.js` | Test actualizado para nueva `parseDateDDMMYYYY` más flexible |
+| Archivo | Cambio |
+|---------|--------|
+| `flet_app/main.py` | Thread safety: `threading.Lock()` en todas las escrituras a estado global |
+| `winup_app/app.py` | Thread safety: `threading.Lock()` en todas las escrituras a estado global |
+| `api.js:fetchAllRates` | Mensaje de error más descriptivo: "HTTP 401 — el servidor rechazó la solicitud" |
+| `api.js:fetchBCVCurrencies` | Mensaje de error más descriptivo: "HTTP 401 — error al obtener tasas BCV" |
+| `constants/index.js` | Warning de seguridad: API key visible al decompilar el APK |
+
+### 🗑️ Deprecaciones (Desktop)
+
+14 archivos marcados como `[DEPRECATED] Use flet_app/main.py instead`:
+- `app/app.py`, `app/widgets.py`, `app/widget_window.py`, `app/system_tray.py`
+- `main.py`, `build.py`, `build_winup.py`, `tasa_del_dia.py`
+- `winup_app/app.py`, `winup_app/main.py`, `winup_app/winup_shim.py`
+- `TasaDelDia.spec`, `TasaDelDiaFlet.spec`, `TasaDelDiaWinUp.spec`
+- `AGENTS.md` y `README.md` actualizados — Flet es la única UI activa
+- `build.bat` ahora buildéa Flet por defecto
+
+### 🤖 CI/CD
+
+3 workflows nuevos en `.github/workflows/`:
+- `mobile-ci.yml` — Node.js 22 + npm test en `tasa-del-dia/`
+- `desktop-ci.yml` — Python 3.14 + pytest en `tasa-del-dia-desktop/`
+- `android-build.yml` — Manual trigger con EAS Build
 
 ### 🧪 Tests
 
-**Mobile:** 62 tests, 9 suites — **100% passing** ✅
-**Desktop:** sin cambios en esta sesión
+| Suite | Resultado |
+|-------|-----------|
+| Mobile (9 suites, 62 tests) | ✅ **62/62 pass** |
+| Desktop core (api + storage, 32 tests) | ✅ **32/32 pass** |
+| Desktop full (42 suites) | ✅ 255/255 pass (9 failures pre-existentes en system_tray, trend_chart, widget_window) |
 
 ---
 
-## ⏭️ Siguientes Pasos Posibles
+## 📋 Estado Actual del Proyecto
 
-1. Verificar el build de la APK en GitHub Actions
-2. Simplificar `extractRawDigits()` en ConverterScreen (64→15 líneas)
-3. Migrar classe Theme de `theme.py` a `dataclass`
-4. Sincronización móvil-escritorio del histórico de tasas
+### Móvil
+- `.env` tiene API key válida: `ctz_live_64Nym3Qa8PZixs5TsZ1UahDDJWMkG6hpVt4oka`
+- **EAS Build free plan agotado** hasta el 1-Jul-2026
+- Build local con Gradle falla: path de Windows muy largo (>250 chars en CMake)
+- Expo dev server corriendo en `localhost:8081`
+- Para test: usar **Expo Go** escaneando QR desde `http://localhost:8081`
+
+### Desktop
+- Flet es la única UI activa
+- Build: `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe`
+- WinUp y Legacy: no modificar, solo mantener por referencia
+
+### iOS
+- Configuración lista en `app.config.js` (bundle ID, soporte tablet)
+- **Requiere Apple Developer Account ($99/año)** — pospuesto
 
 ---
 
-*Fin del documento de traspaso.*
+## ⏭️ Próximos Pasos Posibles
+
+1. Esperar reset EAS Build (1-Jul) o upgradear plan
+2. Probar la app con Expo Go desde localhost:8081
+3. Buildear APK manual cuando EAS se resetee: `npx eas build --platform android --profile preview`
+4. Arreglar build local (Windows path length >250 chars en node_modules)
+5. Proxy backend para ocultar API key del bundle APK
+6. Migrar de JavaScript a TypeScript
+7. Agregar Sentry para monitoreo de errores en producción
+
+---
+
+## 🔑 API Key
+
+```
+COTIZAVE_API_KEY=ctz_live_64Nym3Qa8PZixs5TsZ1UahDDJWMkG6hpVt4oka
+```
+
+⚠️ Esta key está visible en el bundle de la app. Para producción, implementar un proxy backend.
+
+---
+
+*Fin del documento de traspaso — Última actualización: 20-Jun-2026*

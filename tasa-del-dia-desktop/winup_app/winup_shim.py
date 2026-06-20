@@ -1,4 +1,8 @@
-"""WinUp shim — reemplaza import winup con PySide6 puro.
+"""
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
+WinUp shim — reemplaza import winup con PySide6 puro.
 Provee las mismas APIs (component, ui.Column, ui.Row, TabView, ScrollView, style)
 sin depender del paquete winup.
 """

@@ -1,4 +1,7 @@
 """
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
 Clase principal TasaDelDiaApp — aplicación de escritorio para tasas de cambio.
 """
 
@@ -67,6 +70,7 @@ class TasaDelDiaApp:
         self.rates: RatesDict = {}
         self.converter_rates: Dict[str, Any] = {}
         self.is_loading: bool = False
+        self._rebuilding: bool = False
         self._refresh_timer: Optional[str] = None
         self._theme_poll_timer: Optional[str] = None
         self._countdown: int = REFRESH_MINUTES * 60
@@ -123,9 +127,8 @@ class TasaDelDiaApp:
     def _set_window_icon(self) -> None:
         """Intenta establecer el icono de la ventana."""
         try:
-            from app.utils import resource_path  # type: ignore[attr-defined]
-            icon_path = resource_path("app_icon.ico")
-            if icon_path and __import__("os").path.exists(icon_path):
+            icon_path = os.path.join(os.path.dirname(__file__), "..", "assets", "app_icon.ico")
+            if os.path.exists(icon_path):
                 self.window.iconbitmap(icon_path)
         except Exception:
             pass
@@ -199,13 +202,17 @@ class TasaDelDiaApp:
             else:
                 self._set_offline_mode(True)
 
+        self._rebuilding = False
+
     def _switch_theme_mode(self) -> None:
         """Cambia al siguiente modo de tema."""
         modes = ["dark", "light", "system"]
         idx = modes.index(self.theme_mode)
         self.theme_mode = modes[(idx + 1) % len(modes)]
         logger.info("Cambiando tema a: %s", self.theme_mode)
-        self._rebuild_ui()
+        if not getattr(self, '_rebuilding', False):
+            self._rebuilding = True
+            self.window.after(1, self._rebuild_ui)
 
     def _theme_label(self) -> str:
         labels = {

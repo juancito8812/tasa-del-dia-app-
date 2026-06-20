@@ -3,6 +3,8 @@ import threading
 import time
 import webbrowser
 from datetime import datetime
+
+_lock = threading.Lock()
 from typing import Optional, Dict, Any, List, Tuple
 
 import sys
@@ -632,9 +634,10 @@ def start_reminder_check():
 
 def refresh_rates():
     global _is_loading
-    if _is_loading:
-        return
-    _is_loading = True
+    with _lock:
+        if _is_loading:
+            return
+        _is_loading = True
     set_card_loading("card_bcv")
     set_card_loading("card_parallel")
     set_card_loading("card_eur")
@@ -651,7 +654,8 @@ def refresh_rates():
     except Exception as e:
         on_rates_error(str(e))
     finally:
-        _is_loading = False
+        with _lock:
+            _is_loading = False
 
 
 def set_card_loading(key: str):
@@ -662,12 +666,13 @@ def set_card_loading(key: str):
 
 def on_rates_loaded(rates):
     global _rates, _converter_rates, _brecha_notified
-    _rates = rates
-    _converter_rates = {
-        "bcv": rates.get("bcv"), "binance_p2p": rates.get("binance_p2p"),
-        "eur": rates.get("eur"), "parallel": rates.get("parallel"),
-        "bcv_lunes": _bcv_lunes,
-    }
+    with _lock:
+        _rates = rates
+        _converter_rates = {
+            "bcv": rates.get("bcv"), "binance_p2p": rates.get("binance_p2p"),
+            "eur": rates.get("eur"), "parallel": rates.get("parallel"),
+            "bcv_lunes": _bcv_lunes,
+        }
     update_rate_cards(rates)
     update_conv_rate_labels()
     update_spreads(rates.get("bcv"), rates.get("parallel"))
@@ -679,9 +684,11 @@ def on_rates_loaded(rates):
         if brecha > 20 and not _brecha_notified:
             if page:
                 page.open(ft.SnackBar(content=ft.Text(f"⚠️ Brecha BCV vs Paralelo: {brecha:.1f}%")))
-            _brecha_notified = True
+            with _lock:
+                _brecha_notified = True
         elif brecha <= 20:
-            _brecha_notified = False
+            with _lock:
+                _brecha_notified = False
     save_cache_rates(rates)
     save_today_historical_rate(
         bcv=rates.get("bcv"), paralelo=rates.get("parallel"),
@@ -697,15 +704,17 @@ def on_rates_loaded(rates):
 
 def on_rates_error(error_msg: str):
     global _is_loading
-    _is_loading = False
+    with _lock:
+        _is_loading = False
     cache = load_cache_rates()
     if cache and cache.get("bcv") is not None:
-        _rates = cache
-        _converter_rates = {
-            "bcv": cache.get("bcv"), "binance_p2p": cache.get("binance_p2p"),
-            "eur": cache.get("euro"), "parallel": cache.get("paralelo"),
-            "bcv_lunes": _bcv_lunes,
-        }
+        with _lock:
+            _rates = cache
+            _converter_rates = {
+                "bcv": cache.get("bcv"), "binance_p2p": cache.get("binance_p2p"),
+                "eur": cache.get("euro"), "parallel": cache.get("paralelo"),
+                "bcv_lunes": _bcv_lunes,
+            }
         set_offline_mode(True, cache.get("cached_at", ""))
         update_rate_cards(cache)
         update_conv_rate_labels()
@@ -730,38 +739,40 @@ def on_rates_error(error_msg: str):
 # ─── UI Updates ───────────────────────────────────────────────
 
 def update_rate_cards(rates):
-    def upd(key, rate_key):
-        card = ctrl.get(key)
-        if not card:
-            return
-        val = rates.get(rate_key)
-        fetched = rates.get("fetched_at")
-        if val is not None:
-            card["rate_lbl"].value = f"{val:,.2f}"
-            card["usd_lbl"].value = f"1 USD = {val:,.2f} Bs."
-        else:
-            card["rate_lbl"].value = "—"
-            card["usd_lbl"].value = ""
-        ts = format_time(fetched)
-        card["time_lbl"].value = f"🕐 {ts}" if ts else ""
-    upd("card_bcv", "bcv")
-    upd("card_parallel", "parallel")
-    upd("card_eur", "eur")
-    upd("card_binance", "binance_p2p")
-    lc = ctrl.get("card_lunes")
-    if lc:
-        if _bcv_lunes is not None:
-            lc["rate_lbl"].value = f"{_bcv_lunes:,.2f}"
-            lc["time_lbl"].value = f"🕐 {format_time(_bcv_lunes_updated_at)}" if _bcv_lunes_updated_at else ""
-        else:
-            lc["rate_lbl"].value = "—"
+    with _lock:
+        def upd(key, rate_key):
+            card = ctrl.get(key)
+            if not card:
+                return
+            val = rates.get(rate_key)
+            fetched = rates.get("fetched_at")
+            if val is not None:
+                card["rate_lbl"].value = f"{val:,.2f}"
+                card["usd_lbl"].value = f"1 USD = {val:,.2f} Bs."
+            else:
+                card["rate_lbl"].value = "—"
+                card["usd_lbl"].value = ""
+            ts = format_time(fetched)
+            card["time_lbl"].value = f"🕐 {ts}" if ts else ""
+        upd("card_bcv", "bcv")
+        upd("card_parallel", "parallel")
+        upd("card_eur", "eur")
+        upd("card_binance", "binance_p2p")
+        lc = ctrl.get("card_lunes")
+        if lc:
+            if _bcv_lunes is not None:
+                lc["rate_lbl"].value = f"{_bcv_lunes:,.2f}"
+                lc["time_lbl"].value = f"🕐 {format_time(_bcv_lunes_updated_at)}" if _bcv_lunes_updated_at else ""
+            else:
+                lc["rate_lbl"].value = "—"
 
 
 def update_spreads(bcv, paralelo):
-    upd_spread("spread_bcv", bcv, paralelo)
-    upd_spread("cv_spread_bcv", bcv, paralelo)
-    upd_spread("spread_lunes", _bcv_lunes, paralelo)
-    upd_spread("cv_spread_lunes", _bcv_lunes, paralelo)
+    with _lock:
+        upd_spread("spread_bcv", bcv, paralelo)
+        upd_spread("cv_spread_bcv", bcv, paralelo)
+        upd_spread("spread_lunes", _bcv_lunes, paralelo)
+        upd_spread("cv_spread_lunes", _bcv_lunes, paralelo)
 
 
 def upd_spread(key, a, b):
@@ -809,7 +820,8 @@ def update_info_label(text: str):
 
 def set_offline_mode(offline: bool, cached_at: str = ""):
     global _offline_mode
-    _offline_mode = offline
+    with _lock:
+        _offline_mode = offline
     banner = ctrl.get("offline_banner")
     label = ctrl.get("offline_label")
     if banner and label:

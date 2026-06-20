@@ -1,5 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+# [DEPRECATED] Use build_flet.py instead.
+# This file is kept for reference only and will be removed in a future release.
 
 a = Analysis(
     ['flet_app\\main.py'],

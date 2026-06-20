@@ -57,20 +57,20 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-:: ─── 4. Compile .EXE ───
-echo %YELLOW%[4/4]^> Compilando .EXE (esto puede tomar 1-2 minutos)...%RESET%
+:: ─── 4. Compile .EXE (Flet) ───
+echo %YELLOW%[4/4]^> Compilando .EXE Flet (esto puede tomar 1-2 minutos)...%RESET%
 echo.
 
 :: Clean old build artifacts
-if exist "dist\TasaDelDia.exe" (
-    del /f /q "dist\TasaDelDia.exe" >nul 2>&1
+if exist "dist\TasaDelDiaFlet.exe" (
+    del /f /q "dist\TasaDelDiaFlet.exe" >nul 2>&1
     echo   [..] Limpiando build anterior...
 )
-if exist "build\TasaDelDia" (
-    rmdir /s /q "build\TasaDelDia" >nul 2>&1
+if exist "dist\TasaDelDia" (
+    rmdir /s /q "dist\TasaDelDia" >nul 2>&1
 )
 
-python -m PyInstaller --clean TasaDelDia.spec
+python build_flet.py --quick
 if %errorlevel% neq 0 (
     echo.
     echo %RED%╔══════════════════════════════════════════╗%RESET%
@@ -81,18 +81,18 @@ if %errorlevel% neq 0 (
 )
 
 :: ─── Success ───
-for %%i in ("dist\TasaDelDia.exe") do set FILE_SIZE=%%~zi
+for %%i in ("dist\TasaDelDiaFlet.exe") do set FILE_SIZE=%%~zi
 set /a FILE_SIZE_MB=FILE_SIZE / 1048576
 
 echo.
 echo %GREEN%╔══════════════════════════════════════════╗%RESET%
-echo %GREEN%║   [OK] EXE CREADO EXITOSAMENTE!         ║%RESET%
+echo %GREEN%║   [OK] EXE FLET CREADO EXITOSAMENTE!    ║%RESET%
 echo %GREEN%╚══════════════════════════════════════════╝%RESET%
 echo.
-echo %CYAN%  Ubicacion:%RESET% dist\TasaDelDia.exe
+echo %CYAN%  Ubicacion:%RESET% dist\TasaDelDiaFlet.exe
 echo %CYAN%  Tamano:%RESET%    %FILE_SIZE_MB% MB
 echo.
-echo Puedes mover TasaDelDia.exe a cualquier
+echo Puedes mover TasaDelDiaFlet.exe a cualquier
 echo carpeta y ejecutarlo directamente.
 echo.
 echo %YELLOW%TIP: Para recompilar rapido, solo ejecuta este batch de nuevo.%RESET%

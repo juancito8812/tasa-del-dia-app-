@@ -1,4 +1,7 @@
 """
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
 Componentes UI reutilizables: RateCard, SpreadIndicator, TimerBar.
 """
 

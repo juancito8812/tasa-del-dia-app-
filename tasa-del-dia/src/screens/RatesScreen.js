@@ -24,7 +24,7 @@ import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled as persistReminderEnabled, saveHistoricalRate, getTodayKey } from '../services/api';
 import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
-import useAutoRefresh from '../hooks/useAutoRefresh';
+
 
 function createStyles(C) {
   return StyleSheet.create({
@@ -230,37 +230,39 @@ export default function RatesScreen() {
     }
   }, [data.tasaBCV, data.tasaParalelo, data.tasaBinanceP2P, data.tasaEuro, data.usdFetchedAt]);
 
-  // ─── Retry automático cuando estamos offline ───────────────────
-  // Intenta reconectar cada 30s; en cuanto la API responde,
-  // actualiza las tasas y sale del modo offline.
-  const retryIntervalRef = useRef(null);
+  // ─── Retry automático con backoff cuando estamos offline ──────
+  const retryRef = useRef(null);
+  const retryCountRef = useRef(0);
 
   useEffect(() => {
     if (offlineMode) {
-      retryIntervalRef.current = setInterval(async () => {
+      retryCountRef.current = 0;
+      const tryReconnect = async () => {
+        retryCountRef.current++;
+        if (retryCountRef.current > 10) return;
         try {
           const { data: result, fromCache } = await fetchWithOfflineFallback();
           if (result && !fromCache) {
-            // ¡Conexión recuperada!
             setData(result);
             setOfflineMode(false);
             setOfflineCachedAt(null);
             setError(null);
+            retryCountRef.current = 0;
           }
-        } catch {
-          // Sigue sin conexión, esperar al próximo intento
-        }
-      }, 30000);
+        } catch {}
+        const delay = Math.min(30000 * Math.pow(1.5, retryCountRef.current - 1), 300000);
+        retryRef.current = setTimeout(tryReconnect, delay);
+      };
+      retryRef.current = setTimeout(tryReconnect, 30000);
     }
     return () => {
-      if (retryIntervalRef.current) {
-        clearInterval(retryIntervalRef.current);
-        retryIntervalRef.current = null;
+      if (retryRef.current) {
+        clearTimeout(retryRef.current);
+        retryRef.current = null;
       }
+      retryCountRef.current = 0;
     };
-  }, [offlineMode, fetchWithOfflineFallback]);
-
-  useAutoRefresh(useCallback(() => loadRates(true), [loadRates]));
+  }, [offlineMode]);
 
   const onRefresh = () => {
     loadRates(true);
@@ -280,6 +282,8 @@ export default function RatesScreen() {
       const now = new Date().toISOString();
       setBcvLunesUpdatedAt(now);
       setStoredBCVLunes(parsed);
+      const todayKey = getTodayKey();
+      saveHistoricalRate(todayKey, { bcv: parsed });
       // Si el recordatorio está activo y hoy es viernes, reagendar para próximo viernes
       if (reminderEnabled) {
         rescheduleIfEnteredToday(now);

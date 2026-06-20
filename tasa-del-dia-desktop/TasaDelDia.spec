@@ -1,3 +1,6 @@
+# [DEPRECATED] Use build_flet.py / TasaDelDiaFlet.spec instead.
+# This file is kept for reference only and will be removed in a future release.
+
 # -*- mode: python ; coding: utf-8 -*-
 """
 Spec para compilar Tasa del Día con PyInstaller.

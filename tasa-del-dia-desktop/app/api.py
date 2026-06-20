@@ -55,8 +55,14 @@ def fetch_all_rates() -> RatesDict:
 
     logger.info("Solicitando tasas a %s", url)
 
+    api_key = os.environ.get("COTIZAVE_API_KEY", "")
+    if not api_key:
+        logger.warning("COTIZAVE_API_KEY no está definida en el entorno")
+
     req = urllib_request.Request(url)
     req.add_header("Accept", "application/json")
+    if api_key:
+        req.add_header("X-API-Key", api_key)
 
     try:
         with urllib_request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
@@ -74,7 +80,7 @@ def fetch_all_rates() -> RatesDict:
         logger.error("URLError: %s", e.reason)
         raise ApiError(f"Error de conexión: {e.reason}") from e
     except (json.JSONDecodeError, OSError) as e:
-        logger.error("Error parseando respuesta: %s", e)
+        logger.exception("Error parseando respuesta: %s", e)
         raise ApiError(str(e)) from e
 
     rates: Dict[str, Dict[str, Any]] = {}

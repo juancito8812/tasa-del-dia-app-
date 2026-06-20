@@ -21,7 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
-import useAutoRefresh from '../hooks/useAutoRefresh';
+
 
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000, 50000];
 const TAB_BAR_HEIGHT = 60;
@@ -602,7 +602,6 @@ export default function ConverterScreen() {
     return () => { showSub.remove(); hideSub.remove(); };
   }, []);
 
-  useAutoRefresh(useCallback(() => loadRates(true), [loadRates]));
   const getCurrentRate = () => rates[selectedRate];
 
   const handleConvert = () => {

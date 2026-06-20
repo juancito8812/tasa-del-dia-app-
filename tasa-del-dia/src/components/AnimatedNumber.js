@@ -23,6 +23,12 @@ export default function AnimatedNumber({
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [displayText, setDisplayText] = useState('—');
   const lastTarget = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   useEffect(() => {
     if (value === null || value === undefined) {
@@ -30,8 +36,9 @@ export default function AnimatedNumber({
       return;
     }
 
+    if (value === lastTarget.current && !isFirstRender) return;
+
     if (isFirstRender) {
-      // En el primer render, mostrar el valor directamente sin animación
       lastTarget.current = value;
       animatedValue.setValue(value);
       const formatted = format ? format(value) : value.toFixed(2);
@@ -44,6 +51,7 @@ export default function AnimatedNumber({
     lastTarget.current = value;
 
     const listenerId = animatedValue.addListener(({ value: v }) => {
+      if (!mountedRef.current) return;
       const formatted = format ? format(v) : v.toFixed(2);
       setDisplayText(prefix + formatted);
     });

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+[DEPRECATED] Use `flet_app/main.py` instead.
+This file is kept for reference only and will be removed in a future release.
+
 Tasa del Día — Aplicación de escritorio (Premium Dark Fintech)
 =============================================================
 Punto de entrada principal. Inicializa logging y lanza la app.
