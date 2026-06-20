@@ -506,6 +506,7 @@ export default function ConverterScreen() {
   const [pasteFeedback, setPasteFeedback] = useState(false);
   const [offlineMode, setOfflineMode] = useState(false);
   const [offlineCachedAt, setOfflineCachedAt] = useState(null);
+  const [gasLitros, setGasLitros] = useState('');
   const insets = useSafeAreaInsets();
 
   // Animación fade-in al cambiar de pestaña
@@ -808,6 +809,46 @@ export default function ConverterScreen() {
                 <Text style={styles.spreadStat}>Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(rates.paralelo)}</Text></Text>
                 <Text style={styles.spreadStat}>Diferencia: <Text style={{ color: spreadLunes.barColor, fontWeight: '700' }}>Bs. {formatCurrency(spreadLunes.diff)}</Text></Text>
               </View>
+            </View>
+          )}
+
+          {/* Gasolina — Conversor */}
+          {rates.bcv !== null && rates.bcv !== undefined && (
+            <View style={[styles.spreadCard, { marginTop: 8 }]}>
+              <View style={styles.spreadHeader}>
+                <View style={styles.spreadTitleRow}>
+                  <Ionicons name="flame" size={14} color={C.warning} />
+                  <Text style={[styles.spreadTitle, { color: C.textPrimary, fontSize: 13, fontWeight: '700' }]}>Gasolina</Text>
+                </View>
+                <Text style={{ fontSize: 11, color: C.textMuted }}>$0,50 USD/L</Text>
+              </View>
+              <View style={[styles.inputContainer, { marginBottom: 10 }]}>
+                <Ionicons name="flame" size={16} color={C.warning} style={{ marginRight: 8 }} />
+                <TextInput
+                  style={[styles.input, { borderColor: 'transparent' }]}
+                  placeholder="Litros (ej: 3.4)"
+                  placeholderTextColor={C.textMuted}
+                  keyboardType="decimal-pad"
+                  value={gasLitros}
+                  onChangeText={setGasLitros}
+                />
+              </View>
+              {gasLitros && parseFloat(gasLitros) > 0 && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={{ fontSize: 14, color: C.textSecondary }}>{gasLitros}L</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      const total = parseFloat(gasLitros) * 0.50 * rates.bcv;
+                      Clipboard.setStringAsync(`Bs. ${total.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: C.warning, fontVariant: ['tabular-nums'] }}>
+                      Bs. {(parseFloat(gasLitros) * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           )}
           </Animated.View>
