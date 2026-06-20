@@ -6,6 +6,21 @@ const STORAGE_KEY_REMINDER = '@tasa_del_dia/reminder_enabled';
 
 const { BASE_URL, API_KEY } = API_CONFIG;
 
+/**
+ * Wrapper around fetch with AbortController timeout.
+ * Aborts the request if it takes longer than timeoutMs.
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 const headers = {
   'X-API-Key': API_KEY,
   'Accept': 'application/json',
@@ -17,7 +32,7 @@ const headers = {
  */
 export async function fetchAllRates() {
   const url = `${BASE_URL}/v1/fx/rates`;
-  const response = await fetch(url, { headers });
+  const response = await fetchWithTimeout(url, { headers });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -52,7 +67,7 @@ export async function fetchAllRates() {
  */
 export async function fetchBCVCurrencies() {
   const url = `${BASE_URL}/v1/fx/bcv/currencies`;
-  const response = await fetch(url, { headers });
+  const response = await fetchWithTimeout(url, { headers });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));

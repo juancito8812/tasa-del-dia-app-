@@ -573,14 +573,22 @@ export default function ConverterScreen() {
     }
   }, []);
 
-  useEffect(() => { loadRates(); }, [loadRates]);
+  useEffect(() => {
+    const mounted = { current: true };
+    loadRates();
+    return () => { mounted.current = false; };
+  }, [loadRates]);
 
   // Recargar BCV Lunes cada vez que se enfoca la pestaña (sincronización con RatesScreen)
   useFocusEffect(
     useCallback(() => {
+      const mounted = { current: true };
       getStoredBCVLunes().then((data) => {
-        setRates((prev) => ({ ...prev, bcv_lunes: data.value }));
+        if (mounted.current) {
+          setRates((prev) => ({ ...prev, bcv_lunes: data.value }));
+        }
       });
+      return () => { mounted.current = false; };
     }, [])
   );
 

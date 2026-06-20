@@ -198,21 +198,28 @@ export default function RatesScreen() {
   }, []);
 
   useEffect(() => {
+    const mounted = { current: true };
     loadRates();
     getStoredBCVLunes().then((data) => {
-      setTasaBCVLunes(data.value);
-      setBcvLunesUpdatedAt(data.updatedAt);
-    });
-    getReminderEnabled().then((enabled) => {
-      setReminderEnabledState(enabled);
-      if (enabled) {
-        ensureReminderScheduled();
+      if (mounted.current) {
+        setTasaBCVLunes(data.value);
+        setBcvLunesUpdatedAt(data.updatedAt);
       }
     });
+    getReminderEnabled().then((enabled) => {
+      if (mounted.current) {
+        setReminderEnabledState(enabled);
+        if (enabled) {
+          ensureReminderScheduled();
+        }
+      }
+    });
+    return () => { mounted.current = false; };
   }, [loadRates]);
 
   // Auto-guardar tasas de hoy cada vez que se carguen exitosamente
   useEffect(() => {
+    const mounted = { current: true };
     if (data.tasaBCV !== null || data.tasaParalelo !== null) {
       const todayKey = getTodayKey();
       saveHistoricalRate(todayKey, {
@@ -223,6 +230,7 @@ export default function RatesScreen() {
         fetchedAt: data.usdFetchedAt,
       });
     }
+    return () => { mounted.current = false; };
   }, [data.tasaBCV, data.tasaParalelo, data.tasaBinanceP2P, data.tasaEuro, data.usdFetchedAt]);
 
   // ─── Retry automático cuando estamos offline ───────────────────
