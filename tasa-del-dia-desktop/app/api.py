@@ -1,39 +1,27 @@
 """
-Cliente HTTP para la API de Cotizave.
-Obtiene tasas de cambio: BCV, Paralelo, Euro, Binance P2P.
+Cliente HTTP para múltiples fuentes.
+Obtiene tasas de cambio desde DolarApi.com y Binance P2P.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Union
 from urllib import request as urllib_request
 from urllib import error as urllib_error
 
 logger = logging.getLogger(__name__)
 
-# ─── Configuración ───────────────────────────────────────────────
-# Se puede sobreescribir con variable de entorno COTIZAVE_BASE_URL
-DEFAULT_BASE_URL = "https://api.cotizave.com"
-BASE_URL = os.environ.get("COTIZAVE_BASE_URL", DEFAULT_BASE_URL)
-
-# Tiempo máximo de espera para requests (segundos)
 REQUEST_TIMEOUT = 15
 
-# Mapa de nombres de mercado a claves internas
-MARKET_MAP: Dict[str, str] = {
-    "reference": "bcv",
-    "eur_reference": "eur",
-    "binance": "binance_p2p",
-    "parallel": "parallel",
-}
+DOLARAPI_BASE_URL = "https://ve.dolarapi.com/v1"
+BINANCE_P2P_URL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 
 
 class ApiError(Exception):
-    """Error personalizado para fallos de la API."""
-
     def __init__(self, message: str, status_code: Optional[int] = None) -> None:
         self.status_code = status_code
         super().__init__(message)
@@ -42,71 +30,102 @@ class ApiError(Exception):
 RatesDict = Dict[str, Optional[Union[float, str]]]
 
 
-def fetch_all_rates() -> RatesDict:
-    """Obtiene todas las tasas de cambio desde la API de Cotizave.
-
-    Returns:
-        Diccionario con claves: 'bcv', 'eur', 'binance_p2p', 'parallel', 'fetched_at'.
-
-    Raises:
-        ApiError: Si hay un error de conexión o la API responde con error.
-    """
-    url = f"{BASE_URL}/v1/fx/public/calculator?amount=1&from=USD&to=VES"
-
-    logger.info("Solicitando tasas a %s", url)
-
-    api_key = os.environ.get("COTIZAVE_API_KEY", "")
-    if not api_key:
-        logger.warning("COTIZAVE_API_KEY no está definida en el entorno")
-
-    req = urllib_request.Request(url)
+def _fetch_json(url: str, method: str = "GET", body: Optional[dict] = None) -> Optional[dict]:
+    req = urllib_request.Request(url, method=method)
     req.add_header("Accept", "application/json")
-    if api_key:
-        req.add_header("X-API-Key", api_key)
-
+    if body is not None:
+        req.add_header("Content-Type", "application/json")
+        req.data = json.dumps(body).encode("utf-8")
     try:
-        with urllib_request.urlopen(req, timeout=REQUEST_TIMEOUT) as response:
-            data: dict = json.loads(response.read().decode("utf-8"))
-    except urllib_error.HTTPError as e:
-        error_body = e.read().decode("utf-8", errors="replace")
+        with urllib_request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except (urllib_error.HTTPError, urllib_error.URLError, json.JSONDecodeError, OSError) as e:
+        logger.warning("Error fetching %s: %s", url, e)
+        return None
+
+
+def _fetch_binance_p2p() -> Optional[float]:
+    body = {
+        "asset": "USDT",
+        "fiat": "VES",
+        "tradeType": "BUY",
+        "rows": 1,
+        "page": 1,
+    }
+    data = _fetch_json(BINANCE_P2P_URL, method="POST", body=body)
+    if data:
         try:
-            err_data = json.loads(error_body)
-            msg = err_data.get("message", f"Error HTTP {e.code}")
-        except json.JSONDecodeError:
-            msg = f"Error HTTP {e.code}"
-        logger.error("HTTPError %s: %s", e.code, msg)
-        raise ApiError(msg, status_code=e.code) from e
-    except urllib_error.URLError as e:
-        logger.error("URLError: %s", e.reason)
-        raise ApiError(f"Error de conexión: {e.reason}") from e
-    except (json.JSONDecodeError, OSError) as e:
-        logger.exception("Error parseando respuesta: %s", e)
-        raise ApiError(str(e)) from e
+            price = data["data"][0]["adv"]["price"]
+            return float(price)
+        except (KeyError, IndexError, TypeError, ValueError):
+            pass
+    return None
 
-    rates: Dict[str, Dict[str, Any]] = {}
-    fetched_at: Optional[str] = data.get("fetched_at")
 
-    for result in data.get("results", []):
-        market: Optional[str] = result.get("market")
-        internal_key = MARKET_MAP.get(market) if market else None
-        if internal_key:
-            rates[internal_key] = {
-                "rate": result.get("rate"),
-                "fetched_at": fetched_at,
-            }
+def fetch_all_rates() -> RatesDict:
+    results: Dict[str, Any] = {
+        "bcv": None,
+        "parallel": None,
+        "eur": None,
+        "binance_p2p": None,
+    }
+    timestamps: list[str] = []
+
+    def fetch_bcv():
+        data = _fetch_json(f"{DOLARAPI_BASE_URL}/dolares/oficial")
+        if data:
+            results["bcv"] = data.get("promedio")
+            ts = data.get("fechaActualizacion")
+            if ts:
+                timestamps.append(ts)
+
+    def fetch_parallel():
+        data = _fetch_json(f"{DOLARAPI_BASE_URL}/dolares/paralelo")
+        if data:
+            results["parallel"] = data.get("promedio")
+            ts = data.get("fechaActualizacion")
+            if ts:
+                timestamps.append(ts)
+
+    def fetch_eur():
+        data = _fetch_json(f"{DOLARAPI_BASE_URL}/euros/oficial")
+        if data:
+            results["eur"] = data.get("promedio")
+            ts = data.get("fechaActualizacion")
+            if ts:
+                timestamps.append(ts)
+
+    def fetch_binance():
+        results["binance_p2p"] = _fetch_binance_p2p()
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [
+            executor.submit(fetch_bcv),
+            executor.submit(fetch_parallel),
+            executor.submit(fetch_eur),
+            executor.submit(fetch_binance),
+        ]
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                logger.error("Error in parallel fetch: %s", e)
+
+    if results["bcv"] is None and results["parallel"] is None:
+        raise ApiError("No se pudieron obtener las tasas USD")
+
+    fetched_at = max(timestamps) if timestamps else datetime.now(timezone.utc).isoformat()
 
     result_rates: RatesDict = {
-        "bcv": rates.get("bcv", {}).get("rate"),
-        "eur": rates.get("eur", {}).get("rate"),
-        "binance_p2p": rates.get("binance_p2p", {}).get("rate"),
-        "parallel": rates.get("parallel", {}).get("rate"),
+        "bcv": results["bcv"],
+        "eur": results["eur"],
+        "binance_p2p": results["binance_p2p"],
+        "parallel": results["parallel"],
         "fetched_at": fetched_at,
     }
 
     logger.info("Tasas obtenidas: BCV=%s, Paralelo=%s, Euro=%s, Binance=%s",
                 result_rates["bcv"], result_rates["parallel"],
                 result_rates["eur"], result_rates["binance_p2p"])
-    logger.debug("API bruta: %d markets en results, fetched_at=%s",
-                 len(data.get("results", [])), fetched_at)
 
     return result_rates

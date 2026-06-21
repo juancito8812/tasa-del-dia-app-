@@ -2,7 +2,7 @@
 
 ## Stack
 - Python 3.14, **Flet 0.85.3 (única UI activa)**
-- API: `https://api.cotizave.com/v1/fx/public/calculator?amount=1&from=USD&to=VES`
+- API: `https://ve.dolarapi.com/v1` (BCV, Paralelo, Euro) + Binance P2P pública (POST sin key)
 - Business logic compartida en `app/` (api.py, storage.py, auto_update.py)
 - WinUp (PySide6) y Legacy (customtkinter) están **deprecados** — no modificar
 
