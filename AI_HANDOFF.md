@@ -26,8 +26,9 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 | Feature | Plataforma | Archivos | Detalle |
 |---------|-----------|----------|---------|
 | **Binance P2P directo** | Mobile + Desktop | `api.js` (+fetchBinanceP2P), `app/api.py` | POST a `p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search` sin API key |
-| **Manual tabs (Desktop)** | Desktop | `flet_app/main.py` (+ switch_tab, $selected_tab) | Reemplazó `TabBar`+`TabBarView` (rompía scroll) por `Row` de botones + visibilidad toggle |
+| **Tab system: Container swap** | Desktop | `flet_app/main.py` | `TabBarView` → `Row` botones + `Container(content=tab)` intercambiable |
 | **Formato VES** | Desktop | `flet_app/main.py` (+format_ves) | Números con formato venezolano: punto miles, coma decimal |
+| **Detalle historial** | Desktop | `flet_app/main.py` | `detail_card` se popula con tasas al clickear fecha |
 
 ### 🐛 Correcciones Desktop (21-Jun-2026)
 
@@ -41,8 +42,8 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 | Flet 0.85.3 `Tab(text=, content=)` | `TabBar(tabs=[Tab(label=...)])` + `TabBarView(controls=[...])` |
 | Flet 0.85.3 `TextButton(text=)` / `ElevatedButton(text=)` | Usar `content=` en vez de `text=` |
 | Flet 0.85.3 `TextField(weight=)` | Usar `TextField(text_style=TextStyle(weight=))` |
-| Scroll no funciona en TabBarView | Manual tabs con `ListView` + visibilidad |
-| Historial no responde a clicks | `update_history_tab()` ahora popula `detail_card` al seleccionar fecha |
+| Scroll no funciona en TabBarView | 3 intentos: ListView → visibility toggle → Container content swap |
+| Historial no responde a clicks | `update_history_tab()` popula `detail_card` al seleccionar fecha |
 | Formato tasas usa punto decimal | `format_ves()` convierte a coma decimal |
 
 ### 🐛 Correcciones Mobile (21-Jun-2026)
@@ -72,11 +73,13 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 - Fuentes: DolarApi.com + Binance P2P (ambas sin API key)
 - Build: `python build_flet.py --quick` (~2 min, genera `dist/TasaDelDiaFlet.exe`)
 - Unique constraint: **NO usar módulos flet con `__getattr__` dinámico** (`.pyi` stubs) — PyInstaller no los resuelve. Usar clases con mayúscula: `ft.Padding`, `ft.Icons`, `ft.Border`, `ft.Alignment`
-- Tab system: manual (Row de botones + visibilidad), no `TabBarView`
+- Tab system: `Container` único con `content` intercambiable (evita layout conflictos de múltiples `expand=True`)
+- Tabs se reconstruyen al cambiar (cada builder se llama de nuevo)
 - Formato: `format_ves()` para locale venezolano
 - API necesita User-Agent tipo navegador (urllib no envía default)
-- **Tabs**: tasas BCV/Paralelo/Euro/Binance, conversor USD↔Bs, historial con chips de fecha + detalle
+- **Problemas conocidos sin resolver**: scroll vertical dentro de tabs no funciona, historial no responde a clicks, formato tasas "2 cifras"
 - `%APPDATA%\TasaDelDia\` para persistencia (config, cache, historial, logs)
+- Para debug: `python flet_app/main.py` directamente (sin build)
 
 ### Skills repo
 - Skills en `skills/` (~40 skills)
@@ -101,11 +104,12 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 
 ## ⏭️ Próximos Pasos Posibles
 
-1. Proxy backend para ocultar API key del bundle APK (si se reintroduce Cotizave)
-2. Build local APK con EAS cuando se resetee plan free
-3. Ajustes finos al glassmorphism
-4. Notificaciones desktop (system tray)
-5. Widget flotante desktop (overlay)
+1. **Debug scroll/history Desktop** — probar con `ft.run()` en vez de `ft.app()`, verificar que ListView/Container recibe altura correcta
+2. Proxy backend para ocultar API key del bundle APK (si se reintroduce Cotizave)
+3. Build local APK con EAS cuando se resetee plan free
+4. Ajustes finos al glassmorphism
+5. Notificaciones desktop (system tray)
+6. Widget flotante desktop (overlay)
 
 ---
 
