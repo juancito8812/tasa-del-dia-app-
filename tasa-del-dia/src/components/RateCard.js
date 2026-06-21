@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedNumber from './AnimatedNumber';
 import ShimmerEffect from './ShimmerEffect';
@@ -16,7 +17,6 @@ const ICON_NAMES = {
 function createStyles(C) {
   return StyleSheet.create({
     card: {
-      backgroundColor: C.cardBg,
       borderRadius: 20,
       borderWidth: 1,
       borderColor: C.cardBorder,
@@ -144,16 +144,17 @@ export default function RateCard({
   updatedAt,
   compact = false,
   onEdit,
+  type,
 }) {
-  const { colors: C } = useTheme();
+  const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
 
-  const formatRate = (value) => {
+  const formatRate = useCallback((value) => {
     return Number(value).toLocaleString('es-VE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  };
+  }, []);
 
   const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -170,15 +171,28 @@ export default function RateCard({
     }
   };
 
+  const glowColor = {
+    bcv: C.glowBcv,
+    paralelo: C.glowParalelo,
+    euro: C.glowEuro,
+    'bcv-lunes': C.glowBcvLunes,
+    gasolina: C.glowGasolina,
+  }[type] || 'rgba(255,255,255,0.05)';
+
   if (loading) {
     return <ShimmerEffect style={compact ? styles.compactCard : undefined} />;
   }
 
   return (
-    <View style={[styles.card, compact && styles.compactCard, { shadowColor: color }]}>
+    <View style={[styles.card, compact && styles.compactCard, { shadowColor: glowColor }]}>
+      <BlurView
+        intensity={Platform.OS === 'android' ? 30 : 40}
+        tint={isDark ? 'dark' : 'light'}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={[styles.glowAccent, compact && styles.glowAccentCompact, { backgroundColor: color }]} />
       <View style={[styles.header, compact && styles.headerCompact]}>
-        <View style={[styles.iconContainer, compact && styles.iconContainerCompact, { backgroundColor: color + '18' }]}>
+        <View style={[styles.iconContainer, compact && styles.iconContainerCompact, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
           <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={compact ? 14 : 20} color={color} />
         </View>
         <View style={styles.titleBlock}>

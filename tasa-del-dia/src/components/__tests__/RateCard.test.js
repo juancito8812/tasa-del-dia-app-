@@ -2,6 +2,15 @@ import React from 'react';
 import TestRenderer from 'react-test-renderer';
 import RateCard from '../RateCard';
 
+jest.mock('expo-blur', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    BlurView: ({ children, style, ...props }) =>
+      React.createElement(View, { style, ...props }, children),
+  };
+});
+
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
@@ -21,6 +30,11 @@ jest.mock('../../context/ThemeContext', () => ({
       tabBar: '#0a0a14',
       tabBarBorder: 'rgba(255, 255, 255, 0.06)',
       glassOverlay: 'rgba(255, 255, 255, 0.03)',
+      glowBcv: 'rgba(0, 184, 148, 0.15)',
+      glowParalelo: 'rgba(79, 195, 247, 0.15)',
+      glowEuro: 'rgba(233, 69, 96, 0.15)',
+      glowBcvLunes: 'rgba(168, 85, 247, 0.15)',
+      glowGasolina: 'rgba(243, 156, 18, 0.15)',
     },
     isDark: true,
     theme: 'dark',
