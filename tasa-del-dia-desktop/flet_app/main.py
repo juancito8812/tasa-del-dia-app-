@@ -145,7 +145,7 @@ def blend_color(color: str, alpha: float) -> str:
 # ─── Rates Tab ────────────────────────────────────────────────
 
 def build_rates_tab():
-    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
+    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
     ctrl["rates_tab"] = tab
     tab.controls = [
         build_spread("spread_bcv", "BRECHA BCV VS PARALELO"),
@@ -297,7 +297,7 @@ def build_info_bar():
 # ─── Converter Tab ────────────────────────────────────────────
 
 def build_converter_tab():
-    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
+    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
     ctrl["converter_tab"] = tab
     tab.controls = [
         build_conv_rate_sel(),
@@ -482,7 +482,7 @@ def build_history_tab():
     ctrl["hist_detail_card"] = detail_card
     list_content = ft.Column(spacing=2)
     ctrl["hist_list"] = list_content
-    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True, controls=[
+    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True, controls=[
         ft.Text("SELECCIONAR FECHA", size=10, weight="bold", color=colors["muted"]),
         chips,
         ft.Row(controls=[date_inp, search_btn]),
