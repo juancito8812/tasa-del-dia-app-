@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, Text, View, StyleSheet } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import RatesScreen from './src/screens/RatesScreen';
@@ -73,11 +74,19 @@ function AnimatedAppContent() {
 }
 
 class ErrorBoundary extends React.Component {
-  state = { hasError: false };
-  static getDerivedStateFromError() { return { hasError: true }; }
+  state = { hasError: false, error: null };
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
   componentDidCatch(error) { console.error(error); }
   render() {
-    return this.state.hasError ? <Text>Algo salió mal. Reinicia la app.</Text> : this.props.children;
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex:1, justifyContent:'center', alignItems:'center', padding:20 }}>
+          <Text style={{ fontSize:18, marginBottom:10 }}>Algo salió mal. Reinicia la app.</Text>
+          <Text style={{ fontSize:12, color:'red' }}>{this.state.error?.message}</Text>
+        </View>
+      );
+    }
+    return this.props.children;
   }
 }
 
@@ -88,11 +97,13 @@ function App() {
   }, []);
 
   return (
-    <ThemeProvider>
-      <ErrorBoundary>
-        <AnimatedAppContent />
-      </ErrorBoundary>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <ErrorBoundary>
+          <AnimatedAppContent />
+        </ErrorBoundary>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 
