@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\18a916e9-fa1b-470a-9398-144e7373c652',
+    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\5d92feb2-3090-4a5e-9fc7-cb844ba1390d',
 )

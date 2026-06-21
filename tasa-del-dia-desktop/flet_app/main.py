@@ -854,10 +854,11 @@ def update_info_label(text: str):
 def switch_tab(index: int):
     global _selected_tab
     _selected_tab = index
-    tabs = ctrl.get("tab_views", [])
-    for i, t in enumerate(tabs):
-        t.visible = (i == index)
-    # Update tab button styles
+    tabs = [build_rates_tab, build_converter_tab, build_history_tab]
+    container = ctrl.get("tab_container")
+    if container and index < len(tabs):
+        container.content = tabs[index]()
+        page.update()
     btns = ctrl.get("tab_btns", [])
     colors = c()
     for i, btn in enumerate(btns):
@@ -970,11 +971,9 @@ def main(p: ft.Page):
 
     colors = c()
     tab_labels = ["📊  Tasas", "💱  Conversor", "📅  Historial"]
-    tab_views = [build_rates_tab(), build_converter_tab(), build_history_tab()]
-    # Hide all except first
-    for i, tv in enumerate(tab_views):
-        tv.visible = (i == 0)
-    ctrl["tab_views"] = tab_views
+
+    tab_container = ft.Container(expand=True, content=build_rates_tab())
+    ctrl["tab_container"] = tab_container
 
     tab_btns = []
     for i, label in enumerate(tab_labels):
@@ -996,7 +995,7 @@ def main(p: ft.Page):
                 content=ft.Row(controls=tab_btns, alignment=ft.MainAxisAlignment.CENTER),
                 padding=ft.Padding.only(left=8, right=8, top=4, bottom=0),
             ),
-            ft.Column(expand=True, controls=tab_views, spacing=0),
+            ft.Column(expand=True, controls=[tab_container], spacing=0),
         ], spacing=4),
     )
     page.update()
