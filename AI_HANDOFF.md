@@ -51,83 +51,106 @@ Skills leídas (aplicar cuando corresponda):
 
 ## 🚀 Últimos Cambios (Sesión 22-Jun-2026)
 
-### ✨ Features Mobile nuevas
+### 🐛 Fix: Salto vertical al deslizar entre tabs (causa raíz)
 
-| Feature | Archivos | Detalle |
-|---------|----------|---------|
-| **Fix "jalón" al deslizar entre tabs** | `App.js`, `RatesScreen.js`, `ConverterScreen.js`, `HistoryScreen.js` | StatusBar unificado en App.js (eliminado de cada screen); eliminado `<Animated.View>` con referencias rotas (fadeAnim/translateY undefined) en RatesScreen; corregido useEffect que nunca cargaba History por isActive no pasado; eliminada animación muerta en ConverterScreen |
-| **Transición suave entre tabs** | `App.js`, `CustomTabBar.js`, `CustomTabBar.test.js` | `onPageScroll` captura `position+offset` en Animated.Value; CustomTabBar interpola color/escala/opacidad/indicador continuamente en vez de spring discreto |
-| **Refactor frontend-ui-engineering** | Múltiples archivos nuevos | Datos separados en hooks (`useRatesData`, `useConverterData`, `useHistoryData`); subcomponentes extraídos (`RatesHeader`, `BCVModal`, `HistoryChart`, `DateDetailCard`); screens reducidas a < 200 líneas; estilos inline movidos a StyleSheet |
+**Problema:** Las 3 pantallas tenían estructuras distintas (ScreenContainer/SafeAreaView/insets diferentes), causando que el PagerView re-calculara el layout al cambiar de tab.
 
-### 📦 Archivos nuevos
+| Cambio | Archivos | Detalle |
+|--------|----------|---------|
+| **ScreenContainer único en App.js** | `App.js` + 3 screens | LinearGradient pasa a App.js (una sola vez), ya no se re-renderiza por cada tab change |
+| **SafeAreaView único en App.js** | `App.js` + 3 screens | SafeArea padding ahora consistente entre todas las páginas |
+| **bounces=false estandarizado** | `ConverterScreen.js` | Todas las pantallas ahora tienen `bounces={false}` en ScrollView |
+| **Eliminado useSafeAreaInsets** | `ConverterScreen.js` | Ya no calcula padding individual — SafeAreaView de App.js lo maneja |
+
+### 🔒 Seguridad (segunda pasada)
+
+| Mejora | Archivo | Detalle |
+|--------|---------|---------|
+| **ErrorBoundary** | `App.js` | Mensaje genérico al usuario (sin leak de `error.message`), log completo a console.warn |
+| **usesCleartextTraffic** | `app.config.js` | `usesCleartextTraffic: false` via expo-build-properties (HTTPS-only en Android) |
+| **.env.example** | `.env.example` | Documentación actualizada, `COTIZAVE_API_KEY` comentada como obsoleta |
+
+### 📦 Archivos creados en esta sesión
 
 | Archivo | Propósito |
 |---------|-----------|
-| `src/hooks/useRatesData.js` | Hook: fetching, BCV Lunes, recordatorio, retry offline, brecha |
-| `src/hooks/useConverterData.js` | Hook: fetching, conversión, copy/paste, spreads, gasolina |
-| `src/hooks/useHistoryData.js` | Hook: histórico, selección de fecha, chart data, copy |
-| `src/components/RatesHeader.js` | Header RatesScreen con error/offline banners |
-| `src/components/BCVModal.js` | Modal para editar BCV Lunes |
-| `src/components/HistoryChart.js` | NativeBarChart extraído como componente |
-| `src/components/DateDetailCard.js` | Detail card de historial con copia individual/todo |
+| `.env.example` | Documentación de variables de entorno |
 
-### 🗑️ Archivos modificados
+### 🗑️ Archivos modificados en esta sesión
 
 | Archivo | Cambio |
 |---------|--------|
-| `App.js` | StatusBar unificado, onPageScroll handler, scrollOffset Animated.Value |
-| `CustomTabBar.js` | Interpolación continua con scrollOffset, barrita indicadora |
-| `RatesScreen.js` | ~390→170 líneas, usa useRatesData + RatesHeader + BCVModal |
-| `ConverterScreen.js` | ~670→185 líneas, usa useConverterData |
-| `HistoryScreen.js` | ~600→160 líneas, usa useHistoryData + HistoryChart + DateDetailCard |
-| `CustomTabBar.test.js` | Actualizado con createMockScrollOffset() |
+| `App.js` | ScreenContainer + SafeAreaView unificados, ErrorBoundary genérico |
+| `app.config.js` | `usesCleartextTraffic: false` para Android |
+| `RatesScreen.js` | Eliminado ScreenContainer/SafeAreaView (~190 ln) |
+| `ConverterScreen.js` | Eliminado ScreenContainer/useSafeAreaInsets, bounces=false (~195 ln) |
+| `HistoryScreen.js` | Eliminado ScreenContainer/SafeAreaView (~170 ln) |
+
+### 🗑️ Archivos eliminados
+
+- `android/` (gitignored — era de prueba local)
+
+### Último commit
+- **SHA:** `83a8213` — "fix: unificar estructura de pantallas y mejoras de seguridad"
+- **20 archivos**, 1773 inserciones, 1956 eliminaciones
 
 ---
 
-## 🔒 Seguridad — Mejoras aplicadas (22-Jun-2026)
-
-### ErrorBoundary (App.js)
-- **Antes:** Mostraba `error.message` al usuario (filtrado de información interna)
-- **Después:** Pantalla genérica con tema oscuro, logo 🔄, mensajes "Algo salió mal" / "Reinicia la app" / "Contacta al soporte"
-- Detalle completo del error + componentStack se loguea a `console.warn`
-
-### Android Network Security
-- **`android/app/src/main/res/xml/network_security_config.xml`**: HTTPS-only enforcement con `cleartextTrafficPermitted="false"` + debug overrides para certificados de usuario en desarrollo
-- **`app.config.js`**: Referencia al XML via `expo.android.networkSecurityConfig`
-- EAS Build usará esta configuración al compilar la APK
-
-### Environment
-- **`.env.example`**: Documentación actualizada — `COTIZAVE_API_KEY` ahora comentada como obsoleta, aclarando que ninguna API necesita keys
-
-### Cache
-- **`saveHistoricalRate()`**: Ya tenía límite de 365 entradas (sin cambios necesarios)
-
----
+## 📋 Estado Actual
 
 ### Móvil (`tasa-del-dia/`)
 - **62 tests, 10 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
-- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`
-- `.env` necesita `COTIZAVE_API_KEY` (aún referenciada en constants, pero no se usa en runtime)
+- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`
+- `.env`: `COTIZAVE_API_KEY` obsoleta (no se usa en runtime)
 - Para desarrollo: `npx expo start --tunnel`
-- Build APK: GitHub Action `Build APK (React Native)`
-- Checkpoint tag: `glassmorphism-checkpoint`
-- `git worktree` para aislar features
+- Build APK: GitHub Action `Build APK (React Native)` (~6 min)
+  - Cada build crea automáticamente un Release "latest" en GitHub con la APK
+  - URL de descarga: `https://github.com/juancito8812/tasa-del-dia-app-/releases/latest/download/TasaDelDia.apk`
+- Último build: [Run #27915752480](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27915752480)
+
+### ✨ Auto-Update desde GitHub
+
+La app verifica automáticamente al iniciar si hay una versión más nueva en GitHub Releases.
+
+| Componente | Archivo | Detalle |
+|------------|---------|---------|
+| **Auto-update service** | `src/services/autoUpdate.js` | Consulta GitHub API pública, compara semver, cache 30 min, skip version, descarga APK con expo-file-system + fallback navegador |
+| **Update Modal** | `src/components/UpdateModal.js` | Modal con versión actual/nueva, botón Descargar (lanza instalador Android), Saltar versión, Más tarde |
+| **Integración** | `App.js` | Check automático al montar (delay 2s para no interrumpir primera renderización) |
+| **GitHub Release** | `.github/workflows/build-apk.yml` | Crea/actualiza Release "latest" con la APK después de cada build exitoso |
+
+Flujo: `checkLatestRelease()` → compara con `getCurrentVersion()` → si hay nueva y no fue saltada → muestra `UpdateModal` → usuario toca Descargar → `downloadAndInstall()` descarga APK y abre instalador.
 
 ### Arquitectura Mobile (actualizada)
 
 ```
+App.js
+└── SafeAreaProvider → ThemeProvider → ErrorBoundary
+    └── AnimatedAppContent
+        ├── StatusBar (expo-status-bar, único)
+        ├── ScreenContainer (LinearGradient, único)
+        │   └── SafeAreaView (único)
+        │       └── View
+        │           ├── PagerView
+        │           │   ├── View → RatesScreen
+        │           │   ├── View → ConverterScreen
+        │           │   └── View → HistoryScreen
+        │           └── CustomTabBar
+        └── UpdateModal (Modal nativo, portal sobre todo)
+
 src/
   screens/
-    RatesScreen.js          # ~170 ln, usa useRatesData + RatesHeader + BCVModal
-    ConverterScreen.js      # ~185 ln, usa useConverterData
-    HistoryScreen.js        # ~160 ln, usa useHistoryData + HistoryChart + DateDetailCard
+    RatesScreen.js          # ~190 ln, usa useRatesData + RatesHeader + BCVModal
+    ConverterScreen.js      # ~195 ln, usa useConverterData
+    HistoryScreen.js        # ~170 ln, usa useHistoryData + HistoryChart + DateDetailCard
   components/
     RatesHeader.js           # Header con banners
     BCVModal.js              # Modal de BCV Lunes
     HistoryChart.js          # NativeBarChart
     DateDetailCard.js        # Detail de fecha
-    CustomTabBar.js          # Tab bar con animación suave
+    UpdateModal.js           # Modal de actualización disponible
+    CustomTabBar.js          # Tab bar con animación suave (interpolación continua)
     RateCard.js, ShimmerEffect.js, ThemeToggleMini.js, ScreenContainer.js
   hooks/
     useRatesData.js          # Fetching + BCV Lunes + recordatorio + retry
@@ -135,7 +158,7 @@ src/
     useHistoryData.js        # Historial + selección fecha + chart data
     useAutoRefresh.js
   services/
-    api.js, backgroundTasks.js, notifications.js
+    api.js, backgroundTasks.js, notifications.js, autoUpdate.js
 ```
 
 ### Desktop (`tasa-del-dia-desktop/`)
@@ -175,7 +198,7 @@ src/
 ## ⏭️ Próximos Pasos Posibles
 
 1. **Debug scroll/history Desktop** — probar con `ft.run()` en vez de `ft.app()`, verificar que ListView/Container recibe altura correcta
-2. Proxy backend para ocultar API key del bundle APK (si se reintroduce Cotizave)
+2. **Probar la APK nueva** — instalar el último build y verificar que el "salto" ya no ocurre
 3. Build local APK con EAS
 4. Ajustes finos al glassmorphism / UI
 5. Notificaciones desktop (system tray)

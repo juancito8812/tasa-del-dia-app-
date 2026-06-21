@@ -12,6 +12,8 @@ import CustomTabBar from './src/components/CustomTabBar';
 import ScreenContainer from './src/components/ScreenContainer';
 import { ensureReminderScheduled } from './src/services/notifications';
 import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
+import UpdateModal from './src/components/UpdateModal';
+import { checkLatestRelease, isUpdateAvailable, getCurrentVersion, isVersionSkipped } from './src/services/autoUpdate';
 
 function AnimatedAppContent() {
   const { colors: C, isDark, theme } = useTheme();
@@ -19,6 +21,8 @@ function AnimatedAppContent() {
   const prevTheme = useRef(theme);
   const pagerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [updateInfo, setUpdateInfo] = useState(null);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
     if (prevTheme.current !== theme) {
@@ -49,6 +53,23 @@ function AnimatedAppContent() {
 
   const onPageSelected = useCallback((e) => {
     setActiveIndex(e.nativeEvent.position);
+  }, []);
+
+  // Auto-update: check on mount, delay so it doesn't interrupt first render
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const release = await checkLatestRelease();
+        if (!release) return;
+        const current = getCurrentVersion();
+        if (!isUpdateAvailable(current, release.version)) return;
+        const skipped = await isVersionSkipped(release.version);
+        if (skipped) return;
+        setUpdateInfo(release);
+        setTimeout(() => setShowUpdate(true), 2000);
+      } catch {}
+    };
+    check();
   }, []);
 
   return (
@@ -84,6 +105,16 @@ function AnimatedAppContent() {
           </View>
         </SafeAreaView>
       </ScreenContainer>
+
+      <UpdateModal
+        visible={showUpdate}
+        onClose={() => setShowUpdate(false)}
+        currentVersion={getCurrentVersion()}
+        latestVersion={updateInfo?.version || ''}
+        apkUrl={updateInfo?.apkUrl || ''}
+        notes={updateInfo?.notes || ''}
+        C={C}
+      />
     </Animated.View>
   );
 }

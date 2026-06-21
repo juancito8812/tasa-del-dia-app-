@@ -109,6 +109,13 @@ jobs:
             exit 1
           fi
 
+      - name: Obtener versión de la app
+        id: app_version
+        run: |
+          VERSION=$(node -p "require('./app.config.js').expo.version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "App version: $VERSION"
+
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v7
         with:
@@ -116,3 +123,24 @@ jobs:
           path: tasa-del-dia/TasaDelDia.apk
           retention-days: 30
           if-no-files-found: error
+
+      - name: Crear/Actualizar Release "latest" en GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v${{ steps.app_version.outputs.version }}"
+          echo "📦 Version: $VERSION"
+
+          # Eliminar release "latest" anterior si existe
+          gh release delete latest --yes 2>/dev/null || echo "No existing 'latest' release to delete"
+
+          # Crear nuevo release "latest"
+          gh release create latest \
+            --title "$VERSION" \
+            --notes "Build automático del ${{ github.ref_name }} — $(date -u '+%Y-%m-%d %H:%M UTC')" \
+            --latest
+
+          # Subir APK al release
+          gh release upload latest TasaDelDia.apk --clobber
+          echo "✅ APK subida a GitHub Release 'latest'"
+          echo "📎 Descarga: https://github.com/${{ github.repository }}/releases/latest/download/TasaDelDia.apk"

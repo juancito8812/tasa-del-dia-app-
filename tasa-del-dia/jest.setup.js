@@ -5,6 +5,7 @@ jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 // Mock expo-constants for API_CONFIG
 jest.mock('expo-constants', () => ({
   expoConfig: {
+    version: '1.0.1',
     extra: {
       apiKey: 'test-api-key',
     },
@@ -79,6 +80,31 @@ jest.mock('expo-task-manager', () => ({
 jest.mock('expo-clipboard', () => ({
   getStringAsync: jest.fn().mockResolvedValue(''),
   setStringAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+// Mock expo-linking
+jest.mock('expo-linking', () => ({
+  openURL: jest.fn().mockResolvedValue(undefined),
+  createURL: jest.fn().mockReturnValue('test-url'),
+  useURL: jest.fn().mockReturnValue(null),
+  useLatestURL: jest.fn().mockReturnValue(null),
+}));
+
+// Mock expo-file-system
+jest.mock('expo-file-system', () => ({
+  cacheDirectory: '/mock/cache/',
+  documentDirectory: '/mock/docs/',
+  createDownloadResumable: jest.fn().mockReturnValue({
+    downloadAsync: jest.fn().mockResolvedValue({ uri: '/mock/cache/app.apk' }),
+  }),
+  getContentUriAsync: jest.fn().mockResolvedValue('content://mock/app.apk'),
+  readAsStringAsync: jest.fn(),
+  writeAsStringAsync: jest.fn(),
+  deleteAsync: jest.fn(),
+  getInfoAsync: jest.fn(),
+  StorageAccessFramework: {
+    requestDirectoryPermissionsAsync: jest.fn(),
+  },
 }));
 
 // Mock react-native-safe-area-context
