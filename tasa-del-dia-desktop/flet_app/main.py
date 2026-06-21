@@ -327,7 +327,7 @@ def build_conv_rate_sel():
         tc = colors["primary"] if key == _converter_selected else colors["secondary"]
         row = ft.Container(
             content=ft.Row(controls=[
-                ft.TextButton(text=label, on_click=lambda e, k=key: conv_select_rate(k),
+                ft.TextButton(content=label, on_click=lambda e, k=key: conv_select_rate(k),
                               style=ft.ButtonStyle(color=tc)),
                 val_lbl,
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
@@ -347,32 +347,32 @@ def build_conv_rate_sel():
 
 def build_conv_card():
     colors = c()
-    usd_btn = ft.ElevatedButton(text="USD → Bs.", on_click=lambda e: set_conv_mode("usd_to_bs"),
+    usd_btn = ft.ElevatedButton(content="USD → Bs.", on_click=lambda e: set_conv_mode("usd_to_bs"),
                                 style=ft.ButtonStyle(bgcolor=colors["accent"], color=colors["primary"]))
-    bs_btn = ft.ElevatedButton(text="Bs. → USD", on_click=lambda e: set_conv_mode("bs_to_usd"),
+    bs_btn = ft.ElevatedButton(content="Bs. → USD", on_click=lambda e: set_conv_mode("bs_to_usd"),
                                style=ft.ButtonStyle(bgcolor=colors["input_bg"], color=colors["muted"]))
     ctrl["btn_usd"] = usd_btn
     ctrl["btn_bs"] = bs_btn
 
-    amount_input = ft.TextField(value="100", text_size=20, weight="bold",
-                                 border=ft.InputBorder.NONE, text_style=ft.TextStyle(color=colors["input_text"]),
+    amount_input = ft.TextField(value="100", text_size=20,
+                                 border=ft.InputBorder.NONE, text_style=ft.TextStyle(weight="bold", color=colors["input_text"]),
                                  on_submit=lambda e: do_conversion())
     ctrl["conv_amount"] = amount_input
 
-    paste_btn = ft.TextButton(text="📋 Pegar", on_click=lambda e: paste_from_clipboard(),
+    paste_btn = ft.TextButton(content="📋 Pegar", on_click=lambda e: paste_from_clipboard(),
                               style=ft.ButtonStyle(color=colors["muted"]))
     ctrl["paste_btn"] = paste_btn
 
     quick_btns = []
     for val in [100, 500, 1000, 5000, 10000, 50000]:
         fmt = f"{val:,}".replace(",", ".")
-        b = ft.ElevatedButton(text=fmt, on_click=lambda e, v=val: set_quick_amount(v),
+        b = ft.ElevatedButton(content=fmt, on_click=lambda e, v=val: set_quick_amount(v),
                               style=ft.ButtonStyle(bgcolor=colors["input_bg"], color=colors["secondary"],
                                                    padding=4))
         quick_btns.append(b)
     ctrl["conv_quick_btns"] = quick_btns
 
-    conv_btn = ft.ElevatedButton(text="💱  Convertir", on_click=lambda e: do_conversion(),
+    conv_btn = ft.ElevatedButton(content="💱  Convertir", on_click=lambda e: do_conversion(),
                                  style=ft.ButtonStyle(bgcolor=colors["accent"], color=colors["primary"]))
     ctrl["conv_btn"] = conv_btn
 
@@ -476,7 +476,7 @@ def build_history_tab():
                              text_style=ft.TextStyle(color=colors["input_text"]),
                              on_submit=lambda e: hist_search_date())
     ctrl["hist_date_input"] = date_inp
-    search_btn = ft.ElevatedButton(text="🔍 Ver", on_click=lambda e: hist_search_date(),
+    search_btn = ft.ElevatedButton(content="🔍 Ver", on_click=lambda e: hist_search_date(),
                                     style=ft.ButtonStyle(bgcolor=colors["info"], color="#ffffff"))
     detail_card = ft.Container(visible=False, bgcolor=colors["card"], border_radius=8, padding=12)
     ctrl["hist_detail_card"] = detail_card
@@ -514,7 +514,7 @@ def update_history_tab():
     if chips:
         chips.controls.clear()
         for d in dates[:20]:
-            lbl = ft.TextButton(text=format_date_key(d), on_click=lambda e, dt=d: select_hist_date(dt))
+            lbl = ft.TextButton(content=format_date_key(d), on_click=lambda e, dt=d: select_hist_date(dt))
             chips.controls.append(lbl)
         page.update()
 
