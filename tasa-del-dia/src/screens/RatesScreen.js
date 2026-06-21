@@ -16,7 +16,7 @@ import {
   KeyboardAvoidingView,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
@@ -127,7 +127,7 @@ function createStyles(C) {
   });
 }
 
-export default function RatesScreen() {
+export default function RatesScreen({ isActive }) {
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
 
@@ -154,16 +154,15 @@ export default function RatesScreen() {
   // Animación fade-in al cambiar de pestaña
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  useFocusEffect(
-    useCallback(() => {
-      fadeAnim.setValue(0.85);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }, [fadeAnim])
-  );
+  useEffect(() => {
+    if (!isActive) return;
+    fadeAnim.setValue(0.85);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isActive, fadeAnim]);
 
   const loadRates = useCallback(async (isRefresh = false) => {
     try {
@@ -204,7 +203,7 @@ export default function RatesScreen() {
         setTasaBCVLunes(data.value);
         setBcvLunesUpdatedAt(data.updatedAt);
       }
-    });
+    }).catch(() => {});
     getReminderEnabled().then((enabled) => {
       if (mounted.current) {
         setReminderEnabledLocal(enabled);
@@ -212,7 +211,7 @@ export default function RatesScreen() {
           ensureReminderScheduled();
         }
       }
-    });
+    }).catch(() => {});
     return () => { mounted.current = false; };
   }, [loadRates]);
 
@@ -235,6 +234,7 @@ export default function RatesScreen() {
   const retryCountRef = useRef(0);
 
   useEffect(() => {
+    let cancelled = false;
     if (offlineMode) {
       retryCountRef.current = 0;
       const tryReconnect = async () => {
@@ -243,6 +243,7 @@ export default function RatesScreen() {
         try {
           const { data: result, fromCache } = await fetchWithOfflineFallback();
           if (result && !fromCache) {
+            if (cancelled) return;
             setData(result);
             setOfflineMode(false);
             setOfflineCachedAt(null);
@@ -250,12 +251,14 @@ export default function RatesScreen() {
             retryCountRef.current = 0;
           }
         } catch {}
+        if (cancelled) return;
         const delay = Math.min(30000 * Math.pow(1.5, retryCountRef.current - 1), 300000);
         retryRef.current = setTimeout(tryReconnect, delay);
       };
       retryRef.current = setTimeout(tryReconnect, 30000);
     }
     return () => {
+      cancelled = true;
       if (retryRef.current) {
         clearTimeout(retryRef.current);
         retryRef.current = null;
@@ -306,6 +309,7 @@ export default function RatesScreen() {
       ? ((data.tasaParalelo - tasaBCVLunes) / tasaBCVLunes) * 100
       : null;
 
+  const translateY = useMemo(() => fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }), [fadeAnim]);
   const brechaColor =
     brecha !== null
       ? brecha > 15
@@ -363,7 +367,7 @@ export default function RatesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
-      <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }) }] }]}>
+      <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ translateY }] }]}>
         <View style={styles.header}>
           <View style={styles.headerRow}>
             <View style={[styles.logoContainer, { backgroundColor: C.highlight + '15' }]}>

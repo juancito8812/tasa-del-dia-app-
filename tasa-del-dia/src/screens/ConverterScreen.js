@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
+
 import {
   Animated,
   View,
@@ -489,7 +489,7 @@ function createStyles(C) {
   });
 }
 
-export default function ConverterScreen() {
+export default function ConverterScreen({ isActive }) {
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
   const RATE_TYPES = useMemo(() => getRateTypes(C), [C]);
@@ -507,21 +507,21 @@ export default function ConverterScreen() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [offlineCachedAt, setOfflineCachedAt] = useState(null);
   const [gasLitros, setGasLitros] = useState('');
+  const gasLitrosNum = useMemo(() => parseFloat(gasLitros) || 0, [gasLitros]);
   const insets = useSafeAreaInsets();
 
   // Animación fade-in al cambiar de pestaña
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  useFocusEffect(
-    useCallback(() => {
-      fadeAnim.setValue(0.85);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }, [fadeAnim])
-  );
+  useEffect(() => {
+    if (!isActive) return;
+    fadeAnim.setValue(0.85);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isActive, fadeAnim]);
   const inputRef = useRef(null);
   const copyTimeoutRef = useRef(null);
   const pasteTimeoutRef = useRef(null);
@@ -585,17 +585,16 @@ export default function ConverterScreen() {
   }, [loadRates]);
 
   // Recargar BCV Lunes cada vez que se enfoca la pestaña (sincronización con RatesScreen)
-  useFocusEffect(
-    useCallback(() => {
-      const mounted = { current: true };
-      getStoredBCVLunes().then((data) => {
-        if (mounted.current) {
-          setRates((prev) => ({ ...prev, bcv_lunes: data.value }));
-        }
-      });
-      return () => { mounted.current = false; };
-    }, [])
-  );
+  useEffect(() => {
+    if (!isActive) return;
+    let mounted = true;
+    getStoredBCVLunes().then((data) => {
+      if (mounted) {
+        setRates((prev) => ({ ...prev, bcv_lunes: data.value }));
+      }
+    });
+    return () => { mounted = false; };
+  }, [isActive]);
 
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
@@ -833,18 +832,15 @@ export default function ConverterScreen() {
                   onChangeText={setGasLitros}
                 />
               </View>
-              {gasLitros && parseFloat(gasLitros) > 0 && (
+              {gasLitrosNum > 0 && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text style={{ fontSize: 14, color: C.textSecondary }}>{gasLitros}L</Text>
                   <TouchableOpacity
-                    onPress={() => {
-                      const total = parseFloat(gasLitros) * 0.50 * rates.bcv;
-                      Clipboard.setStringAsync(`Bs. ${total.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-                    }}
+                    onPress={() => handleCopy(`Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'gasolina')}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: C.warning, fontVariant: ['tabular-nums'] }}>
-                      Bs. {(parseFloat(gasLitros) * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <Text style={{ fontSize: 18, fontWeight: '800', color: copiedType === 'gasolina' ? C.success : C.warning, fontVariant: ['tabular-nums'] }}>
+                      {copiedType === 'gasolina' ? 'Copiado!' : `Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                     </Text>
                   </TouchableOpacity>
                 </View>

@@ -13,7 +13,7 @@ import {
   Alert,
   Keyboard,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
@@ -387,7 +387,7 @@ function formatCurrency(v) {
 
 // ─── Component ────────────────────────────────────────────────────
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ isActive }) {
   const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
 
@@ -398,27 +398,31 @@ export default function HistoryScreen() {
   const [showCustomInput, setShowCustomInput] = useState(false);
 
   const copyTimeoutRef = useRef(null);
+  const mountedRef = useRef(true);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadHistory();
-    }, [])
-  );
+  useEffect(() => {
+    if (!isActive) return;
+    loadHistory();
+  }, [isActive]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
     };
   }, []);
 
   const loadHistory = async () => {
-    const data = await getHistoricalRates();
-    const arr = Object.keys(data).map(key => ({
-      dateKey: key,
-      ...data[key]
-    })).sort((a, b) => b.dateKey.localeCompare(a.dateKey));
-    setRatesData(arr);
+    try {
+      const data = await getHistoricalRates();
+      if (!mountedRef.current) return;
+      const arr = Object.keys(data).map(key => ({
+        dateKey: key,
+        ...data[key]
+      })).sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+      setRatesData(arr);
+    } catch {}
   };
 
   // Last 5 dates
@@ -480,13 +484,13 @@ export default function HistoryScreen() {
 
   const handleCopyAll = async (data) => {
     const lines = [
-      `📅 Fecha: ${formatDateKey(data.dateKey)}`,
-      `🏦 BCV: Bs. ${formatCurrency(data.bcv)}`,
-      `💵 Paralelo: Bs. ${formatCurrency(data.paralelo)}`,
-      `📊 Binance P2P: Bs. ${formatCurrency(data.binance_p2p)}`,
-      `💶 Euro: Bs. ${formatCurrency(data.euro)}`,
+      `Fecha: ${formatDateKey(data.dateKey)}`,
+      `BCV: Bs. ${formatCurrency(data.bcv)}`,
+      `Paralelo: Bs. ${formatCurrency(data.paralelo)}`,
+      `Binance P2P: Bs. ${formatCurrency(data.binance_p2p)}`,
+      `Euro: Bs. ${formatCurrency(data.euro)}`,
     ];
-    if (data.manual) lines.push('📝 Ingreso manual');
+    if (data.manual) lines.push('Ingreso manual');
     const text = lines.join('\n');
     handleCopy(text, 'all');
   };
@@ -494,6 +498,7 @@ export default function HistoryScreen() {
   // ─── Render helpers ─────────────────────────────────────────
 
   const renderCopyBtn = (fieldKey, value) => {
+    if (value == null) return null;
     const isCopied = copiedField === fieldKey;
     return (
       <TouchableOpacity
@@ -665,7 +670,7 @@ export default function HistoryScreen() {
                     value={customDateText}
                     onChangeText={setCustomDateText}
                     keyboardType="number-pad"
-                    maxLength={8}
+                    maxLength={10}
                     returnKeyType="search"
                     onSubmitEditing={handleCustomDate}
                   />
@@ -713,7 +718,7 @@ export default function HistoryScreen() {
           {!selectedDateKey && (
             <View style={styles.listContainer}>
               {ratesData.length > 0 ? (
-                ratesData.map((item) => (
+                ratesData.slice(0, 365).map((item) => (
                   <TouchableOpacity
                     key={item.dateKey}
                     style={styles.listItem}
