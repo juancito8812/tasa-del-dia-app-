@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes, setStoredBCVLunes, getReminderEnabled, setReminderEnabled as persistReminderEnabled, saveHistoricalRate, getTodayKey } from '../services/api';
-import { scheduleFridayReminder, cancelFridayReminder, rescheduleIfEnteredToday, ensureReminderScheduled } from '../services/notifications';
+import { scheduleFridayReminder, cancelFridayReminder, ensureReminderScheduled } from '../services/notifications';
 import RateCard from '../components/RateCard';
 import ScreenContainer from '../components/ScreenContainer';
 
@@ -287,10 +287,7 @@ export default function RatesScreen({ isActive }) {
       setStoredBCVLunes(parsed);
       const todayKey = getTodayKey();
       saveHistoricalRate(todayKey, { bcv: parsed });
-      // Si el recordatorio está activo y hoy es viernes, reagendar para próximo viernes
-      if (reminderEnabled) {
-        rescheduleIfEnteredToday(now);
-      }
+      // La notificación semanal se re-agenda sola en ensureReminderScheduled al abrir la app
     } else {
       setTasaBCVLunes(null);
       setBcvLunesUpdatedAt(null);
