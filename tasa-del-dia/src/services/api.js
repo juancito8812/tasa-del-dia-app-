@@ -120,17 +120,49 @@ export async function setReminderEnabled(enabled) {
 }
 
 /**
+ * Fetch Binance P2P USDT/VES rate directly from Binance's public API.
+ * Uses POST with JSON body — no API key required.
+ * Returns the best sell offer price or null on failure.
+ */
+export async function fetchBinanceP2P() {
+  try {
+    const res = await fetchWithTimeout(
+      'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asset: 'USDT',
+          fiat: 'VES',
+          tradeType: 'BUY',
+          rows: 1,
+          page: 1,
+        }),
+      },
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    const price = json?.data?.[0]?.adv?.price;
+    return price ? parseFloat(price) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Fetch all data needed for the app in parallel.
  * Uses allSettled so one endpoint failing doesn't kill the other.
  */
 export async function fetchAllData() {
-  const [usdResult, bcvResult] = await Promise.allSettled([
+  const [usdResult, bcvResult, binanceResult] = await Promise.allSettled([
     fetchAllRates(),
     fetchBCVCurrencies(),
+    fetchBinanceP2P(),
   ]);
 
   const usdRates = usdResult.status === 'fulfilled' ? usdResult.value : null;
   const bcvCurrencies = bcvResult.status === 'fulfilled' ? bcvResult.value : null;
+  const tasaBinanceP2P = binanceResult.status === 'fulfilled' ? binanceResult.value : null;
 
   if (!usdRates) {
     throw new Error(usdResult.reason?.message || 'Error al obtener tasas USD');
@@ -139,7 +171,7 @@ export async function fetchAllData() {
   const result = {
     tasaBCV: usdRates.rates.reference?.mid ?? null,
     tasaParalelo: usdRates.rates.parallel?.mid ?? null,
-    tasaBinanceP2P: usdRates.rates.binance?.mid ?? null,
+    tasaBinanceP2P,
     tasaEuro: bcvCurrencies?.rates?.EUR ?? null,
     usdFetchedAt: usdRates.fetchedAt,
     eurReferenceDate: bcvCurrencies?.referenceDate ?? null,
