@@ -11,6 +11,12 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+
+def format_ves(val):
+    """Format number with Venezuelan locale: dot thousands, comma decimal."""
+    s = f"{val:,.2f}"
+    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+
 from app.api import fetch_all_rates, ApiError
 from app.storage import (
     load_config, save_config, load_cache_rates, save_cache_rates,
@@ -52,6 +58,7 @@ _hist_selected_date: Optional[str] = None
 _converter_selected = "bcv"
 _converter_mode = "usd_to_bs"
 _current_theme = "dark"
+_selected_tab = 0
 _theme_mode = "system"
 
 page: ft.Page = None
@@ -516,7 +523,33 @@ def update_history_tab():
         for d in dates[:20]:
             lbl = ft.TextButton(content=format_date_key(d), on_click=lambda e, dt=d: select_hist_date(dt))
             chips.controls.append(lbl)
-        page.update()
+    detail = ctrl.get("hist_detail_card")
+    if detail:
+        sel = _hist_selected_date
+        if sel and sel in hist:
+            data = hist[sel]
+            detail.visible = True
+            rows = []
+            labels = [("BCV", "bcv", colors["success"]),
+                      ("Paralelo", "parallel", colors["highlight"]),
+                      ("Euro", "eur", colors["info"]),
+                      ("Binance P2P", "binance_p2p", colors["warning"])]
+            for name, key, clr in labels:
+                v = data.get(key)
+                if v is not None:
+                    rows.append(
+                        ft.Row(controls=[
+                            ft.Text(name, color=colors["secondary"], size=13),
+                            ft.Text(format_ves(v), color=clr, size=14, weight="bold"),
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+                    )
+            if rows:
+                detail.content = ft.Column(spacing=4, controls=rows)
+            else:
+                detail.visible = False
+        else:
+            detail.visible = False
+    page.update()
 
 
 def select_hist_date(date_str: str):
@@ -747,8 +780,8 @@ def update_rate_cards(rates):
             val = rates.get(rate_key)
             fetched = rates.get("fetched_at")
             if val is not None:
-                card["rate_lbl"].value = f"{val:,.2f}"
-                card["usd_lbl"].value = f"1 USD = {val:,.2f} Bs."
+                card["rate_lbl"].value = format_ves(val)
+                card["usd_lbl"].value = f"1 USD = {format_ves(val)} Bs."
             else:
                 card["rate_lbl"].value = "—"
                 card["usd_lbl"].value = ""
@@ -761,7 +794,7 @@ def update_rate_cards(rates):
         lc = ctrl.get("card_lunes")
         if lc:
             if _bcv_lunes is not None:
-                lc["rate_lbl"].value = f"{_bcv_lunes:,.2f}"
+                lc["rate_lbl"].value = format_ves(_bcv_lunes)
                 lc["time_lbl"].value = f"🕐 {format_time(_bcv_lunes_updated_at)}" if _bcv_lunes_updated_at else ""
             else:
                 lc["rate_lbl"].value = "—"
@@ -781,9 +814,9 @@ def upd_spread(key, a, b):
         return
     diff = abs(b - a)
     pct = ((b - a) / a) * 100 if a > 0 else 0
-    sp["a_val"].value = f"Bs. {a:,.2f}"
-    sp["b_val"].value = f"Bs. {b:,.2f}"
-    sp["diff_val"].value = f"Bs. {diff:,.2f}"
+    sp["a_val"].value = f"Bs. {format_ves(a)}"
+    sp["b_val"].value = f"Bs. {format_ves(b)}"
+    sp["diff_val"].value = f"Bs. {format_ves(diff)}"
     pct_str = f"{'+' if pct >= 0 else ''}{pct:.2f}%"
     sp["pct_val"].value = pct_str
     bar_pct = min(abs(pct) / 50, 1.0)
@@ -806,7 +839,7 @@ def update_conv_rate_labels():
         val = _converter_rates.get(key)
         clr = color_map.get(key, colors["primary"])
         if val is not None:
-            lbl.value = f"{val:,.2f}"
+            lbl.value = format_ves(val)
         else:
             lbl.value = "—"
         lbl.color = clr
@@ -816,6 +849,24 @@ def update_info_label(text: str):
     lbl = ctrl.get("info_label")
     if lbl:
         lbl.value = text
+
+
+def switch_tab(index: int):
+    global _selected_tab
+    _selected_tab = index
+    tabs = ctrl.get("tab_views", [])
+    for i, t in enumerate(tabs):
+        t.visible = (i == index)
+    # Update tab button styles
+    btns = ctrl.get("tab_btns", [])
+    colors = c()
+    for i, btn in enumerate(btns):
+        btn.style = ft.ButtonStyle(
+            color=colors["primary"] if i == index else colors["secondary"],
+            bgcolor=colors["accent"] if i == index else None,
+        )
+    if page:
+        page.update()
 
 
 def set_offline_mode(offline: bool, cached_at: str = ""):
@@ -849,14 +900,14 @@ def do_conversion():
         return
     if _converter_mode == "usd_to_bs":
         result = amount * rate
-        res_from.value = f"USD {amount:,.2f}"
-        res_to.value = f"Bs. {result:,.2f}"
-        res_info.value = f"Tasa: {rate:,.2f}"
+        res_from.value = f"USD {format_ves(amount)}"
+        res_to.value = f"Bs. {format_ves(result)}"
+        res_info.value = f"Tasa: {format_ves(rate)}"
     else:
         result = amount / rate if rate > 0 else 0
-        res_from.value = f"Bs. {amount:,.2f}"
-        res_to.value = f"USD {result:,.2f}"
-        res_info.value = f"Tasa: 1 USD = {rate:,.2f} Bs."
+        res_from.value = f"Bs. {format_ves(amount)}"
+        res_to.value = f"USD {format_ves(result)}"
+        res_info.value = f"Tasa: 1 USD = {format_ves(rate)} Bs."
     res_from.color = colors["primary"]
     res_to.color = colors["highlight"]
     res_info.color = colors["muted"]
@@ -917,36 +968,35 @@ def main(p: ft.Page):
     _theme_mode = config.get("last_known_theme", "dark")
     apply_theme()
 
+    colors = c()
+    tab_labels = ["📊  Tasas", "💱  Conversor", "📅  Historial"]
+    tab_views = [build_rates_tab(), build_converter_tab(), build_history_tab()]
+    # Hide all except first
+    for i, tv in enumerate(tab_views):
+        tv.visible = (i == 0)
+    ctrl["tab_views"] = tab_views
+
+    tab_btns = []
+    for i, label in enumerate(tab_labels):
+        btn = ft.TextButton(
+            content=label,
+            on_click=lambda e, idx=i: switch_tab(idx),
+            style=ft.ButtonStyle(
+                color=colors["primary"] if i == 0 else colors["secondary"],
+                bgcolor=colors["accent"] if i == 0 else None,
+            ),
+        )
+        tab_btns.append(btn)
+    ctrl["tab_btns"] = tab_btns
+
     page.add(
         ft.Column(controls=[
             build_title_bar(),
-            ft.Tabs(
-                selected_index=0,
-                animation_duration=200,
-                length=3,
-                expand=True,
-                content=ft.Column(
-                    expand=True,
-                    spacing=0,
-                    controls=[
-                        ft.TabBar(
-                            tabs=[
-                                ft.Tab(label="📊  Tasas"),
-                                ft.Tab(label="💱  Conversor"),
-                                ft.Tab(label="📅  Historial"),
-                            ],
-                        ),
-                        ft.TabBarView(
-                            expand=True,
-                            controls=[
-                                build_rates_tab(),
-                                build_converter_tab(),
-                                build_history_tab(),
-                            ],
-                        ),
-                    ],
-                ),
+            ft.Container(
+                content=ft.Row(controls=tab_btns, alignment=ft.MainAxisAlignment.CENTER),
+                padding=ft.Padding.only(left=8, right=8, top=4, bottom=0),
             ),
+            ft.Column(expand=True, controls=tab_views, spacing=0),
         ], spacing=4),
     )
     page.update()

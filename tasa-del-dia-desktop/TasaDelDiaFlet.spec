@@ -1,13 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-# [DEPRECATED] Use build_flet.py instead.
-# This file is kept for reference only and will be removed in a future release.
 
 a = Analysis(
     ['flet_app\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('app', 'app')],
     hiddenimports=['app', 'app.api', 'app.storage', 'app.auto_update'],
     hookspath=[],
     hooksconfig={},
@@ -37,6 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\6052a9be-84a9-45eb-a2f7-aca52e655a03',
-    icon=['app_icon.ico'],
+    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\18a916e9-fa1b-470a-9398-144e7373c652',
 )
