@@ -112,9 +112,9 @@ jobs:
       - name: Obtener versión de la app
         id: app_version
         run: |
-          VERSION=$(node -p "require('./app.config.js').expo.version")
+          VERSION=$(node -p "require('./app.config.js').expo.version" 2>/dev/null | grep -xE '[0-9]+\.[0-9]+\.[0-9]+')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "App version: $VERSION"
+          echo "✅ Versión detectada: $VERSION"
 
       - name: Subir APK como artefacto
         uses: actions/upload-artifact@v7

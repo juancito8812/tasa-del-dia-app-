@@ -71,7 +71,7 @@ jobs:
           elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF#refs/tags/v}"
           else
-            CURRENT=$(node -p "require('./app.config.js').expo.version")
+            CURRENT=$(node -p "require('./app.config.js').expo.version" 2>/dev/null | grep -xE '[0-9]+\.[0-9]+\.[0-9]+')
             IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
             case "${{ github.event.inputs.bump_type }}" in
               major) VERSION="$((MAJOR+1)).0.0" ;;
