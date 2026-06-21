@@ -923,12 +923,29 @@ def main(p: ft.Page):
             ft.Tabs(
                 selected_index=0,
                 animation_duration=200,
-                tabs=[
-                    ft.Tab(label="📊  Tasas", content=build_rates_tab()),
-                    ft.Tab(label="💱  Conversor", content=build_converter_tab()),
-                    ft.Tab(label="📅  Historial", content=build_history_tab()),
-                ],
+                length=3,
                 expand=True,
+                content=ft.Column(
+                    expand=True,
+                    spacing=0,
+                    controls=[
+                        ft.TabBar(
+                            tabs=[
+                                ft.Tab(label="📊  Tasas"),
+                                ft.Tab(label="💱  Conversor"),
+                                ft.Tab(label="📅  Historial"),
+                            ],
+                        ),
+                        ft.TabBarView(
+                            expand=True,
+                            controls=[
+                                build_rates_tab(),
+                                build_converter_tab(),
+                                build_history_tab(),
+                            ],
+                        ),
+                    ],
+                ),
             ),
         ], spacing=4),
     )
