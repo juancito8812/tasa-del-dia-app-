@@ -134,6 +134,12 @@ jobs:
           VERSION="v${{ steps.app_version.outputs.version }}"
           echo "📦 Versión: $VERSION"
 
+          # Validar que la versión no esté vacía
+          if [ -z "${{ steps.app_version.outputs.version }}" ] || [ "$VERSION" = "v" ]; then
+            echo "❌ No se pudo extraer una versión válida"
+            exit 1
+          fi
+
           # Eliminar release previo con este tag si existe
           gh release delete "$VERSION" --yes 2>/dev/null || echo "No existing release $VERSION to delete"
 
