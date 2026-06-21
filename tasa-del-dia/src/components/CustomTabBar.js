@@ -1,88 +1,115 @@
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 
 const TABS = [
-  { key: 'Tasas', icon: 'pulse', iconOutline: 'pulse-outline' },
-  { key: 'Conversor', icon: 'swap-horizontal', iconOutline: 'swap-horizontal-outline' },
-  { key: 'Historial', icon: 'stats-chart', iconOutline: 'stats-chart-outline' },
+  { key: 'Tasas', icon: 'pulse' },
+  { key: 'Conversor', icon: 'swap-horizontal' },
+  { key: 'Historial', icon: 'stats-chart' },
 ];
 
-export default function CustomTabBar({ activeIndex, onTabPress, colors }) {
-  const animValues = useRef(TABS.map(() => new Animated.Value(0))).current;
-
-  useEffect(() => {
-    TABS.forEach((_, i) => {
-      Animated.spring(animValues[i], {
-        toValue: i === activeIndex ? 1 : 0,
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
-      }).start();
-    });
-  }, [activeIndex]);
-
+export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
   return (
     <BlurView intensity={Platform.OS === 'android' ? 50 : 80} tint="dark" style={[
       styles.container,
       { borderTopColor: colors.tabBarBorder }
     ]}>
-      {TABS.map((tab, i) => {
-        const isActive = i === activeIndex;
-        const scale = animValues[i].interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 1.15],
-        });
-        const opacity = animValues[i].interpolate({
-          inputRange: [0, 1],
-          outputRange: [0.6, 1],
-        });
-        return (
-          <TouchableOpacity
-            key={tab.key}
-            onPress={() => onTabPress(i)}
-            style={styles.tab}
-            accessibilityLabel={tab.key}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: isActive }}
-          >
-            <Animated.View style={{ transform: [{ scale }] }}>
-              <Ionicons
-                name={isActive ? tab.icon : tab.iconOutline}
-                size={22}
-                color={isActive ? colors.highlight : colors.textMuted}
+      <View style={styles.tabsRow}>
+        {TABS.map((tab, i) => {
+          // Cada tab se activa cuando scrollOffset ≈ i
+          const inputRange = [i - 1, i, i + 1];
+
+          // ponytail: opacity es redundante — el cambio de color (muted→highlight) ya es señal visual suficiente
+          const activeProgress = scrollOffset.interpolate({
+            inputRange,
+            outputRange: [0, 1, 0],
+            extrapolate: 'clamp',
+          });
+
+          const iconColor = activeProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [colors.textMuted, colors.highlight],
+          });
+
+          const indicatorScaleX = activeProgress.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 1],
+          });
+
+          const isActive = i === activeIndex;
+
+          return (
+            <TouchableOpacity
+              key={tab.key}
+              onPress={() => onTabPress(i)}
+              style={styles.tab}
+              accessibilityLabel={tab.key}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isActive }}
+            >
+              <Animated.View>
+                <Ionicons
+                  name={tab.icon}
+                  size={22}
+                  color={iconColor}
+                />
+              </Animated.View>
+              <Animated.Text style={[styles.label, { color: iconColor }]}>
+                {tab.key}
+              </Animated.Text>
+              {/* ponytail: el indicator y el scale son el mismo feedback visual — el indicator basta */}
+              <Animated.View
+                style={[
+                  styles.indicator,
+                  {
+                    backgroundColor: colors.highlight,
+                    transform: [{ scaleX: indicatorScaleX }],
+                  },
+                ]}
               />
-            </Animated.View>
-            <Animated.Text style={[
-              styles.label,
-              { color: isActive ? colors.highlight : colors.textMuted, opacity }
-            ]}>
-              {tab.key}
-            </Animated.Text>
-          </TouchableOpacity>
-        );
-      })}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </BlurView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
     borderTopWidth: 1,
-    paddingTop: 6,
-    paddingBottom: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
     height: 60,
+  },
+  tabsRow: {
+    flexDirection: 'row',
+    flex: 1,
   },
   tab: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingTop: 2,
+  },
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: 1,
+  },
+  indicator: {
+    width: 20,
+    height: 3,
+    borderRadius: 1.5,
+    marginTop: 3,
   },
 });
+
+

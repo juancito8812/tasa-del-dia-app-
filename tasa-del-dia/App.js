@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, Text, View, StyleSheet } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import RatesScreen from './src/screens/RatesScreen';
 import ConverterScreen from './src/screens/ConverterScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import CustomTabBar from './src/components/CustomTabBar';
+import ScreenContainer from './src/components/ScreenContainer';
 import { ensureReminderScheduled } from './src/services/notifications';
 import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
 
@@ -34,10 +35,17 @@ function AnimatedAppContent() {
     }
   }, [theme, fadeAnim]);
 
+  const scrollOffset = useRef(new Animated.Value(0)).current;
+
   const onTabPress = useCallback((index) => {
     pagerRef.current?.setPage(index);
     setActiveIndex(index);
   }, []);
+
+  const onPageScroll = useCallback((e) => {
+    const { position, offset } = e.nativeEvent;
+    scrollOffset.setValue(position + offset);
+  }, [scrollOffset]);
 
   const onPageSelected = useCallback((e) => {
     setActiveIndex(e.nativeEvent.position);
@@ -46,43 +54,62 @@ function AnimatedAppContent() {
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <View style={[styles.container, { backgroundColor: C.primary }]}>
-        <PagerView
-          ref={pagerRef}
-          style={styles.pager}
-          initialPage={0}
-          onPageSelected={onPageSelected}
-        >
-          <View style={styles.page} key="tasas">
-            <RatesScreen isActive={activeIndex === 0} />
+      <ScreenContainer>
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+            <PagerView
+              ref={pagerRef}
+              style={styles.pager}
+              initialPage={0}
+              onPageScroll={onPageScroll}
+              onPageSelected={onPageSelected}
+              overScrollMode="never"
+            >
+              <View style={styles.page} key="tasas">
+                <RatesScreen />
+              </View>
+              <View style={styles.page} key="conversor">
+                <ConverterScreen />
+              </View>
+              <View style={styles.page} key="historial">
+                <HistoryScreen />
+              </View>
+            </PagerView>
+            <CustomTabBar
+              activeIndex={activeIndex}
+              scrollOffset={scrollOffset}
+              onTabPress={onTabPress}
+              colors={C}
+            />
           </View>
-          <View style={styles.page} key="conversor">
-            <ConverterScreen isActive={activeIndex === 1} />
-          </View>
-          <View style={styles.page} key="historial">
-            <HistoryScreen isActive={activeIndex === 2} />
-          </View>
-        </PagerView>
-        <CustomTabBar
-          activeIndex={activeIndex}
-          onTabPress={onTabPress}
-          colors={C}
-        />
-      </View>
+        </SafeAreaView>
+      </ScreenContainer>
     </Animated.View>
   );
 }
 
 class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
-  static getDerivedStateFromError(error) { return { hasError: true, error }; }
-  componentDidCatch(error) { console.error(error); }
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  componentDidCatch(error, info) {
+    // Log completo para debugging, NO se muestra al usuario en producción
+    console.warn('[ErrorBoundary] Component crash:', error?.message || error);
+    console.warn('[ErrorBoundary] Stack:', info?.componentStack || info);
+  }
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ flex:1, justifyContent:'center', alignItems:'center', padding:20 }}>
-          <Text style={{ fontSize:18, marginBottom:10 }}>Algo salió mal. Reinicia la app.</Text>
-          <Text style={{ fontSize:12, color:'red' }}>{this.state.error?.message}</Text>
+        <View style={{ flex:1, justifyContent:'center', alignItems:'center', padding:24, backgroundColor:'#0a0a14' }}>
+          <Text style={{ fontSize:40, marginBottom:12 }}>🔄</Text>
+          <Text style={{ fontSize:18, fontWeight:'700', color:'#ffffff', marginBottom:8, textAlign:'center' }}>
+            Algo salió mal
+          </Text>
+          <Text style={{ fontSize:14, color:'#a0aec0', textAlign:'center', marginBottom:24, lineHeight:20 }}>
+            Ocurrió un error inesperado. Por favor, reinicia la app.
+          </Text>
+          <Text style={{ fontSize:12, color:'#636e82', textAlign:'center' }}>
+            Si el problema persiste, contacta al soporte.
+          </Text>
         </View>
       );
     }

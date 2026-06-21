@@ -2,6 +2,7 @@ import flet as ft
 import threading
 import time
 import webbrowser
+import logging
 from datetime import datetime
 
 _lock = threading.Lock()
@@ -11,11 +12,28 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+# Setup logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(os.environ.get('APPDATA', ''), 'TasaDelDia', 'debug.log')),
+        logging.StreamHandler()
+    ]
+)
+log = logging.getLogger(__name__)
+
 
 def format_ves(val):
     """Format number with Venezuelan locale: dot thousands, comma decimal."""
+    log.debug(f"format_ves input: {val} (type: {type(val)})")
+    if val is None:
+        log.warning("format_ves called with None")
+        return "—"
     s = f"{val:,.2f}"
-    return s.replace(",", "X").replace(".", ",").replace("X", ".")
+    result = s.replace(",", "X").replace(".", ",").replace("X", ".")
+    log.debug(f"format_ves output: {result}")
+    return result
 
 from app.api import fetch_all_rates, ApiError
 from app.storage import (
@@ -152,6 +170,7 @@ def blend_color(color: str, alpha: float) -> str:
 # ─── Rates Tab ────────────────────────────────────────────────
 
 def build_rates_tab():
+    log.debug("build_rates_tab called")
     tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
     ctrl["rates_tab"] = tab
     tab.controls = [
@@ -166,6 +185,7 @@ def build_rates_tab():
         build_offline_banner(),
         build_info_bar(),
     ]
+    log.debug(f"build_rates_tab returning ListView with {len(tab.controls)} controls")
     return tab
 
 
@@ -475,6 +495,7 @@ def update_conv_ui():
 # ─── History Tab ──────────────────────────────────────────────
 
 def build_history_tab():
+    log.debug("build_history_tab called")
     colors = c()
     chips = ft.Row(spacing=4, scroll=ft.ScrollMode.AUTO)
     ctrl["hist_chips"] = chips
@@ -497,7 +518,7 @@ def build_history_tab():
         list_content,
     ])
     ctrl["history_tab"] = tab
-    threading.Timer(0.3, update_history_tab).start()
+    log.debug("build_history_tab returning ListView")
     return tab
 
 
@@ -550,14 +571,16 @@ def update_history_tab():
         else:
             detail.visible = False
     page.update()
+    log.debug("update_history_tab completed")
 
 
 def select_hist_date(date_str: str):
+    log.debug(f"select_hist_date called with {date_str}")
     global _hist_selected_date
     _hist_selected_date = date_str
     inp = ctrl.get("hist_date_input")
     if inp:
-        inp.value = date_str
+        inp.value = format_date_key(date_str)
     update_history_tab()
 
 
@@ -772,10 +795,12 @@ def on_rates_error(error_msg: str):
 # ─── UI Updates ───────────────────────────────────────────────
 
 def update_rate_cards(rates):
+    log.debug(f"update_rate_cards called with rates: {rates}")
     with _lock:
         def upd(key, rate_key):
             card = ctrl.get(key)
             if not card:
+                log.warning(f"update_rate_cards: card not found for key={key}")
                 return
             val = rates.get(rate_key)
             fetched = rates.get("fetched_at")
@@ -852,13 +877,18 @@ def update_info_label(text: str):
 
 
 def switch_tab(index: int):
+    log.debug(f"switch_tab called with index={index}")
     global _selected_tab
     _selected_tab = index
     tabs = [build_rates_tab, build_converter_tab, build_history_tab]
     container = ctrl.get("tab_container")
     if container and index < len(tabs):
+        log.debug(f"Building tab {index}: {tabs[index].__name__}")
         container.content = tabs[index]()
         page.update()
+        log.debug(f"Tab {index} content set and page updated")
+        if index == 2:
+            update_history_tab()
     btns = ctrl.get("tab_btns", [])
     colors = c()
     for i, btn in enumerate(btns):
@@ -868,6 +898,7 @@ def switch_tab(index: int):
         )
     if page:
         page.update()
+    log.debug(f"switch_tab completed for index={index}")
 
 
 def set_offline_mode(offline: bool, cached_at: str = ""):
@@ -989,7 +1020,7 @@ def main(p: ft.Page):
     ctrl["tab_btns"] = tab_btns
 
     page.add(
-        ft.Column(controls=[
+        ft.Column(expand=True, controls=[
             build_title_bar(),
             ft.Container(
                 content=ft.Row(controls=tab_btns, alignment=ft.MainAxisAlignment.CENTER),

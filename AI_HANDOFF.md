@@ -14,49 +14,95 @@
 API Mobile: `https://ve.dolarapi.com/v1` + Binance P2P directo
 API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 
-**Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery  
+**Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery → frontend-ui-engineering → ponytail → systematic-debugging → verification-before-completion → subagent-driven-development
 **Método de trabajo:** git worktree (`.worktrees/` ignorado via `.gitignore`)
 
----
+### ⚠️ Skills del repo externo — leídas y aplicadas (15/15)
 
-## 🚀 Últimos Cambios (Sesión 21-Jun-2026)
+**Siempre que se trabaje en este proyecto, se DEBEN leer y aplicar todas las skills del repositorio:**  
+🔗 `https://github.com/juancito8812/mi-repo-de-skills`
 
-### ✨ Features nuevas
+Skills activas permanentemente (modifican comportamiento base):
 
-| Feature | Plataforma | Archivos | Detalle |
-|---------|-----------|----------|---------|
-| **Binance P2P directo** | Mobile + Desktop | `api.js` (+fetchBinanceP2P), `app/api.py` | POST a `p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search` sin API key |
-| **Tab system: Container swap** | Desktop | `flet_app/main.py` | `TabBarView` → `Row` botones + `Container(content=tab)` intercambiable |
-| **Formato VES** | Desktop | `flet_app/main.py` (+format_ves) | Números con formato venezolano: punto miles, coma decimal |
-| **Detalle historial** | Desktop | `flet_app/main.py` | `detail_card` se popula con tasas al clickear fecha |
+| Skill | Efecto |
+|-------|--------|
+| **ponytail** | Solución más simple que funciona. YAGNI, stdlib primero, marcar con `ponytail:` |
+| **systematic-debugging** | Root cause antes de fix. 4 fases: investigar → analizar → hipótesis → implementar |
+| **verification-before-completion** | Evidencia fresca antes de claims. NO decir "debería funcionar" sin verificar |
+| **subagent-driven-development** | Flujo: implementer → spec review → quality review por cada tarea |
+| **using-superpowers** | Invocar skills relevantes antes de cada respuesta. Si hay 1% de posibilidad, invocar |
 
-### 🐛 Correcciones Desktop (21-Jun-2026)
+Skills leídas (aplicar cuando corresponda):
 
-| Issue | Fix |
-|-------|-----|
-| Cotizave API caída (403) | Migrado a `ve.dolarapi.com/v1` + User-Agent header en urllib |
-| PyInstaller crash `ft.padding.all` | Usar `ft.Padding.all` (clase, no módulo con `__getattr__`) |
-| PyInstaller crash `ft.icons.DARK_MODE` | Usar `ft.Icons.DARK_MODE` |
-| PyInstaller crash `ft.border.all` | Usar `ft.Border.all` |
-| PyInstaller crash `ft.alignment.center` | Usar `ft.Alignment.CENTER` |
-| Flet 0.85.3 `Tab(text=, content=)` | `TabBar(tabs=[Tab(label=...)])` + `TabBarView(controls=[...])` |
-| Flet 0.85.3 `TextButton(text=)` / `ElevatedButton(text=)` | Usar `content=` en vez de `text=` |
-| Flet 0.85.3 `TextField(weight=)` | Usar `TextField(text_style=TextStyle(weight=))` |
-| Scroll no funciona en TabBarView | 3 intentos: ListView → visibility toggle → Container content swap |
-| Historial no responde a clicks | `update_history_tab()` popula `detail_card` al seleccionar fecha |
-| Formato tasas usa punto decimal | `format_ves()` convierte a coma decimal |
-
-### 🐛 Correcciones Mobile (21-Jun-2026)
-
-| Issue | Fix |
-|-------|-----|
-| Swipe animation brusca | `translateY` 15→8px, start opacity 0.9, duración 150ms |
-| Crash Galaxy A12/A54 | `SafeAreaProvider` faltante agregado |
-| Cotizave a DolarApi | API URL cambiada, `Promise.allSettled` con Binance |
+| Skill | Cuándo aplicar |
+|-------|---------------|
+| **brainstorming** | Antes de cualquier trabajo creativo — diseño → spec → plan, nunca implementar sin diseño aprobado |
+| **dispatching-parallel-agents** | 2+ fallos independientes → 1 agente por dominio en paralelo |
+| **executing-plans** | Tener un plan escrito → revisar → ejecutar tareas → verificar |
+| **finishing-a-development-branch** | Tests pasan → detectar entorno → presentar opciones (merge/PR/keep/discard) |
+| **receiving-code-review** | Recibir feedback → verificar antes de implementar, no performative agreement |
+| **requesting-code-review** | Después de cada tarea → dispatch reviewer con SHAs y contexto |
+| **test-driven-development** | RED (test fallido) → GREEN (código mínimo) → REFACTOR. Nunca código sin test fallido primero |
+| **using-git-worktrees** | Antes de features — workspace aislado via herramienta nativa o git worktree |
+| **writing-plans** | Spec aprobado → plan con pasos de 2-5 min, código completo en cada paso |
+| **writing-skills** | Crear skills nuevas → TDD aplicado a documentación (baseline → skill → verify) |
 
 ---
 
-## 📋 Estado Actual
+## 🚀 Últimos Cambios (Sesión 22-Jun-2026)
+
+### ✨ Features Mobile nuevas
+
+| Feature | Archivos | Detalle |
+|---------|----------|---------|
+| **Fix "jalón" al deslizar entre tabs** | `App.js`, `RatesScreen.js`, `ConverterScreen.js`, `HistoryScreen.js` | StatusBar unificado en App.js (eliminado de cada screen); eliminado `<Animated.View>` con referencias rotas (fadeAnim/translateY undefined) en RatesScreen; corregido useEffect que nunca cargaba History por isActive no pasado; eliminada animación muerta en ConverterScreen |
+| **Transición suave entre tabs** | `App.js`, `CustomTabBar.js`, `CustomTabBar.test.js` | `onPageScroll` captura `position+offset` en Animated.Value; CustomTabBar interpola color/escala/opacidad/indicador continuamente en vez de spring discreto |
+| **Refactor frontend-ui-engineering** | Múltiples archivos nuevos | Datos separados en hooks (`useRatesData`, `useConverterData`, `useHistoryData`); subcomponentes extraídos (`RatesHeader`, `BCVModal`, `HistoryChart`, `DateDetailCard`); screens reducidas a < 200 líneas; estilos inline movidos a StyleSheet |
+
+### 📦 Archivos nuevos
+
+| Archivo | Propósito |
+|---------|-----------|
+| `src/hooks/useRatesData.js` | Hook: fetching, BCV Lunes, recordatorio, retry offline, brecha |
+| `src/hooks/useConverterData.js` | Hook: fetching, conversión, copy/paste, spreads, gasolina |
+| `src/hooks/useHistoryData.js` | Hook: histórico, selección de fecha, chart data, copy |
+| `src/components/RatesHeader.js` | Header RatesScreen con error/offline banners |
+| `src/components/BCVModal.js` | Modal para editar BCV Lunes |
+| `src/components/HistoryChart.js` | NativeBarChart extraído como componente |
+| `src/components/DateDetailCard.js` | Detail card de historial con copia individual/todo |
+
+### 🗑️ Archivos modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `App.js` | StatusBar unificado, onPageScroll handler, scrollOffset Animated.Value |
+| `CustomTabBar.js` | Interpolación continua con scrollOffset, barrita indicadora |
+| `RatesScreen.js` | ~390→170 líneas, usa useRatesData + RatesHeader + BCVModal |
+| `ConverterScreen.js` | ~670→185 líneas, usa useConverterData |
+| `HistoryScreen.js` | ~600→160 líneas, usa useHistoryData + HistoryChart + DateDetailCard |
+| `CustomTabBar.test.js` | Actualizado con createMockScrollOffset() |
+
+---
+
+## 🔒 Seguridad — Mejoras aplicadas (22-Jun-2026)
+
+### ErrorBoundary (App.js)
+- **Antes:** Mostraba `error.message` al usuario (filtrado de información interna)
+- **Después:** Pantalla genérica con tema oscuro, logo 🔄, mensajes "Algo salió mal" / "Reinicia la app" / "Contacta al soporte"
+- Detalle completo del error + componentStack se loguea a `console.warn`
+
+### Android Network Security
+- **`android/app/src/main/res/xml/network_security_config.xml`**: HTTPS-only enforcement con `cleartextTrafficPermitted="false"` + debug overrides para certificados de usuario en desarrollo
+- **`app.config.js`**: Referencia al XML via `expo.android.networkSecurityConfig`
+- EAS Build usará esta configuración al compilar la APK
+
+### Environment
+- **`.env.example`**: Documentación actualizada — `COTIZAVE_API_KEY` ahora comentada como obsoleta, aclarando que ninguna API necesita keys
+
+### Cache
+- **`saveHistoricalRate()`**: Ya tenía límite de 365 entradas (sin cambios necesarios)
+
+---
 
 ### Móvil (`tasa-del-dia/`)
 - **62 tests, 10 suites — 100% passing** ✅
@@ -67,6 +113,30 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 - Build APK: GitHub Action `Build APK (React Native)`
 - Checkpoint tag: `glassmorphism-checkpoint`
 - `git worktree` para aislar features
+
+### Arquitectura Mobile (actualizada)
+
+```
+src/
+  screens/
+    RatesScreen.js          # ~170 ln, usa useRatesData + RatesHeader + BCVModal
+    ConverterScreen.js      # ~185 ln, usa useConverterData
+    HistoryScreen.js        # ~160 ln, usa useHistoryData + HistoryChart + DateDetailCard
+  components/
+    RatesHeader.js           # Header con banners
+    BCVModal.js              # Modal de BCV Lunes
+    HistoryChart.js          # NativeBarChart
+    DateDetailCard.js        # Detail de fecha
+    CustomTabBar.js          # Tab bar con animación suave
+    RateCard.js, ShimmerEffect.js, ThemeToggleMini.js, ScreenContainer.js
+  hooks/
+    useRatesData.js          # Fetching + BCV Lunes + recordatorio + retry
+    useConverterData.js      # Fetching + conversión + copy/paste + spreads
+    useHistoryData.js        # Historial + selección fecha + chart data
+    useAutoRefresh.js
+  services/
+    api.js, backgroundTasks.js, notifications.js
+```
 
 ### Desktop (`tasa-del-dia-desktop/`)
 - Flet 0.85.3 es la única UI activa
@@ -106,11 +176,11 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 
 1. **Debug scroll/history Desktop** — probar con `ft.run()` en vez de `ft.app()`, verificar que ListView/Container recibe altura correcta
 2. Proxy backend para ocultar API key del bundle APK (si se reintroduce Cotizave)
-3. Build local APK con EAS cuando se resetee plan free
-4. Ajustes finos al glassmorphism
+3. Build local APK con EAS
+4. Ajustes finos al glassmorphism / UI
 5. Notificaciones desktop (system tray)
 6. Widget flotante desktop (overlay)
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 21-Jun-2026*
+*Fin del documento de traspaso — Última actualización: 22-Jun-2026*

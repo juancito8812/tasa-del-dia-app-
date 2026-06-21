@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('app', 'app')],
-    hiddenimports=['app', 'app.api', 'app.storage', 'app.auto_update'],
+    hiddenimports=['app', 'app.api', 'app.storage', 'app.auto_update', 'certifi', 'urllib3', 'ssl'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\5d92feb2-3090-4a5e-9fc7-cb844ba1390d',
+    version='C:\\Users\\JUANSA~1\\AppData\\Local\\Temp\\6898e821-82af-43cc-bd4e-96d2f683ea13',
 )

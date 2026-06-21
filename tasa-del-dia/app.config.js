@@ -43,6 +43,7 @@ module.exports = {
             compileSdkVersion: 36,
             targetSdkVersion: 36,
             minSdkVersion: 24,
+            usesCleartextTraffic: false,
           },
           ios: {
             newArchEnabled: true,

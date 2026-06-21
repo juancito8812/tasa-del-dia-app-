@@ -19,12 +19,17 @@ const mockColors = {
   textPrimary: '#ffffff',
 };
 
+function createMockScrollOffset(value = 0) {
+  const Animated = require('react-native').Animated;
+  return new Animated.Value(value);
+}
+
 describe('CustomTabBar', () => {
   it('renders 3 tabs with text labels', () => {
     let renderer;
     TestRenderer.act(() => {
       renderer = TestRenderer.create(
-        <CustomTabBar activeIndex={0} onTabPress={jest.fn()} colors={mockColors} />
+        <CustomTabBar activeIndex={0} onTabPress={jest.fn()} colors={mockColors} scrollOffset={createMockScrollOffset(0)} />
       );
     });
     const root = renderer.root;
@@ -40,7 +45,7 @@ describe('CustomTabBar', () => {
     let renderer;
     TestRenderer.act(() => {
       renderer = TestRenderer.create(
-        <CustomTabBar activeIndex={0} onTabPress={onPress} colors={mockColors} />
+        <CustomTabBar activeIndex={0} onTabPress={onPress} colors={mockColors} scrollOffset={createMockScrollOffset(0)} />
       );
     });
     const root = renderer.root;
@@ -55,7 +60,7 @@ describe('CustomTabBar', () => {
     let renderer;
     TestRenderer.act(() => {
       renderer = TestRenderer.create(
-        <CustomTabBar activeIndex={1} onTabPress={jest.fn()} colors={mockColors} />
+        <CustomTabBar activeIndex={1} onTabPress={jest.fn()} colors={mockColors} scrollOffset={createMockScrollOffset(1)} />
       );
     });
     const root = renderer.root;
