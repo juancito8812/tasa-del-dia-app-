@@ -70,44 +70,63 @@ Skills leídas (aplicar cuando corresponda):
 | **usesCleartextTraffic** | `app.config.js` | `usesCleartextTraffic: false` via expo-build-properties (HTTPS-only en Android) |
 | **.env.example** | `.env.example` | Documentación actualizada, `COTIZAVE_API_KEY` comentada como obsoleta |
 
+### 🤖 Release Automático con Changelog
+
+| Cambio | Archivos | Detalle |
+|--------|----------|---------|
+| **Release workflow** | `.github/workflows/release-automatic.yml` | workflow_dispatch (version/bump_type inputs) + push tags v* |
+| **Changelog script** | `tasa-del-dia/scripts/generate-changelog.js` | Genera markdown desde git log con conventional commits |
+| **App version bump** | Incluido en workflow | Actualiza app.config.js + commit [skip ci] automático |
+| **APK build** | Incluido en workflow | Build local + subida a GitHub Release + actualiza "latest" |
+
+Flujo: workflow_dispatch → bump version → git log changelog → build APK → GitHub Release (vX.Y.Z) + actualiza "latest"
+
 ### 📦 Archivos creados en esta sesión
 
 | Archivo | Propósito |
 |---------|-----------|
-| `.env.example` | Documentación de variables de entorno |
+| `scripts/generate-changelog.js` | Generador de changelog desde conventional commits (sin dependencias) |
+| `.github/workflows/release-automatic.yml` | Release workflow con changelog automático |
 
 ### 🗑️ Archivos modificados en esta sesión
 
 | Archivo | Cambio |
 |---------|--------|
-| `App.js` | ScreenContainer + SafeAreaView unificados, ErrorBoundary genérico |
-| `app.config.js` | `usesCleartextTraffic: false` para Android |
-| `RatesScreen.js` | Eliminado ScreenContainer/SafeAreaView (~190 ln) |
-| `ConverterScreen.js` | Eliminado ScreenContainer/useSafeAreaInsets, bounces=false (~195 ln) |
-| `HistoryScreen.js` | Eliminado ScreenContainer/SafeAreaView (~170 ln) |
+| `App.js` | (sesión anterior) ScreenContainer + SafeAreaView unificados |
+| `.github/workflows/build-apk.yml` | (sesión anterior) Release "latest" automático |
 
-### 🗑️ Archivos eliminados
+### Último commit (sesión anterior)
+- **SHA:** `716fc31` — "feat: auto-update desde GitHub con Release latest y modal de actualización"
+- **8 archivos**, +715 / -12
 
-- `android/` (gitignored — era de prueba local)
-
-### Último commit
-- **SHA:** `83a8213` — "fix: unificar estructura de pantallas y mejoras de seguridad"
-- **20 archivos**, 1773 inserciones, 1956 eliminaciones
+### Pendiente de commit
+- `scripts/generate-changelog.js` — nuevo
+- `.github/workflows/release-automatic.yml` — nuevo
 
 ---
 
 ## 📋 Estado Actual
 
 ### Móvil (`tasa-del-dia/`)
-- **62 tests, 10 suites — 100% passing** ✅
+- **74 tests, 11 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
-- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`
+- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env`: `COTIZAVE_API_KEY` obsoleta (no se usa en runtime)
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
   - Cada build crea automáticamente un Release "latest" en GitHub con la APK
   - URL de descarga: `https://github.com/juancito8812/tasa-del-dia-app-/releases/latest/download/TasaDelDia.apk`
-- Último build: [Run #27915752480](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27915752480)
+- Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
+- Último build: [Run #27919029524](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27919029524)
+
+**Workflows móviles activos (3):**
+| Workflow | Trigger | Propósito |
+|----------|---------|-----------|
+| `build-apk.yml` | Push a main + manual | Build APK local + Release "latest" |
+| `release-automatic.yml` | Manual + tags v* | Release con changelog + APK |
+| `mobile-ci.yml` | Push/PR a main | Tests + lint + typecheck |
+
+**Workflows eliminados:** `release-apk.yml` (obsoleto, reemplazado por release-automatic), `android-build.yml` (redundante con build-apk)
 
 ### ✨ Auto-Update desde GitHub
 
@@ -119,6 +138,7 @@ La app verifica automáticamente al iniciar si hay una versión más nueva en Gi
 | **Update Modal** | `src/components/UpdateModal.js` | Modal con versión actual/nueva, botón Descargar (lanza instalador Android), Saltar versión, Más tarde |
 | **Integración** | `App.js` | Check automático al montar (delay 2s para no interrumpir primera renderización) |
 | **GitHub Release** | `.github/workflows/build-apk.yml` | Crea/actualiza Release "latest" con la APK después de cada build exitoso |
+| **Tests** | `src/services/__tests__/autoUpdate.test.js` | 12 tests: compareVersions, isUpdateAvailable, getCurrentVersion |
 
 Flujo: `checkLatestRelease()` → compara con `getCurrentVersion()` → si hay nueva y no fue saltada → muestra `UpdateModal` → usuario toca Descargar → `downloadAndInstall()` descarga APK y abre instalador.
 

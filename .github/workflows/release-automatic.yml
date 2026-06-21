@@ -1,0 +1,193 @@
+name: Release Automático con Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a liberar (ej: 1.1.0). Si está vacío, se usa la versión de app.config.js'
+        required: false
+        type: string
+      bump_type:
+        description: 'Tipo de bump si no se especifica versión'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ANDROID_HOME: /usr/local/lib/android/sdk
+
+jobs:
+  release:
+    name: Release v${{ github.event.inputs.version || github.ref_name }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: tasa-del-dia
+
+    steps:
+      - name: Checkout código con historial completo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'tasa-del-dia/package-lock.json'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Instalar dependencias
+        run: npm install --legacy-peer-deps
+
+      - name: Ejecutar Tests
+        run: npm test
+
+      - name: Determinar versión del release
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            CURRENT=$(node -p "require('./app.config.js').expo.version")
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+            case "${{ github.event.inputs.bump_type }}" in
+              major) VERSION="$((MAJOR+1)).0.0" ;;
+              minor) VERSION="$MAJOR.$((MINOR+1)).0" ;;
+              *)     VERSION="$MAJOR.$MINOR.$((PATCH+1))" ;;
+            esac
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Versión: $VERSION"
+
+      - name: Generar changelog
+        id: changelog
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          CHANGELOG=$(node scripts/generate-changelog.js)
+          DELIM="_CHANGELOG_DONE_"
+          echo "changelog<<$DELIM" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "$DELIM" >> $GITHUB_OUTPUT
+          echo "📝 Changelog generado:"
+          echo "$CHANGELOG"
+
+      - name: Actualizar versión en app.config.js
+        run: |
+          sed -i "s/version: \"[0-9.]\+\"/version: \"${{ steps.version.outputs.version }}\"/" app.config.js
+          echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
+
+      - name: Commit de la actualización de versión
+        run: |
+          git config user.name "release-bot[bot]"
+          git config user.email "release-bot[bot]@users.noreply.github.com"
+          git add app.config.js
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
+          git push
+          echo "✅ Version bump commiteado (build-apk.yml omitido por [skip ci])"
+
+      - name: Instalar EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Autenticar en Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "⚠️  EXPO_TOKEN no configurado"
+            exit 1
+          fi
+          npx eas whoami --non-interactive
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('tasa-del-dia/android/**/*.gradle*', 'tasa-del-dia/android/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Generar proyecto nativo (prebuild)
+        run: npx expo prebuild --clean --non-interactive
+
+      - name: Compilar APK
+        timeout-minutes: 60
+        run: |
+          npx eas build \
+            --platform android \
+            --profile preview \
+            --local \
+            --non-interactive \
+            --output TasaDelDia-${{ steps.version.outputs.tag }}.apk
+
+      - name: Verificar APK
+        run: |
+          if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
+            echo "✅ APK: $(ls -lh TasaDelDia-${{ steps.version.outputs.tag }}.apk | awk '{print $5}')"
+          else
+            echo "❌ APK no encontrada"
+            exit 1
+          fi
+
+      - name: Crear GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="v$VERSION"
+
+          # Eliminar release "latest" anterior
+          gh release delete latest --yes 2>/dev/null || true
+
+          # Crear release versionado (NO marcado como latest — ese rol es para el tag "latest")
+          gh release create "$TAG" \
+            --title "v$VERSION" \
+            --notes "${{ steps.changelog.outputs.changelog }}"
+
+          # Subir APK al release versionado
+          gh release upload "$TAG" TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber
+
+          echo "✅ Release v$VERSION creado en GitHub"
+          echo "📎 https://github.com/${{ github.repository }}/releases/tag/$TAG"
+
+      - name: Crear/Actualizar Release "latest" para auto-update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Eliminar release "latest" anterior si existe
+          gh release delete latest --yes 2>/dev/null || true
+
+          # Crear nuevo release "latest" como el latest oficial
+          gh release create latest \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes "${{ steps.changelog.outputs.changelog }}" \
+            --latest
+
+          # Subir APK
+          gh release upload latest TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber
+
+          echo "✅ Release 'latest' actualizado"
+          echo "📎 Descarga: https://github.com/${{ github.repository }}/releases/latest/download/TasaDelDia.apk"

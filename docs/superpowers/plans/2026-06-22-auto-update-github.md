@@ -13,7 +13,7 @@
 **Files:**
 - Create: `tasa-del-dia/src/services/autoUpdate.js`
 
-- [ ] **Step 1: Escribir el servicio autoUpdate.js**
+- [x] **Step 1: Escribir el servicio autoUpdate.js**
 
 ```js
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -166,14 +166,14 @@ async function getCachedUpdateInfo() {
 }
 ```
 
-- [ ] **Step 2: Verificar que se exportan correctamente**
+- [x] **Step 2: Verificar que se exportan correctamente**
 No hay test automatizado para este archivo (depende de APIs externas). Validación manual: `import` statements son correctos.
 
 ### Task 2: Crear `src/components/UpdateModal.js`
 **Files:**
 - Create: `tasa-del-dia/src/components/UpdateModal.js`
 
-- [ ] **Step 1: Escribir el componente UpdateModal**
+- [x] **Step 1: Escribir el componente UpdateModal**
 
 ```js
 import React, { useState } from 'react';
@@ -351,14 +351,14 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 2: Verificar imports y exports**
+- [x] **Step 2: Verificar imports y exports**
 Validar que el componente se exporta como default y recibe las props correctas.
 
 ### Task 3: Integrar auto-update en App.js
 **Files:**
 - Modify: `tasa-del-dia/App.js`
 
-- [ ] **Step 1: Agregar el check de actualización en App.js**
+- [x] **Step 1: Agregar el check de actualización en App.js**
 
 Agregar estos imports al inicio de `App.js`:
 ```js
@@ -413,7 +413,7 @@ function App() {
 }
 ```
 
-- [ ] **Step 2: Verificar que se pasa `colors` al modal**
+- [x] **Step 2: Verificar que se pasa `colors` al modal**
 
 El `UpdateModal` necesita la prop `C` (colores del theme). Como el modal se renderiza dentro de `ThemeProvider` pero fuera de `AnimatedAppContent`, necesitamos:
 
@@ -443,18 +443,18 @@ Usar Opción B es más simple. Cambiar los colores del modal a valores fijos del
 **Files:**
 - `tasa-del-dia/`
 
-- [ ] **Step 1: Ejecutar tests existentes**
+- [x] **Step 1: Ejecutar tests existentes**
 Run: `cd tasa-del-dia && npm test -- --ci 2>&1`
 Expected: 62/62 pass (los tests existentes no deberían romperse)
 
-- [ ] **Step 2: Code review**
+- [x] **Step 2: Code review**
 Ejecutar code-reviewer-deepseek-flash para revisar todos los archivos modificados/creados.
 
 ### Task 5: Actualizar AI_HANDOFF.md
 **Files:**
 - Modify: `AI_HANDOFF.md`
 
-- [ ] **Step 1: Agregar sección de auto-update**
+- [x] **Step 1: Agregar sección de auto-update**
 Documentar:
 - GitHub Release "latest" se crea automáticamente con cada build
 - Auto-update service en `src/services/autoUpdate.js`
