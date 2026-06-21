@@ -156,10 +156,10 @@ export default function RatesScreen({ isActive }) {
 
   useEffect(() => {
     if (!isActive) return;
-    fadeAnim.setValue(0.85);
+    fadeAnim.setValue(0.9);
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 200,
+      duration: 150,
       useNativeDriver: true,
     }).start();
   }, [isActive, fadeAnim]);
@@ -306,7 +306,7 @@ export default function RatesScreen({ isActive }) {
       ? ((data.tasaParalelo - tasaBCVLunes) / tasaBCVLunes) * 100
       : null;
 
-  const translateY = useMemo(() => fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }), [fadeAnim]);
+  const translateY = useMemo(() => fadeAnim.interpolate({ inputRange: [0.9, 1], outputRange: [8, 0] }), [fadeAnim]);
   const brechaColor =
     brecha !== null
       ? brecha > 15

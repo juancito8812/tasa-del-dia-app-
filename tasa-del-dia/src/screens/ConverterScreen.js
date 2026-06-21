@@ -515,10 +515,10 @@ export default function ConverterScreen({ isActive }) {
 
   useEffect(() => {
     if (!isActive) return;
-    fadeAnim.setValue(0.85);
+    fadeAnim.setValue(0.9);
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 200,
+      duration: 150,
       useNativeDriver: true,
     }).start();
   }, [isActive, fadeAnim]);
@@ -677,7 +677,7 @@ export default function ConverterScreen({ isActive }) {
         <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + insets.bottom : 0}>
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} keyboardDismissMode="interactive"
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadRates(true)} tintColor={C.highlight} colors={[C.highlight]} progressBackgroundColor={C.secondary} />}>
-            <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }) }] }}>
+            <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.9, 1], outputRange: [8, 0] }) }] }}>
             <View style={styles.header}>
               <View style={styles.headerRow}>
                 <View style={[styles.logoContainer, { backgroundColor: C.highlight + '15' }]}>
