@@ -121,7 +121,7 @@ def build_title_bar():
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
     )
     theme_btn = ft.IconButton(
-        icon=ft.icons.DARK_MODE,
+        icon=ft.Icons.DARK_MODE,
         icon_color=colors["secondary"],
         on_click=switch_theme,
     )
@@ -214,7 +214,7 @@ def build_rate_card(key: str, icon: str, title: str, subtitle: str, color_key: s
     clr = color_map.get(color_key, colors["primary"])
     actions = []
     if editable:
-        edit_btn = ft.IconButton(icon=ft.icons.EDIT, icon_size=14, icon_color=colors["bcv_lunes"],
+        edit_btn = ft.IconButton(icon=ft.Icons.EDIT, icon_size=14, icon_color=colors["bcv_lunes"],
                                  on_click=lambda e: edit_bcv_lunes())
         actions.append(edit_btn)
     card = ft.Container(
@@ -588,8 +588,8 @@ def apply_theme():
     page.theme_mode = ft.ThemeMode.DARK if _current_theme == "dark" else ft.ThemeMode.LIGHT
     theme_btn = ctrl.get("theme_btn")
     if theme_btn:
-        icons = {"dark": ft.icons.DARK_MODE, "light": ft.icons.LIGHT_MODE, "system": ft.icons.SETTINGS}
-        theme_btn.icon = icons.get(_theme_mode, ft.icons.DARK_MODE)
+        icons = {"dark": ft.Icons.DARK_MODE, "light": ft.Icons.LIGHT_MODE, "system": ft.Icons.SETTINGS}
+        theme_btn.icon = icons.get(_theme_mode, ft.Icons.DARK_MODE)
     save_config(last_known_theme=_theme_mode)
     update_rate_cards(_rates)
     update_spreads(_rates.get("bcv"), _rates.get("parallel"))
