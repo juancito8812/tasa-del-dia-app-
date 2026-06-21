@@ -924,9 +924,9 @@ def main(p: ft.Page):
                 selected_index=0,
                 animation_duration=200,
                 tabs=[
-                    ft.Tab(text="📊  Tasas", content=build_rates_tab()),
-                    ft.Tab(text="💱  Conversor", content=build_converter_tab()),
-                    ft.Tab(text="📅  Historial", content=build_history_tab()),
+                    ft.Tab(label="📊  Tasas", content=build_rates_tab()),
+                    ft.Tab(label="💱  Conversor", content=build_converter_tab()),
+                    ft.Tab(label="📅  Historial", content=build_history_tab()),
                 ],
                 expand=True,
             ),
