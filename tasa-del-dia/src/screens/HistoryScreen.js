@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import { getHistoricalRates, formatDateKey, parseDateDDMMYYYY } from '../services/api';
+import ScreenContainer from '../components/ScreenContainer';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -87,7 +88,6 @@ function createStyles(C) {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: C.primary,
       paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     container: {
@@ -609,154 +609,156 @@ export default function HistoryScreen({ isActive }) {
   // ─── Main render ────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={[styles.logoContainer, { backgroundColor: C.info + '15' }]}>
-            <Ionicons name="stats-chart" size={18} color={C.info} />
+    <ScreenContainer>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <View style={[styles.logoContainer, { backgroundColor: C.info + '15' }]}>
+              <Ionicons name="stats-chart" size={18} color={C.info} />
+            </View>
+            <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Historial</Text>
           </View>
-          <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Historial</Text>
-        </View>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {/* ── Date selector ── */}
-          {last5.length > 0 && (
-            <>
-              <Text style={[styles.sectionLabel, { color: C.textMuted }]}>Seleccionar fecha</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                {last5.map((item) => {
-                  const isActive = item.dateKey === selectedDateKey;
-                  return (
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+            {/* ── Date selector ── */}
+            {last5.length > 0 && (
+              <>
+                <Text style={[styles.sectionLabel, { color: C.textMuted }]}>Seleccionar fecha</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                  {last5.map((item) => {
+                    const isActive = item.dateKey === selectedDateKey;
+                    return (
+                      <TouchableOpacity
+                        key={item.dateKey}
+                        style={[
+                          styles.dateChip,
+                          isActive ? styles.dateChipActive : styles.dateChipInactive,
+                        ]}
+                        onPress={() => handleSelectDate(item.dateKey)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.dateChipDay, { color: isActive ? C.info : C.textPrimary }]}>
+                          {getDay(item.dateKey)}
+                        </Text>
+                        <Text style={[styles.dateChipMonth, { color: isActive ? C.info : C.textMuted }]}>
+                          {getMonthAbbr(item.dateKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+
+                  {/* "Otra fecha" chip */}
+                  <TouchableOpacity
+                    style={[styles.dateChip, showCustomInput ? styles.dateChipActive : styles.dateChipInactive]}
+                    onPress={() => setShowCustomInput(!showCustomInput)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="search" size={16} color={showCustomInput ? C.info : C.textMuted} />
+                    <Text style={[styles.dateChipMonth, { color: showCustomInput ? C.info : C.textMuted, marginTop: 4 }]}>
+                      Buscar
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+
+                {/* Custom date input */}
+                {showCustomInput && (
+                  <View style={styles.customDateRow}>
+                    <TextInput
+                      style={styles.customDateInput}
+                      placeholder="DD/MM/AAAA (ej: 13/06/2026)"
+                      placeholderTextColor={C.textMuted}
+                      value={customDateText}
+                      onChangeText={setCustomDateText}
+                      keyboardType="number-pad"
+                      maxLength={10}
+                      returnKeyType="search"
+                      onSubmitEditing={handleCustomDate}
+                    />
+                    <TouchableOpacity
+                      style={styles.customDateButton}
+                      onPress={handleCustomDate}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="arrow-forward" size={14} color="#fff" />
+                      <Text style={styles.customDateButtonText}>Ver</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            )}
+
+            {/* ── Detail view (when a date is selected) ── */}
+            {selectedDateKey && renderDateDetail()}
+
+            {/* ── Chart (only when no date selected) ── */}
+            {!selectedDateKey && chartInfo && (
+              <View style={styles.chartContainer}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Ionicons name="trending-up" size={16} color={C.textPrimary} />
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary }}>
+                      Últimos 5 días
+                    </Text>
+                  </View>
+                  <Text style={{ fontSize: 10, color: C.textMuted, fontWeight: '600' }}>
+                    {ratesData.length} registro{ratesData.length !== 1 ? 's' : ''}
+                  </Text>
+                </View>
+                <NativeBarChart
+                  data={chartInfo.data}
+                  labels={chartInfo.labels}
+                  colors={chartInfo.colors}
+                  legendLabels={chartInfo.legendLabels}
+                  C={C}
+                />
+              </View>
+            )}
+
+            {/* ── List (only when no date selected) ── */}
+            {!selectedDateKey && (
+              <View style={styles.listContainer}>
+                {ratesData.length > 0 ? (
+                  ratesData.slice(0, 365).map((item) => (
                     <TouchableOpacity
                       key={item.dateKey}
-                      style={[
-                        styles.dateChip,
-                        isActive ? styles.dateChipActive : styles.dateChipInactive,
-                      ]}
-                      onPress={() => handleSelectDate(item.dateKey)}
+                      style={styles.listItem}
                       activeOpacity={0.7}
+                      onPress={() => handleSelectDate(item.dateKey)}
                     >
-                      <Text style={[styles.dateChipDay, { color: isActive ? C.info : C.textPrimary }]}>
-                        {getDay(item.dateKey)}
-                      </Text>
-                      <Text style={[styles.dateChipMonth, { color: isActive ? C.info : C.textMuted }]}>
-                        {getMonthAbbr(item.dateKey)}
-                      </Text>
+                      <View style={styles.dateRow}>
+                        <Ionicons name="calendar" size={14} color={C.info} />
+                        <Text style={[styles.dateText, { color: C.textPrimary }]}>
+                          {formatDateKey(item.dateKey)}
+                        </Text>
+                        {item.manual && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto', gap: 4 }}>
+                            <Ionicons name="create-outline" size={12} color={C.textMuted} />
+                            <Text style={{ fontSize: 10, color: C.textMuted }}>Manual</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.ratesRow}>
+                        {renderRateCol("BCV", item.bcv, C.success)}
+                        {renderRateCol("Paralelo", item.paralelo, C.highlight)}
+                        {renderRateCol("Binance", item.binance_p2p, C.warning)}
+                        {renderRateCol("Euro", item.euro, C.info)}
+                      </View>
                     </TouchableOpacity>
-                  );
-                })}
-
-                {/* "Otra fecha" chip */}
-                <TouchableOpacity
-                  style={[styles.dateChip, showCustomInput ? styles.dateChipActive : styles.dateChipInactive]}
-                  onPress={() => setShowCustomInput(!showCustomInput)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="search" size={16} color={showCustomInput ? C.info : C.textMuted} />
-                  <Text style={[styles.dateChipMonth, { color: showCustomInput ? C.info : C.textMuted, marginTop: 4 }]}>
-                    Buscar
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-
-              {/* Custom date input */}
-              {showCustomInput && (
-                <View style={styles.customDateRow}>
-                  <TextInput
-                    style={styles.customDateInput}
-                    placeholder="DD/MM/AAAA (ej: 13/06/2026)"
-                    placeholderTextColor={C.textMuted}
-                    value={customDateText}
-                    onChangeText={setCustomDateText}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                    returnKeyType="search"
-                    onSubmitEditing={handleCustomDate}
-                  />
-                  <TouchableOpacity
-                    style={styles.customDateButton}
-                    onPress={handleCustomDate}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="arrow-forward" size={14} color="#fff" />
-                    <Text style={styles.customDateButtonText}>Ver</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </>
-          )}
-
-          {/* ── Detail view (when a date is selected) ── */}
-          {selectedDateKey && renderDateDetail()}
-
-          {/* ── Chart (only when no date selected) ── */}
-          {!selectedDateKey && chartInfo && (
-            <View style={styles.chartContainer}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Ionicons name="trending-up" size={16} color={C.textPrimary} />
-                  <Text style={{ fontSize: 14, fontWeight: '700', color: C.textPrimary }}>
-                    Últimos 5 días
-                  </Text>
-                </View>
-                <Text style={{ fontSize: 10, color: C.textMuted, fontWeight: '600' }}>
-                  {ratesData.length} registro{ratesData.length !== 1 ? 's' : ''}
-                </Text>
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="calendar-outline" size={48} color={C.textMuted} />
+                    <Text style={[styles.emptyText, { color: C.textMuted }]}>
+                      No hay tasas guardadas aún.{'\n'}Se guardarán automáticamente cuando obtengas las tasas del día.
+                    </Text>
+                  </View>
+                )}
               </View>
-              <NativeBarChart
-                data={chartInfo.data}
-                labels={chartInfo.labels}
-                colors={chartInfo.colors}
-                legendLabels={chartInfo.legendLabels}
-                C={C}
-              />
-            </View>
-          )}
-
-          {/* ── List (only when no date selected) ── */}
-          {!selectedDateKey && (
-            <View style={styles.listContainer}>
-              {ratesData.length > 0 ? (
-                ratesData.slice(0, 365).map((item) => (
-                  <TouchableOpacity
-                    key={item.dateKey}
-                    style={styles.listItem}
-                    activeOpacity={0.7}
-                    onPress={() => handleSelectDate(item.dateKey)}
-                  >
-                    <View style={styles.dateRow}>
-                      <Ionicons name="calendar" size={14} color={C.info} />
-                      <Text style={[styles.dateText, { color: C.textPrimary }]}>
-                        {formatDateKey(item.dateKey)}
-                      </Text>
-                      {item.manual && (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto', gap: 4 }}>
-                          <Ionicons name="create-outline" size={12} color={C.textMuted} />
-                          <Text style={{ fontSize: 10, color: C.textMuted }}>Manual</Text>
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.ratesRow}>
-                      {renderRateCol("BCV", item.bcv, C.success)}
-                      {renderRateCol("Paralelo", item.paralelo, C.highlight)}
-                      {renderRateCol("Binance", item.binance_p2p, C.warning)}
-                      {renderRateCol("Euro", item.euro, C.info)}
-                    </View>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View style={styles.emptyState}>
-                  <Ionicons name="calendar-outline" size={48} color={C.textMuted} />
-                  <Text style={[styles.emptyText, { color: C.textMuted }]}>
-                    No hay tasas guardadas aún.{'\n'}Se guardarán automáticamente cuando obtengas las tasas del día.
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+            )}
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    </ScreenContainer>
   );
 }

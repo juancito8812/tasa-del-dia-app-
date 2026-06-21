@@ -21,6 +21,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
+import ScreenContainer from '../components/ScreenContainer';
 
 
 const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000, 50000];
@@ -135,7 +136,6 @@ function createStyles(C) {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
-      backgroundColor: C.primary,
     },
     container: {
       flex: 1,
@@ -671,185 +671,187 @@ export default function ConverterScreen({ isActive }) {
   const numericAmount = parseFloat(rawAmount) || 0;
 
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + insets.bottom : 0}>
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} keyboardDismissMode="interactive"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadRates(true)} tintColor={C.highlight} colors={[C.highlight]} progressBackgroundColor={C.secondary} />}>
-          <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }) }] }}>
-          <View style={styles.header}>
-            <View style={styles.headerRow}>
-              <View style={[styles.logoContainer, { backgroundColor: C.highlight + '15' }]}>
-                <Ionicons name="swap-horizontal" size={18} color={C.highlight} />
+    <ScreenContainer>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={C.primary} />
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT + insets.bottom : 0}>
+          <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} keyboardDismissMode="interactive"
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => loadRates(true)} tintColor={C.highlight} colors={[C.highlight]} progressBackgroundColor={C.secondary} />}>
+            <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: fadeAnim.interpolate({ inputRange: [0.85, 1], outputRange: [15, 0] }) }] }}>
+            <View style={styles.header}>
+              <View style={styles.headerRow}>
+                <View style={[styles.logoContainer, { backgroundColor: C.highlight + '15' }]}>
+                  <Ionicons name="swap-horizontal" size={18} color={C.highlight} />
+                </View>
+                <Text style={styles.headerTitle}>Conversor</Text>
+                <View style={{ flex: 1 }} />
+                <ThemeToggleMini />
               </View>
-              <Text style={styles.headerTitle}>Conversor</Text>
-              <View style={{ flex: 1 }} />
-              <ThemeToggleMini />
+              {offlineMode && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.warning, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 }}>
+                  <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 11, flex: 1 }}>
+                    Sin conexión — Mostrando últimas tasas{offlineCachedAt ? ` (${new Date(offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
+                  </Text>
+                </View>
+              )}
             </View>
-            {offlineMode && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: C.warning, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 }}>
-                <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 11, flex: 1 }}>
-                  Sin conexión — Mostrando últimas tasas{offlineCachedAt ? ` (${new Date(offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
-                </Text>
-              </View>
-            )}
-          </View>
 
-          <View style={styles.converterCard}>
-            <View style={[styles.cardGlow, { backgroundColor: currentColor }]} />
-            <TouchableOpacity style={styles.modeToggle} onPress={handleSwapMode} activeOpacity={0.7}>
-              <View style={[styles.modeSide, mode === 'usd-to-bs' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
-                <Ionicons name="logo-usd" size={16} color={mode === 'usd-to-bs' ? currentColor : C.textMuted} />
-                <Text style={[styles.modeText, mode === 'usd-to-bs' && { color: currentColor, fontWeight: '700' }]}>USD</Text>
-              </View>
-              <View style={styles.swapCircle}><Ionicons name="swap-horizontal" size={16} color={C.textMuted} /></View>
-              <View style={[styles.modeSide, mode === 'bs-to-usd' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
-                <Text style={[styles.modeText, mode === 'bs-to-usd' && { color: currentColor, fontWeight: '700' }]}>Bs.</Text>
-                <Ionicons name="cash" size={16} color={mode === 'bs-to-usd' ? currentColor : C.textMuted} />
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (rawAmount) handleCopy(`${mode === 'usd-to-bs' ? 'USD ' : 'Bs. '}${formatCurrency(numericAmount)}`, 'amount'); }}>
-              <Text style={styles.displayLabel}>{copiedType === 'amount' ? '¡Copiado!' : mode === 'usd-to-bs' ? 'Dólares (USD)' : 'Bolívares (Bs.)'}</Text>
-              <Text style={[styles.displayValue, { color: copiedType === 'amount' ? C.success : currentColor }]}>{rawAmount ? displayAmount : '0,00'}</Text>
-              {rawAmount.length > 0 && copiedType !== 'amount' && <Text style={styles.displaySubtext}>{mode === 'usd-to-bs' ? `× ${getRateLabel().split(' ')[0]} =` : `÷ ${getRateLabel().split(' ')[0]} =`}</Text>}
-              {copiedType === 'amount' && <View style={[styles.copiedBadge, { backgroundColor: C.success + '15' }]}><Ionicons name="checkmark" size={12} color={C.success} /><Text style={styles.copiedBadgeText}>Copiado al portapapeles</Text></View>}
-            </TouchableOpacity>
-
-            <View style={[styles.inputContainer, isKeyboardVisible && styles.inputContainerFocused]}>
-              <Ionicons name={mode === 'usd-to-bs' ? 'logo-usd' : 'cash'} size={16} color={C.textMuted} style={styles.inputIcon} />
-              <TextInput ref={inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0.00" placeholderTextColor={C.textMuted} keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'} value={rawAmount} onChangeText={handleChangeText} returnKeyType="done" onSubmitEditing={handleConvert} />
-              <TouchableOpacity onPress={handlePaste} activeOpacity={0.6} style={{ paddingLeft: 8, paddingVertical: 4 }}>
-                <View style={{ backgroundColor: pasteFeedback ? (C.success + '20') : (currentColor + '20'), borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
-                  <Ionicons name={pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={pasteFeedback ? C.success : currentColor} />
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: pasteFeedback ? C.success : currentColor }}>{pasteFeedback ? '¡Pegado!' : 'Pegar'}</Text>
+            <View style={styles.converterCard}>
+              <View style={[styles.cardGlow, { backgroundColor: currentColor }]} />
+              <TouchableOpacity style={styles.modeToggle} onPress={handleSwapMode} activeOpacity={0.7}>
+                <View style={[styles.modeSide, mode === 'usd-to-bs' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
+                  <Ionicons name="logo-usd" size={16} color={mode === 'usd-to-bs' ? currentColor : C.textMuted} />
+                  <Text style={[styles.modeText, mode === 'usd-to-bs' && { color: currentColor, fontWeight: '700' }]}>USD</Text>
+                </View>
+                <View style={styles.swapCircle}><Ionicons name="swap-horizontal" size={16} color={C.textMuted} /></View>
+                <View style={[styles.modeSide, mode === 'bs-to-usd' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
+                  <Text style={[styles.modeText, mode === 'bs-to-usd' && { color: currentColor, fontWeight: '700' }]}>Bs.</Text>
+                  <Ionicons name="cash" size={16} color={mode === 'bs-to-usd' ? currentColor : C.textMuted} />
                 </View>
               </TouchableOpacity>
-            </View>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow} contentContainerStyle={styles.quickContent}>
-              {QUICK_AMOUNTS.map((val) => (
-                <TouchableOpacity key={val} style={[styles.quickChip, numericAmount === val && { backgroundColor: currentColor + '20', borderColor: currentColor }]} onPress={() => handleQuickAmount(val)} activeOpacity={0.7}>
-                  <Text style={[styles.quickChipText, numericAmount === val && { color: currentColor, fontWeight: '700' }]}>{val.toLocaleString('es-VE')}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+              <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (rawAmount) handleCopy(`${mode === 'usd-to-bs' ? 'USD ' : 'Bs. '}${formatCurrency(numericAmount)}`, 'amount'); }}>
+                <Text style={styles.displayLabel}>{copiedType === 'amount' ? '¡Copiado!' : mode === 'usd-to-bs' ? 'Dólares (USD)' : 'Bolívares (Bs.)'}</Text>
+                <Text style={[styles.displayValue, { color: copiedType === 'amount' ? C.success : currentColor }]}>{rawAmount ? displayAmount : '0,00'}</Text>
+                {rawAmount.length > 0 && copiedType !== 'amount' && <Text style={styles.displaySubtext}>{mode === 'usd-to-bs' ? `× ${getRateLabel().split(' ')[0]} =` : `÷ ${getRateLabel().split(' ')[0]} =`}</Text>}
+                {copiedType === 'amount' && <View style={[styles.copiedBadge, { backgroundColor: C.success + '15' }]}><Ionicons name="checkmark" size={12} color={C.success} /><Text style={styles.copiedBadgeText}>Copiado al portapapeles</Text></View>}
+              </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={handleConvert} activeOpacity={0.8}>
-              <Ionicons name="calculator" size={18} color="#fff" /><Text style={styles.convertButtonText}>Convertir</Text>
-            </TouchableOpacity>
-
-            {result && (
-              <View style={styles.inlineResult}>
-                <View style={styles.resultDivider} />
-                <Text style={styles.resultLabel}>Resultado</Text>
-                <View style={styles.resultContent}>
-                  <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => handleCopy(formatCurrency(result.amount), 'result-source')}>
-                    <Text style={styles.resultItemLabel}>{copiedType === 'result-source' ? '¡Copiado!' : (mode === 'usd-to-bs' ? 'USD' : 'Bs.')}</Text>
-                    <Text style={[styles.resultItemValue, copiedType === 'result-source' && { color: C.success }]}>{formatCurrency(result.amount)}</Text>
-                  </TouchableOpacity>
-                  <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.textMuted} /></View>
-                  <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => handleCopy(formatCurrency(result.converted), 'result-target')}>
-                    <Text style={styles.resultItemLabel}>{copiedType === 'result-target' ? '¡Copiado!' : (mode === 'usd-to-bs' ? 'Bs.' : 'USD')}</Text>
-                    <Text style={[styles.resultItemValue, { color: copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrency(result.converted)}</Text>
-                  </TouchableOpacity>
-                </View>
-                <TouchableOpacity activeOpacity={0.7} onPress={() => handleCopy(`Bs. ${formatCurrency(result.rate)}`, 'rate')}>
-                  <Text style={styles.resultMeta}>Tasa: {getRateLabel()} — <Text style={{ fontWeight: '700' }}>{copiedType === 'rate' ? '¡Copiado!' : `Bs. ${formatCurrency(result.rate)}`}</Text></Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-
-          <Text style={styles.sectionLabel}>Tasa a usar</Text>
-          <View style={styles.rateSelector}>
-            {RATE_TYPES.map((rt) => {
-              const isActive = selectedRate === rt.key;
-              const rateVal = rates[rt.key];
-              return (
-                <TouchableOpacity key={rt.key} style={[styles.rateOption, isActive && { backgroundColor: rt.color + '12', borderColor: rt.color }]} activeOpacity={0.7} onPress={() => { setSelectedRate(rt.key); setResult(null); }}>
-                  {isActive && <View style={[styles.rateActiveBar, { backgroundColor: rt.color }]} />}
-                  <View style={[styles.rateDot, { backgroundColor: isActive ? rt.color : 'rgba(255,255,255,0.15)' }]} />
-                  <View style={styles.rateOptionText}>
-                    <Text style={[styles.rateOptionLabel, isActive && { color: C.textPrimary, fontWeight: '700' }]}>{rt.label}</Text>
-                    <Text style={styles.rateOptionValue}>{rateVal ? `Bs. ${formatCurrency(rateVal)}` : 'Cargando...'}</Text>
+              <View style={[styles.inputContainer, isKeyboardVisible && styles.inputContainerFocused]}>
+                <Ionicons name={mode === 'usd-to-bs' ? 'logo-usd' : 'cash'} size={16} color={C.textMuted} style={styles.inputIcon} />
+                <TextInput ref={inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0.00" placeholderTextColor={C.textMuted} keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'} value={rawAmount} onChangeText={handleChangeText} returnKeyType="done" onSubmitEditing={handleConvert} />
+                <TouchableOpacity onPress={handlePaste} activeOpacity={0.6} style={{ paddingLeft: 8, paddingVertical: 4 }}>
+                  <View style={{ backgroundColor: pasteFeedback ? (C.success + '20') : (currentColor + '20'), borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                    <Ionicons name={pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={pasteFeedback ? C.success : currentColor} />
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: pasteFeedback ? C.success : currentColor }}>{pasteFeedback ? '¡Pegado!' : 'Pegar'}</Text>
                   </View>
-                  {isActive && <Ionicons name="checkmark-circle" size={18} color={rt.color} />}
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              </View>
 
-          {!loading && spreadBcv && (
-            <View style={styles.spreadCard}>
-              <View style={styles.spreadHeader}>
-                <View style={styles.spreadTitleRow}><Ionicons name="git-compare" size={13} color={C.textSecondary} /><Text style={styles.spreadTitle}>Brecha BCV vs Paralelo</Text></View>
-                <Text style={[styles.spreadPercent, { color: spreadBcv.barColor }]}>{spreadBcv.diffPercent.toFixed(1)}%</Text>
-              </View>
-              <View style={styles.spreadBarBg}><View style={[styles.spreadBarFill, { width: `${spreadBcv.barPercent}%`, backgroundColor: spreadBcv.barColor }]} /></View>
-              <View style={styles.spreadStats}>
-                <Text style={styles.spreadStat}>BCV: <Text style={{ color: C.success, fontWeight: '700' }}>Bs. {formatCurrency(rates.bcv)}</Text></Text>
-                <Text style={styles.spreadStat}>Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(rates.paralelo)}</Text></Text>
-                <Text style={styles.spreadStat}>Diferencia: <Text style={{ color: spreadBcv.barColor, fontWeight: '700' }}>Bs. {formatCurrency(spreadBcv.diff)}</Text></Text>
-              </View>
-            </View>
-          )}
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow} contentContainerStyle={styles.quickContent}>
+                {QUICK_AMOUNTS.map((val) => (
+                  <TouchableOpacity key={val} style={[styles.quickChip, numericAmount === val && { backgroundColor: currentColor + '20', borderColor: currentColor }]} onPress={() => handleQuickAmount(val)} activeOpacity={0.7}>
+                    <Text style={[styles.quickChipText, numericAmount === val && { color: currentColor, fontWeight: '700' }]}>{val.toLocaleString('es-VE')}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
 
-          {!loading && spreadLunes && (
-            <View style={[styles.spreadCard, { marginTop: 8 }]}>
-              <View style={styles.spreadHeader}>
-                <View style={styles.spreadTitleRow}><Ionicons name="calendar" size={13} color={bcvLunesColor} /><Text style={styles.spreadTitle}>Brecha BCV (Lunes) vs Paralelo</Text></View>
-                <Text style={[styles.spreadPercent, { color: spreadLunes.barColor }]}>{spreadLunes.diffPercent.toFixed(1)}%</Text>
-              </View>
-              <View style={styles.spreadBarBg}><View style={[styles.spreadBarFill, { width: `${spreadLunes.barPercent}%`, backgroundColor: spreadLunes.barColor }]} /></View>
-              <View style={styles.spreadStats}>
-                <Text style={styles.spreadStat}>BCV (Lunes): <Text style={{ color: bcvLunesColor, fontWeight: '700' }}>Bs. {formatCurrency(rates.bcv_lunes)}</Text></Text>
-                <Text style={styles.spreadStat}>Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(rates.paralelo)}</Text></Text>
-                <Text style={styles.spreadStat}>Diferencia: <Text style={{ color: spreadLunes.barColor, fontWeight: '700' }}>Bs. {formatCurrency(spreadLunes.diff)}</Text></Text>
-              </View>
-            </View>
-          )}
+              <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={handleConvert} activeOpacity={0.8}>
+                <Ionicons name="calculator" size={18} color="#fff" /><Text style={styles.convertButtonText}>Convertir</Text>
+              </TouchableOpacity>
 
-          {/* Gasolina — Conversor */}
-          {rates.bcv !== null && rates.bcv !== undefined && (
-            <View style={[styles.spreadCard, { marginTop: 8 }]}>
-              <View style={styles.spreadHeader}>
-                <View style={styles.spreadTitleRow}>
-                  <Ionicons name="flame" size={14} color={C.warning} />
-                  <Text style={[styles.spreadTitle, { color: C.textPrimary, fontSize: 13, fontWeight: '700' }]}>Gasolina</Text>
-                </View>
-                <Text style={{ fontSize: 11, color: C.textMuted }}>$0,50 USD/L</Text>
-              </View>
-              <View style={[styles.inputContainer, { marginBottom: 10 }]}>
-                <Ionicons name="flame" size={16} color={C.warning} style={{ marginRight: 8 }} />
-                <TextInput
-                  style={[styles.input, { borderColor: 'transparent' }]}
-                  placeholder="Litros (ej: 3.4)"
-                  placeholderTextColor={C.textMuted}
-                  keyboardType="decimal-pad"
-                  value={gasLitros}
-                  onChangeText={setGasLitros}
-                />
-              </View>
-              {gasLitrosNum > 0 && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 14, color: C.textSecondary }}>{gasLitros}L</Text>
-                  <TouchableOpacity
-                    onPress={() => handleCopy(`Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'gasolina')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ fontSize: 18, fontWeight: '800', color: copiedType === 'gasolina' ? C.success : C.warning, fontVariant: ['tabular-nums'] }}>
-                      {copiedType === 'gasolina' ? 'Copiado!' : `Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    </Text>
+              {result && (
+                <View style={styles.inlineResult}>
+                  <View style={styles.resultDivider} />
+                  <Text style={styles.resultLabel}>Resultado</Text>
+                  <View style={styles.resultContent}>
+                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => handleCopy(formatCurrency(result.amount), 'result-source')}>
+                      <Text style={styles.resultItemLabel}>{copiedType === 'result-source' ? '¡Copiado!' : (mode === 'usd-to-bs' ? 'USD' : 'Bs.')}</Text>
+                      <Text style={[styles.resultItemValue, copiedType === 'result-source' && { color: C.success }]}>{formatCurrency(result.amount)}</Text>
+                    </TouchableOpacity>
+                    <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.textMuted} /></View>
+                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => handleCopy(formatCurrency(result.converted), 'result-target')}>
+                      <Text style={styles.resultItemLabel}>{copiedType === 'result-target' ? '¡Copiado!' : (mode === 'usd-to-bs' ? 'Bs.' : 'USD')}</Text>
+                      <Text style={[styles.resultItemValue, { color: copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrency(result.converted)}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => handleCopy(`Bs. ${formatCurrency(result.rate)}`, 'rate')}>
+                    <Text style={styles.resultMeta}>Tasa: {getRateLabel()} — <Text style={{ fontWeight: '700' }}>{copiedType === 'rate' ? '¡Copiado!' : `Bs. ${formatCurrency(result.rate)}`}</Text></Text>
                   </TouchableOpacity>
                 </View>
               )}
             </View>
-          )}
-          </Animated.View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+
+            <Text style={styles.sectionLabel}>Tasa a usar</Text>
+            <View style={styles.rateSelector}>
+              {RATE_TYPES.map((rt) => {
+                const isActive = selectedRate === rt.key;
+                const rateVal = rates[rt.key];
+                return (
+                  <TouchableOpacity key={rt.key} style={[styles.rateOption, isActive && { backgroundColor: rt.color + '12', borderColor: rt.color }]} activeOpacity={0.7} onPress={() => { setSelectedRate(rt.key); setResult(null); }}>
+                    {isActive && <View style={[styles.rateActiveBar, { backgroundColor: rt.color }]} />}
+                    <View style={[styles.rateDot, { backgroundColor: isActive ? rt.color : 'rgba(255,255,255,0.15)' }]} />
+                    <View style={styles.rateOptionText}>
+                      <Text style={[styles.rateOptionLabel, isActive && { color: C.textPrimary, fontWeight: '700' }]}>{rt.label}</Text>
+                      <Text style={styles.rateOptionValue}>{rateVal ? `Bs. ${formatCurrency(rateVal)}` : 'Cargando...'}</Text>
+                    </View>
+                    {isActive && <Ionicons name="checkmark-circle" size={18} color={rt.color} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {!loading && spreadBcv && (
+              <View style={styles.spreadCard}>
+                <View style={styles.spreadHeader}>
+                  <View style={styles.spreadTitleRow}><Ionicons name="git-compare" size={13} color={C.textSecondary} /><Text style={styles.spreadTitle}>Brecha BCV vs Paralelo</Text></View>
+                  <Text style={[styles.spreadPercent, { color: spreadBcv.barColor }]}>{spreadBcv.diffPercent.toFixed(1)}%</Text>
+                </View>
+                <View style={styles.spreadBarBg}><View style={[styles.spreadBarFill, { width: `${spreadBcv.barPercent}%`, backgroundColor: spreadBcv.barColor }]} /></View>
+                <View style={styles.spreadStats}>
+                  <Text style={styles.spreadStat}>BCV: <Text style={{ color: C.success, fontWeight: '700' }}>Bs. {formatCurrency(rates.bcv)}</Text></Text>
+                  <Text style={styles.spreadStat}>Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(rates.paralelo)}</Text></Text>
+                  <Text style={styles.spreadStat}>Diferencia: <Text style={{ color: spreadBcv.barColor, fontWeight: '700' }}>Bs. {formatCurrency(spreadBcv.diff)}</Text></Text>
+                </View>
+              </View>
+            )}
+
+            {!loading && spreadLunes && (
+              <View style={[styles.spreadCard, { marginTop: 8 }]}>
+                <View style={styles.spreadHeader}>
+                  <View style={styles.spreadTitleRow}><Ionicons name="calendar" size={13} color={bcvLunesColor} /><Text style={styles.spreadTitle}>Brecha BCV (Lunes) vs Paralelo</Text></View>
+                  <Text style={[styles.spreadPercent, { color: spreadLunes.barColor }]}>{spreadLunes.diffPercent.toFixed(1)}%</Text>
+                </View>
+                <View style={styles.spreadBarBg}><View style={[styles.spreadBarFill, { width: `${spreadLunes.barPercent}%`, backgroundColor: spreadLunes.barColor }]} /></View>
+                <View style={styles.spreadStats}>
+                  <Text style={styles.spreadStat}>BCV (Lunes): <Text style={{ color: bcvLunesColor, fontWeight: '700' }}>Bs. {formatCurrency(rates.bcv_lunes)}</Text></Text>
+                  <Text style={styles.spreadStat}>Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(rates.paralelo)}</Text></Text>
+                  <Text style={styles.spreadStat}>Diferencia: <Text style={{ color: spreadLunes.barColor, fontWeight: '700' }}>Bs. {formatCurrency(spreadLunes.diff)}</Text></Text>
+                </View>
+              </View>
+            )}
+
+            {/* Gasolina — Conversor */}
+            {rates.bcv !== null && rates.bcv !== undefined && (
+              <View style={[styles.spreadCard, { marginTop: 8 }]}>
+                <View style={styles.spreadHeader}>
+                  <View style={styles.spreadTitleRow}>
+                    <Ionicons name="flame" size={14} color={C.warning} />
+                    <Text style={[styles.spreadTitle, { color: C.textPrimary, fontSize: 13, fontWeight: '700' }]}>Gasolina</Text>
+                  </View>
+                  <Text style={{ fontSize: 11, color: C.textMuted }}>$0,50 USD/L</Text>
+                </View>
+                <View style={[styles.inputContainer, { marginBottom: 10 }]}>
+                  <Ionicons name="flame" size={16} color={C.warning} style={{ marginRight: 8 }} />
+                  <TextInput
+                    style={[styles.input, { borderColor: 'transparent' }]}
+                    placeholder="Litros (ej: 3.4)"
+                    placeholderTextColor={C.textMuted}
+                    keyboardType="decimal-pad"
+                    value={gasLitros}
+                    onChangeText={setGasLitros}
+                  />
+                </View>
+                {gasLitrosNum > 0 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 14, color: C.textSecondary }}>{gasLitros}L</Text>
+                    <TouchableOpacity
+                      onPress={() => handleCopy(`Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'gasolina')}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={{ fontSize: 18, fontWeight: '800', color: copiedType === 'gasolina' ? C.success : C.warning, fontVariant: ['tabular-nums'] }}>
+                        {copiedType === 'gasolina' ? 'Copiado!' : `Bs. ${(gasLitrosNum * 0.50 * rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
+    </ScreenContainer>
   );
 }
