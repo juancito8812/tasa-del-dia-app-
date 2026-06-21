@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: "Tasa del Día",
     slug: "tasa-del-dia",
-    version: "1.0.1",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "dark",

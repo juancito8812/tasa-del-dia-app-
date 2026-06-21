@@ -41,7 +41,7 @@ export async function checkLatestRelease() {
     let data;
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/releases/tags/latest`,
+        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
         {
           headers: { Accept: 'application/vnd.github.v3+json' },
           signal: controller.signal,
@@ -55,8 +55,10 @@ export async function checkLatestRelease() {
 
     const tagName = data.tag_name || '';
     const version = tagName.replace(/^v/i, '');
+    // Validar que la versión sea semver válida (ej: "1.0.2"), no un tag como "latest"
+    if (!version || !/^\d+\.\d+\.\d+$/.test(version)) return null;
     const apkAsset = data.assets?.find(a => a.name?.endsWith('.apk'));
-    if (!version || !apkAsset) return null;
+    if (!apkAsset) return null;
 
     const info = {
       version,
