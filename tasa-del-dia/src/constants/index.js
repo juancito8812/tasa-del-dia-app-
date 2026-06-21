@@ -11,6 +11,6 @@ if (!apiKeyFromConfig || apiKeyFromConfig === 'undefined') {
 export const API_CONFIG = {
   BASE_URL: 'https://api.cotizave.com',
   API_KEY: apiKeyFromConfig, // ← debe estar en .env, ver .env.example
-  REFRESH_INTERVAL: 20 * 60 * 1000, // 20 minutes
+  REFRESH_INTERVAL: 12 * 60 * 60 * 1000, // 12 horas
 };
 
