@@ -33,6 +33,7 @@ RatesDict = Dict[str, Optional[Union[float, str]]]
 def _fetch_json(url: str, method: str = "GET", body: Optional[dict] = None) -> Optional[dict]:
     req = urllib_request.Request(url, method=method)
     req.add_header("Accept", "application/json")
+    req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     if body is not None:
         req.add_header("Content-Type", "application/json")
         req.data = json.dumps(body).encode("utf-8")
