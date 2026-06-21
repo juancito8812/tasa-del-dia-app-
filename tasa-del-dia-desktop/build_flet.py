@@ -99,6 +99,7 @@ def main():
         f'--company-name "Tasa del Dia" '
         f'--hidden-import app --hidden-import app.api --hidden-import app.storage '
         f'--hidden-import app.auto_update '
+        f'--add-data "app;app" '
         f'-y'
     )
 

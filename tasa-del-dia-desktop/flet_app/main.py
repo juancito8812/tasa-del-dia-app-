@@ -107,7 +107,7 @@ def build_title_bar():
             ft.Container(
                 content=ft.Text("📉", size=20),
                 bgcolor=blend_color(colors["highlight"], 0.1),
-                border_radius=10, padding=ft.padding.all(8), width=40, height=40,
+                border_radius=10, padding=ft.Padding.all(8), width=40, height=40,
             ),
             ft.Column(
                 controls=[
@@ -128,7 +128,7 @@ def build_title_bar():
     ctrl["theme_btn"] = theme_btn
     return ft.Container(
         content=ft.Row(controls=[title, theme_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-        padding=ft.padding.only(left=16, right=16, top=12, bottom=4),
+        padding=ft.Padding.only(left=16, right=16, top=12, bottom=4),
     )
 
 
@@ -265,7 +265,7 @@ def build_reminder_card():
             switch,
         ]),
         bgcolor=colors["card"], border=ft.border.all(1, colors["card_border"]),
-        border_radius=8, padding=ft.padding.only(left=14, right=14, top=10, bottom=10),
+        border_radius=8, padding=ft.Padding.only(left=14, right=14, top=10, bottom=10),
     )
 
 
@@ -276,7 +276,7 @@ def build_offline_banner():
             ft.Text("⚠️"),
             ft.Text("", size=9, color="#ffffff"),
         ]),
-        bgcolor=colors["warning"], border_radius=6, padding=ft.padding.all(6), visible=False,
+        bgcolor=colors["warning"], border_radius=6, padding=ft.Padding.all(6), visible=False,
     )
     ctrl["offline_banner"] = banner
     ctrl["offline_label"] = banner.content.controls[1]
@@ -290,7 +290,7 @@ def build_info_bar():
     return ft.Container(
         content=ft.Row(controls=[ft.Text("🔄"), label]),
         bgcolor=colors["card"], border=ft.border.all(1, colors["card_border"]),
-        border_radius=6, padding=ft.padding.only(left=14, right=14, top=8, bottom=8),
+        border_radius=6, padding=ft.Padding.only(left=14, right=14, top=8, bottom=8),
     )
 
 
@@ -331,7 +331,7 @@ def build_conv_rate_sel():
                               style=ft.ButtonStyle(color=tc)),
                 val_lbl,
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            bgcolor=bg, border_radius=8, padding=ft.padding.all(8),
+            bgcolor=bg, border_radius=8, padding=ft.Padding.all(8),
         )
         rows.append(row)
         labels[key] = val_lbl
@@ -392,7 +392,7 @@ def build_conv_card():
             ft.Text("MONTO", size=9, weight="bold", color=colors["secondary"]),
             ft.Container(
                 content=ft.Row(controls=[amount_input, paste_btn]),
-                bgcolor=colors["input_bg"], border_radius=6, padding=ft.padding.only(left=4),
+                bgcolor=colors["input_bg"], border_radius=6, padding=ft.Padding.only(left=4),
             ),
             ft.Row(controls=quick_btns, spacing=2),
             conv_btn,
