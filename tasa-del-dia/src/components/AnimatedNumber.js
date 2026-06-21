@@ -24,11 +24,13 @@ export default function AnimatedNumber({
   const [displayText, setDisplayText] = useState('—');
   const lastTarget = useRef(0);
   const mountedRef = useRef(true);
+  const formatRef = useRef(format);
 
   useEffect(() => {
     mountedRef.current = true;
+    formatRef.current = format;
     return () => { mountedRef.current = false; };
-  }, []);
+  }, [format]);
 
   useEffect(() => {
     if (value === null || value === undefined) {
@@ -41,7 +43,7 @@ export default function AnimatedNumber({
     if (isFirstRender) {
       lastTarget.current = value;
       animatedValue.setValue(value);
-      const formatted = format ? format(value) : value.toFixed(2);
+      const formatted = formatRef.current ? formatRef.current(value) : value.toFixed(2);
       setDisplayText(prefix + formatted);
       setIsFirstRender(false);
       return;
@@ -52,20 +54,22 @@ export default function AnimatedNumber({
 
     const listenerId = animatedValue.addListener(({ value: v }) => {
       if (!mountedRef.current) return;
-      const formatted = format ? format(v) : v.toFixed(2);
+      const formatted = formatRef.current ? formatRef.current(v) : v.toFixed(2);
       setDisplayText(prefix + formatted);
     });
 
-    Animated.timing(animatedValue, {
+    const animation = Animated.timing(animatedValue, {
       toValue: value,
       duration,
       useNativeDriver: false,
-    }).start();
+    });
+    animation.start();
 
     return () => {
+      animation.stop();
       animatedValue.removeListener(listenerId);
     };
-  }, [value, duration, animatedValue, format, prefix]);
+  }, [value, duration, animatedValue, prefix]);
 
   if (value === null || value === undefined) {
     return <Text style={style}>—</Text>;

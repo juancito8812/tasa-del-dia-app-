@@ -20,20 +20,22 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     }
     return BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (error) {
-    // Silently fail — background task errors are expected when offline
+    console.warn('Background fetch failed:', error);
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
 
 export async function registerBackgroundFetchAsync() {
   try {
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+    if (isRegistered) return;
     return await BackgroundFetch.registerTaskAsync(BACKGROUND_FETCH_TASK, {
       minimumInterval: 60 * 60 * 4, // 4 hours
       stopOnTerminate: false, 
       startOnBoot: true,
     });
   } catch (err) {
-    // Silently fail — may not be available on all devices
+    console.warn('Failed to register background fetch:', err);
   }
 }
 

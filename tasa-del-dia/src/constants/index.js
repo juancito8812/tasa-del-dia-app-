@@ -4,12 +4,8 @@ export { darkTheme, lightTheme };
 
 const apiKeyFromConfig = Constants.expoConfig?.extra?.apiKey;
 
-if (!apiKeyFromConfig) {
-  console.warn(
-    '⚠️  COTIZAVE_API_KEY no definida — crea un archivo .env con COTIZAVE_API_KEY=tu_api_key (ver .env.example)\n' +
-    '⚠️  ADVERTENCIA DE SEGURIDAD: Esta API key se incrusta en el bundle de la app y es visible al decompilar el APK.\n' +
-    '     Para producción, implementa un proxy backend que oculte la key del cliente.'
-  );
+if (!apiKeyFromConfig || apiKeyFromConfig === 'undefined') {
+  throw new Error('COTIZAVE_API_KEY no está configurada en .env');
 }
 
 export const API_CONFIG = {

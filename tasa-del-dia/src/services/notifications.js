@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { getReminderEnabled } from './api';
 
 const REMINDER_NOTIFICATION_ID = 'bcv-lunes-friday-reminder';
 
@@ -61,42 +62,28 @@ export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
 
   const now = new Date();
   const isFriday = now.getDay() === 5;
-  const alreadyEntered = isFriday && wasEnteredToday(bcvLunesUpdatedAt);
+  if (isFriday && wasEnteredToday(bcvLunesUpdatedAt)) return true;
 
-  // Expo WEEKLY weekday: 1=Dom, 2=Lun, 3=Mar, 4=Mie, 5=Jue, 6=Vie, 7=Sáb
+  // Calculate next Friday at 6 PM
+  const target = new Date();
+  const daysUntilFriday = (5 - target.getDay() + 7) % 7 || 7;
+  target.setDate(target.getDate() + daysUntilFriday);
+  target.setHours(18, 0, 0, 0);
+
   await Notifications.scheduleNotificationAsync({
     identifier: REMINDER_NOTIFICATION_ID,
     content: {
-      title: '📅 BCV (Lunes)',
-      body: alreadyEntered
-        ? '¿Ya viste la nueva tasa del BCV para el lunes? Recuerda revisarla en la app.'
-        : 'El BCV ya publicó la tasa del lunes. ¡Ingrésala en la app!',
+      title: 'BCV (Lunes)',
+      body: 'El BCV ya publicó la tasa del lunes. ¡Ingrésala en la app!',
       sound: 'default',
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-      weekday: 6, // Viernes
-      hour: 18,
-      minute: 0,
-      repeats: true,
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: target,
     },
   });
 
   return true;
-}
-
-/**
- * Reagenda el recordatorio saltando esta semana si la tasa ya fue ingresada hoy.
- * Útil para llamar después de guardar la tasa un viernes.
- * Cancela la notificación para que NO dispare hoy; se re-agendará automáticamente
- * la próxima vez que se abra la app.
- */
-export async function rescheduleIfEnteredToday(updatedAt) {
-  const isFriday = new Date().getDay() === 5;
-  if (isFriday && wasEnteredToday(updatedAt)) {
-    await cancelFridayReminder();
-    // La notificación se re-agendará vía ensureReminderScheduled al abrir la app
-  }
 }
 
 /**
@@ -106,12 +93,11 @@ export async function rescheduleIfEnteredToday(updatedAt) {
  */
 export async function ensureReminderScheduled() {
   try {
+    const enabled = await getReminderEnabled();
+    if (!enabled) return;
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const hasReminder = scheduled.some(n => n.identifier === REMINDER_NOTIFICATION_ID);
-    if (!hasReminder) {
-      // El reminder está activo en preferencias pero no hay notif. programada → re-agendar
-      await scheduleFridayReminder(null);
-    }
+    if (!hasReminder) await scheduleFridayReminder(null);
   } catch {}
 }
 

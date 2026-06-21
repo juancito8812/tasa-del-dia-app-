@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Verificar que existe app React Native
         run: |
@@ -36,7 +36,7 @@ jobs:
 
       - name: Setup Node.js
         if: success()
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'

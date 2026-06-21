@@ -42,6 +42,7 @@ export async function fetchAllRates() {
   const data = await response.json();
   const ratesMap = {};
 
+  if (!Array.isArray(data?.rates)) return null;
   for (const rate of data.rates) {
     ratesMap[rate.market] = {
       market: rate.market,
@@ -87,7 +88,7 @@ export async function getStoredBCVLunes() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_BCV_LUNES);
     if (!raw) return { value: null, updatedAt: null };
     const parsed = JSON.parse(raw);
-    // Compatibilidad: si era un string plano (formato anterior), lo migramos
+    // Compatibilidad: si era un número raw (formato anterior)
     if (typeof parsed === 'number') {
       return { value: parsed, updatedAt: null };
     }
@@ -130,7 +131,7 @@ export async function setReminderEnabled(enabled) {
     if (enabled) {
       await AsyncStorage.setItem(STORAGE_KEY_REMINDER, 'true');
     } else {
-      await AsyncStorage.setItem(STORAGE_KEY_REMINDER, 'false');
+      await AsyncStorage.removeItem(STORAGE_KEY_REMINDER);
     }
   } catch {}
 }
@@ -162,7 +163,7 @@ export async function fetchAllData() {
     eurCapturedAt: bcvCurrencies?.capturedAt ?? null,
   };
 
-  saveCacheRates(result);
+  await saveCacheRates(result);
 
   return result;
 }
@@ -264,7 +265,14 @@ export async function saveHistoricalRate(dateKey, rates) {
       euro: rates.euro ?? all[dateKey]?.euro ?? null,
       fetchedAt: rates.fetchedAt ?? all[dateKey]?.fetchedAt ?? new Date().toISOString(),
     };
-    await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
+    const entries = Object.entries(all);
+    if (entries.length > 365) {
+      entries.sort((a, b) => a[0].localeCompare(b[0]));
+      const trimmed = Object.fromEntries(entries.slice(-365));
+      await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(trimmed));
+    } else {
+      await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));
+    }
   } catch {}
 }
 
@@ -288,7 +296,7 @@ export function parseDateDDMMYYYY(text) {
   const dd = parseInt(cleaned.slice(0, 2), 10);
   const mm = parseInt(cleaned.slice(2, 4), 10);
   const yyyy = parseInt(cleaned.slice(4, 8), 10);
-  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > 2030) return null;
+  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > new Date().getFullYear() + 1) return null;
   return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
 }
 

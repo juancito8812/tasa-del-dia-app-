@@ -28,6 +28,8 @@ export default function ThemeToggleMini() {
       style={[styles.toggle, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}
       onPress={cycleTheme}
       activeOpacity={0.7}
+      accessibilityLabel="Cambiar tema"
+      accessibilityRole="button"
     >
       <Ionicons name={getIcon()} size={ICON_SIZE} color={C.textSecondary} />
     </TouchableOpacity>

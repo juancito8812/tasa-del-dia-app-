@@ -68,19 +68,7 @@ export function ThemeProvider({ children }) {
 }
 
 export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    return {
-      theme: 'dark',
-      colors: darkTheme,
-      themePref: 'system',
-      setTheme: () => {},
-      isDark: true,
-      isSystem: true,
-      loaded: true,
-    };
-  }
-  return context;
+  return useContext(ThemeContext);
 }
 
 export default ThemeContext;

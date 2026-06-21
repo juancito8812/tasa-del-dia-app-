@@ -15,7 +15,7 @@ function createStyles(C) {
     },
     shimmer: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(255, 255, 255, 0.06)',
+      backgroundColor: 'rgba(180, 180, 180, 0.2)',
     },
     row: {
       flexDirection: 'row',
@@ -26,7 +26,7 @@ function createStyles(C) {
       width: 44,
       height: 44,
       borderRadius: 14,
-      backgroundColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: 'rgba(180,180,180,0.2)',
       marginRight: 12,
     },
     textBlock: {
@@ -37,26 +37,26 @@ function createStyles(C) {
       height: 16,
       width: '60%',
       borderRadius: 4,
-      backgroundColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: 'rgba(180,180,180,0.2)',
     },
     subtitleLine: {
       height: 10,
       width: '40%',
       borderRadius: 4,
-      backgroundColor: 'rgba(255,255,255,0.04)',
+      backgroundColor: 'rgba(180,180,180,0.13)',
     },
     rateLine: {
       height: 32,
       width: '50%',
       borderRadius: 6,
-      backgroundColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: 'rgba(180,180,180,0.2)',
       marginBottom: 10,
     },
     usdLine: {
       height: 12,
       width: '35%',
       borderRadius: 4,
-      backgroundColor: 'rgba(255,255,255,0.04)',
+      backgroundColor: 'rgba(180,180,180,0.13)',
     },
   });
 }
