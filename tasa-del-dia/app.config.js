@@ -51,7 +51,6 @@ module.exports = {
       ],
     ],
     extra: {
-      apiKey: process.env.COTIZAVE_API_KEY,
       eas: {
         projectId: "375b5dea-0adb-4c9b-85c6-a932ef737bf2",
       },

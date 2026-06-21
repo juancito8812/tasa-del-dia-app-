@@ -4,7 +4,7 @@ import { API_CONFIG } from '../constants';
 const STORAGE_KEY_BCV_LUNES = '@tasa_del_dia/bcv_lunes';
 const STORAGE_KEY_REMINDER = '@tasa_del_dia/reminder_enabled';
 
-const { BASE_URL, API_KEY } = API_CONFIG;
+const { BASE_URL } = API_CONFIG;
 
 /**
  * Wrapper around fetch with AbortController timeout.
@@ -21,61 +21,44 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
   }
 }
 
-const headers = {
-  'X-API-Key': API_KEY,
-  'Accept': 'application/json',
-};
-
 /**
- * Fetch all USD rates (BCV, parallel, P2P) in a single call.
- * Returns: { bcv, parallel, binance_p2p, ... }
+ * Fetch USD rates (BCV oficial and paralelo) from DolarApi.com.
  */
 export async function fetchAllRates() {
-  const url = `${BASE_URL}/v1/fx/rates`;
-  const response = await fetchWithTimeout(url, { headers });
+  const [oficialRes, paraleloRes] = await Promise.all([
+    fetchWithTimeout(`${BASE_URL}/dolares/oficial`),
+    fetchWithTimeout(`${BASE_URL}/dolares/paralelo`),
+  ]);
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `HTTP ${response.status} — el servidor rechazó la solicitud`);
+  if (!oficialRes.ok || !paraleloRes.ok) {
+    throw new Error('Error al obtener tasas USD');
   }
 
-  const data = await response.json();
-  const ratesMap = {};
-
-  if (!Array.isArray(data?.rates)) return null;
-  for (const rate of data.rates) {
-    ratesMap[rate.market] = {
-      market: rate.market,
-      type: rate.type,
-      mid: rate.mid,
-      ask: rate.ask ?? rate.mid,
-      bid: rate.bid ?? rate.mid,
-      updatedAt: rate.updated_at,
-    };
-  }
+  const oficial = await oficialRes.json();
+  const paralelo = await paraleloRes.json();
 
   return {
-    rates: ratesMap,
-    fetchedAt: data.fetched_at,
-    base: data.base,
-    currency: data.currency,
+    rates: {
+      reference: { mid: oficial.promedio, updatedAt: oficial.fechaActualizacion },
+      parallel: { mid: paralelo.promedio, updatedAt: paralelo.fechaActualizacion },
+    },
+    fetchedAt: new Date().toISOString(),
   };
 }
 
+/**
+ * Fetch EUR rate (BCV oficial) from DolarApi.com.
+ */
 export async function fetchBCVCurrencies() {
-  const url = `${BASE_URL}/v1/fx/bcv/currencies`;
-  const response = await fetchWithTimeout(url, { headers });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `HTTP ${response.status} — error al obtener tasas BCV`);
+  const res = await fetchWithTimeout(`${BASE_URL}/euros/oficial`);
+  if (!res.ok) {
+    throw new Error('Error al obtener tasa EUR');
   }
-
-  const data = await response.json();
+  const data = await res.json();
   return {
-    rates: data.rates,
-    referenceDate: data.reference_value_date,
-    capturedAt: data.captured_at,
+    rates: { EUR: data.promedio },
+    referenceDate: data.fechaActualizacion,
+    capturedAt: data.fechaActualizacion,
   };
 }
 
