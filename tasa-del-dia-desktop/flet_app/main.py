@@ -88,7 +88,7 @@ def card_container(content, padding=16, bg=None, border=None, border_radius=8):
     return ft.Container(
         content=content,
         bgcolor=bg or colors["card"],
-        border=border or ft.border.all(1, colors["card_border"]),
+        border=border or ft.Border.all(1, colors["card_border"]),
         border_radius=border_radius,
         padding=padding,
     )
@@ -194,7 +194,7 @@ def build_spread(key: str, title: str):
             ),
         ], spacing=8),
         bgcolor=colors["card"],
-        border=ft.border.all(1, colors["card_border"]),
+        border=ft.Border.all(1, colors["card_border"]),
         border_radius=8, padding=14,
     )
     ctrl[key] = {
@@ -224,7 +224,7 @@ def build_rate_card(key: str, icon: str, title: str, subtitle: str, color_key: s
                 ft.Container(
                     content=ft.Text(icon, size=18),
                     bgcolor=blend_color(clr, 0.12), border_radius=8,
-                    width=36, height=36, alignment=ft.alignment.center,
+                    width=36, height=36, alignment=ft.Alignment.CENTER,
                 ),
                 ft.Column(controls=[
                     ft.Text(title, size=13, weight="bold", color=colors["primary"]),
@@ -240,7 +240,7 @@ def build_rate_card(key: str, icon: str, title: str, subtitle: str, color_key: s
                 ft.Text("", size=9, color=colors["muted"]),
             ] + actions, alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
         ], spacing=6),
-        bgcolor=colors["card"], border=ft.border.all(1, colors["card_border"]),
+        bgcolor=colors["card"], border=ft.Border.all(1, colors["card_border"]),
         border_radius=8, padding=16,
     )
     ctrl[key] = {
@@ -264,7 +264,7 @@ def build_reminder_card():
             ], spacing=0),
             switch,
         ]),
-        bgcolor=colors["card"], border=ft.border.all(1, colors["card_border"]),
+        bgcolor=colors["card"], border=ft.Border.all(1, colors["card_border"]),
         border_radius=8, padding=ft.Padding.only(left=14, right=14, top=10, bottom=10),
     )
 
@@ -289,7 +289,7 @@ def build_info_bar():
     ctrl["info_label"] = label
     return ft.Container(
         content=ft.Row(controls=[ft.Text("🔄"), label]),
-        bgcolor=colors["card"], border=ft.border.all(1, colors["card_border"]),
+        bgcolor=colors["card"], border=ft.Border.all(1, colors["card_border"]),
         border_radius=6, padding=ft.Padding.only(left=14, right=14, top=8, bottom=8),
     )
 
