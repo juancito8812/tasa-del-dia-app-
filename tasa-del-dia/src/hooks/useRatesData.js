@@ -71,13 +71,13 @@ export default function useRatesData() {
         setTasaBCVLunes(d.value);
         setBcvLunesUpdatedAt(d.updatedAt);
       }
-    }).catch(() => {});
+    }).catch((err) => { if (__DEV__) console.warn('[Rates] getStoredBCVLunes error:', err); });
     getReminderEnabled().then((enabled) => {
       if (mounted.current) {
         setReminderEnabledLocal(enabled);
         if (enabled) ensureReminderScheduled();
       }
-    }).catch(() => {});
+    }).catch((err) => { if (__DEV__) console.warn('[Rates] getReminderEnabled error:', err); });
     return () => { mounted.current = false; };
   }, [loadRates]);
 
@@ -114,7 +114,9 @@ export default function useRatesData() {
             setError(null);
             retryCountRef.current = 0;
           }
-        } catch {}
+        } catch (err) {
+          if (__DEV__) console.warn('[Rates] retry fetch error:', err);
+        }
         if (cancelled) return;
         const delay = Math.min(30000 * 1.5 ** (retryCountRef.current - 1), 300000);
         retryRef.current = setTimeout(tryReconnect, delay);
@@ -132,7 +134,9 @@ export default function useRatesData() {
   const onRefresh = () => loadRates(true);
 
   const handleSaveBCVLunes = (editValue) => {
-    const normalized = editValue.replace(/\./g, '').replace(',', '.');
+    const normalized = editValue.includes(',')
+      ? editValue.replace(/\./g, '').replace(',', '.')
+      : editValue.replace(',', '.');
     const parsed = parseFloat(normalized);
     if (!isNaN(parsed) && parsed > 0) {
       setTasaBCVLunes(parsed);

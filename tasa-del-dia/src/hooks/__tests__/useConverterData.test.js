@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import useConverterData, {
-  extractRawDigits, formatRawDisplay, QUICK_AMOUNTS, formatCurrency,
+  extractRawDigits, formatRawDisplay, QUICK_USD, formatCurrency,
 } from '../useConverterData';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../../services/api';
 
@@ -75,12 +75,12 @@ describe('useConverterData - Pure Functions', () => {
     });
   });
 
-  describe('QUICK_AMOUNTS', () => {
-    it('should be an array of preset amounts', () => {
-      expect(Array.isArray(QUICK_AMOUNTS)).toBe(true);
-      expect(QUICK_AMOUNTS.length).toBe(6);
-      expect(QUICK_AMOUNTS[0]).toBe(100);
-      expect(QUICK_AMOUNTS[5]).toBe(50000);
+  describe('QUICK_USD', () => {
+    it('should be an array of preset USD amounts', () => {
+      expect(Array.isArray(QUICK_USD)).toBe(true);
+      expect(QUICK_USD.length).toBe(6);
+      expect(QUICK_USD[0]).toBe(100);
+      expect(QUICK_USD[5]).toBe(50000);
     });
   });
 

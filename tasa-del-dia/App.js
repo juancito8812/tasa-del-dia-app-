@@ -67,7 +67,9 @@ function AnimatedAppContent() {
         if (skipped) return;
         setUpdateInfo(release);
         setTimeout(() => setShowUpdate(true), 2000);
-      } catch {}
+      } catch (err) {
+        if (__DEV__) console.warn('[AutoUpdate] Check failed:', err);
+      }
     };
     check();
   }, []);
@@ -106,15 +108,17 @@ function AnimatedAppContent() {
         </SafeAreaView>
       </ScreenContainer>
 
-      <UpdateModal
-        visible={showUpdate}
-        onClose={() => setShowUpdate(false)}
-        currentVersion={getCurrentVersion()}
-        latestVersion={updateInfo?.version || ''}
-        apkUrl={updateInfo?.apkUrl || ''}
-        notes={updateInfo?.notes || ''}
-        C={C}
-      />
+      {updateInfo && (
+        <UpdateModal
+          visible={showUpdate}
+          onClose={() => setShowUpdate(false)}
+          currentVersion={getCurrentVersion()}
+          latestVersion={updateInfo.version}
+          apkUrl={updateInfo.apkUrl}
+          notes={updateInfo.notes}
+          C={C}
+        />
+      )}
     </Animated.View>
   );
 }
@@ -123,10 +127,8 @@ class ErrorBoundary extends React.Component {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   componentDidCatch(error, info) {
-    // Solo loguear en desarrollo para no exponer stack traces en producción
     if (__DEV__) {
-      console.warn('[ErrorBoundary] Component crash:', error?.message || error);
-      console.warn('[ErrorBoundary] Stack:', info?.componentStack || info);
+      console.warn('[ErrorBoundary] Component crash:', error?.message);
     }
   }
   render() {

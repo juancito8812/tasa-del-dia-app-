@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import useConverterData, {
-  QUICK_AMOUNTS, getRateTypes, formatCurrency,
+  getRateTypes, formatCurrency,
 } from '../hooks/useConverterData';
 
 const TAB_BAR_HEIGHT = 60;
@@ -203,7 +203,7 @@ export default function ConverterScreen() {
 
               {/* Quick amounts */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow} contentContainerStyle={styles.quickContent}>
-                {QUICK_AMOUNTS.map((val) => (
+                {h.quickAmounts.map((val) => (
                   <TouchableOpacity key={val} style={[styles.quickChip, h.numericAmount === val && { backgroundColor: currentColor + '20', borderColor: currentColor }]}
                     onPress={() => h.handleQuickAmount(val)} activeOpacity={0.7}>
                     <Text style={[styles.quickChipText, h.numericAmount === val && { color: currentColor, fontWeight: '700' }]}>{val.toLocaleString('es-VE')}</Text>

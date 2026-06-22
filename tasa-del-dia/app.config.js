@@ -28,7 +28,7 @@ module.exports = {
         backgroundColor: "#1a1a2e",
       },
       package: "com.tasadeldia.app",
-      permissions: [],
+      permissions: ['POST_NOTIFICATIONS', 'REQUEST_INSTALL_PACKAGES'],
     },
     plugins: [
       "expo-asset",

@@ -3,9 +3,10 @@ import { Keyboard, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
 
-const QUICK_AMOUNTS = [100, 500, 1000, 5000, 10000, 50000];
+const QUICK_USD = [100, 500, 1000, 5000, 10000, 50000];
+const QUICK_BS = [100, 500, 1000, 5000, 10000, 50000];
 
-export { QUICK_AMOUNTS };
+export { QUICK_USD, QUICK_BS };
 
 // ponytail: 50 líneas de parsing → 6. Si hay coma, los puntos son miles.
 // Casos: "28028,33" → "28028.33".  "28.028,33" → "28028.33".  "28028" → "28028".
@@ -26,7 +27,7 @@ export function formatRawDisplay(raw) {
     const intPart = raw.slice(0, dotIndex);
     const decPart = raw.slice(dotIndex + 1);
     const intNum = parseInt(intPart, 10);
-    const formattedInt = isNaN(intNum) ? intPart : intNum.toLocaleString('es-VE');
+    const formattedInt = isNaN(intNum) ? (intPart === '' ? '0' : intPart) : intNum.toLocaleString('es-VE');
     return decPart === '' ? `${formattedInt},` : `${formattedInt},${decPart}`;
   }
   const num = parseInt(raw, 10);
@@ -103,10 +104,11 @@ export default function useConverterData() {
       }
 
       if (fetchError && !fromCache) {
-        Alert.alert('Error', 'No se pudieron cargar las tasas: ' + fetchError);
+        Alert.alert('Error', 'No se pudieron cargar las tasas. Verifica tu conexión.');
       }
     } catch (err) {
-      Alert.alert('Error', 'No se pudieron cargar las tasas: ' + err.message);
+      if (__DEV__) console.warn('[Converter] loadRates error:', err);
+      Alert.alert('Error', 'No se pudieron cargar las tasas. Verifica tu conexión.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -167,7 +169,9 @@ export default function useConverterData() {
         if (pasteTimeoutRef.current) clearTimeout(pasteTimeoutRef.current);
         pasteTimeoutRef.current = setTimeout(() => setPasteFeedback(false), 1200);
       }
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.warn('[Converter] handlePaste error:', err);
+    }
   };
 
   const handleQuickAmount = (val) => {
@@ -181,7 +185,9 @@ export default function useConverterData() {
       setCopiedType(type);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopiedType(null), 1500);
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.warn('[Converter] handleCopy error:', err);
+    }
   };
 
   const handleSwapMode = () => {
@@ -225,11 +231,18 @@ export default function useConverterData() {
     };
   })();
 
+  const quickAmounts = useMemo(() => {
+    const rate = getCurrentRate() || 1;
+    return mode === 'usd-to-bs'
+      ? QUICK_USD
+      : QUICK_BS.map((bs) => Math.round(bs / rate));
+  }, [mode, selectedRate, rates]);
+
   return {
     rates, selectedRate, rawAmount, mode, result,
     loading, refreshing, isKeyboardVisible, copiedType, pasteFeedback,
     offlineMode, offlineCachedAt, gasLitros, gasLitrosNum,
-    inputRef, copyTimeoutRef,
+    inputRef, copyTimeoutRef, quickAmounts,
     setSelectedRate, setRawAmount, setGasLitros,
     setResult, setCopiedType, setMode,
     loadRates, handleConvert, handlePaste, handleQuickAmount,
