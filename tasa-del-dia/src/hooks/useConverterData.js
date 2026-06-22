@@ -8,24 +8,32 @@ const QUICK_BS = [100, 500, 1000, 5000, 10000, 50000];
 
 export { QUICK_USD, QUICK_BS };
 
-// ponytail: 50 líneas de parsing → 6. Si hay coma, los puntos son miles.
-// Casos: "28028,33" → "28028.33".  "28.028,33" → "28028.33".  "28028" → "28028".
 export function extractRawDigits(text) {
   if (!text) return '';
-  const norm = text.includes(',') ? text.replace(/\./g, '') : text;
-  const clean = norm.replace(',', '.').replace(/[^0-9.]/g, '');
-  const dotIdx = clean.indexOf('.');
-  const intPart = dotIdx === -1 ? clean : clean.slice(0, dotIdx);
-  const decPart = dotIdx === -1 ? '' : clean.slice(dotIdx + 1).replace(/\./g, '').slice(0, 2);
-  return decPart ? `${intPart}.${decPart}` : intPart || clean;
+  // Si hay coma, los puntos son separadores de miles → se eliminan
+  const cleaned = text.includes(',') ? text.replace(/\./g, '') : text;
+  // Conservar solo dígitos + el primer separador (coma o punto)
+  let result = '';
+  let seenSep = false;
+  for (const ch of cleaned) {
+    if (ch >= '0' && ch <= '9') {
+      result += ch;
+    } else if ((ch === '.' || ch === ',') && !seenSep) {
+      result += ch;
+      seenSep = true;
+    }
+  }
+  return result;
 }
 
 export function formatRawDisplay(raw) {
   if (!raw) return '';
-  const dotIndex = raw.indexOf('.');
-  if (dotIndex !== -1) {
-    const intPart = raw.slice(0, dotIndex);
-    const decPart = raw.slice(dotIndex + 1);
+  const dotIdx = raw.indexOf('.');
+  const commaIdx = raw.indexOf(',');
+  const sepIdx = dotIdx !== -1 ? dotIdx : commaIdx;
+  if (sepIdx !== -1) {
+    const intPart = raw.slice(0, sepIdx);
+    const decPart = raw.slice(sepIdx + 1);
     const intNum = parseInt(intPart, 10);
     const formattedInt = isNaN(intNum) ? (intPart === '' ? '0' : intPart) : intNum.toLocaleString('es-VE');
     return decPart === '' ? `${formattedInt},` : `${formattedInt},${decPart}`;
@@ -140,9 +148,11 @@ export default function useConverterData() {
   // Handlers
   const getCurrentRate = () => rates[selectedRate];
 
+  const parseAmount = (str) => parseFloat(str.replace(',', '.'));
+
   const handleConvert = () => {
     Keyboard.dismiss();
-    const numericAmount = parseFloat(rawAmount);
+    const numericAmount = parseAmount(rawAmount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
       Alert.alert('Error', 'Ingresa un monto válido');
       return;
@@ -198,7 +208,7 @@ export default function useConverterData() {
 
   const handleChangeText = (text) => setRawAmount(extractRawDigits(text));
   const displayAmount = rawAmount ? formatRawDisplay(rawAmount) : '';
-  const numericAmount = parseFloat(rawAmount) || 0;
+  const numericAmount = rawAmount ? parseFloat(rawAmount.replace(',', '.')) || 0 : 0;
 
   // Spread calculations
   const spreadBcv = (() => {

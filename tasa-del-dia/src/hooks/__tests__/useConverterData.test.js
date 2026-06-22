@@ -24,12 +24,12 @@ function TestComp({ onReady }) {
 
 describe('useConverterData - Pure Functions', () => {
   describe('extractRawDigits', () => {
-    it('should convert comma as decimal separator', () => {
-      expect(extractRawDigits('28028,33')).toBe('28028.33');
+    it('should keep comma as decimal separator', () => {
+      expect(extractRawDigits('28028,33')).toBe('28028,33');
     });
 
     it('should handle thousands dots with comma decimal', () => {
-      expect(extractRawDigits('28.028,33')).toBe('28028.33');
+      expect(extractRawDigits('28.028,33')).toBe('28028,33');
     });
 
     it('should handle plain numbers without separators', () => {
@@ -37,12 +37,12 @@ describe('useConverterData - Pure Functions', () => {
     });
 
     it('should handle integer with comma', () => {
-      expect(extractRawDigits('1000,00')).toBe('1000.00');
+      expect(extractRawDigits('1000,00')).toBe('1000,00');
     });
 
     it('should strip non-numeric characters (Venezuelan format)', () => {
-      // Con coma decimal + punto miles: "$1.234,56" → "1234.56"
-      expect(extractRawDigits('$1.234,56')).toBe('1234.56');
+      // Con coma decimal + punto miles: "$1.234,56" → "1234,56"
+      expect(extractRawDigits('$1.234,56')).toBe('1234,56');
     });
 
     it('should return empty string for null/undefined', () => {
@@ -66,8 +66,8 @@ describe('useConverterData - Pure Functions', () => {
     });
 
     it('should keep trailing comma for unfinished decimal input', () => {
-      // rawAmount con punto decimal (salida de extractRawDigits cuando hay coma)
-      expect(formatRawDisplay('1000.')).toBe('1.000,');
+      // rawAmount con punto decimal (ej: usuario escribe "1000," → extractRawDigits "1000,")
+      expect(formatRawDisplay('1000,')).toBe('1.000,');
     });
 
     it('should handle zero', () => {
@@ -175,7 +175,7 @@ describe('useConverterData - Hook', () => {
       TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
     });
     act(() => { hook.handleChangeText('28.028,33'); });
-    expect(hook.rawAmount).toBe('28028.33');
+    expect(hook.rawAmount).toBe('28028,33');
   });
 
   it('should calculate spreadBCV when both rates exist', async () => {

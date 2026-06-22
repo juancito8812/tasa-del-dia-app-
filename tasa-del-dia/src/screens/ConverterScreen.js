@@ -191,7 +191,7 @@ export default function ConverterScreen() {
               <View style={[styles.inputContainer, h.isKeyboardVisible && styles.inputContainerFocused]}>
                 <Ionicons name={h.mode === 'usd-to-bs' ? 'logo-usd' : 'cash'} size={16} color={C.textMuted} style={styles.inputIcon} />
                 <TextInput ref={h.inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0.00" placeholderTextColor={C.textMuted}
-                  keyboardType={Platform.OS === 'ios' ? 'decimal-pad' : 'numeric'} value={h.rawAmount} onChangeText={h.handleChangeText}
+                  keyboardType="decimal-pad" value={h.rawAmount} onChangeText={h.handleChangeText}
                   returnKeyType="done" onSubmitEditing={h.handleConvert} />
                 <TouchableOpacity onPress={h.handlePaste} activeOpacity={0.6} style={styles.pasteBtn}>
                   <View style={[styles.pasteInner, { backgroundColor: h.pasteFeedback ? C.success + '20' : currentColor + '20' }]}>
