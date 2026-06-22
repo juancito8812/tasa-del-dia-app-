@@ -123,9 +123,11 @@ class ErrorBoundary extends React.Component {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   componentDidCatch(error, info) {
-    // Log completo para debugging, NO se muestra al usuario en producción
-    console.warn('[ErrorBoundary] Component crash:', error?.message || error);
-    console.warn('[ErrorBoundary] Stack:', info?.componentStack || info);
+    // Solo loguear en desarrollo para no exponer stack traces en producción
+    if (__DEV__) {
+      console.warn('[ErrorBoundary] Component crash:', error?.message || error);
+      console.warn('[ErrorBoundary] Stack:', info?.componentStack || info);
+    }
   }
   render() {
     if (this.state.hasError) {

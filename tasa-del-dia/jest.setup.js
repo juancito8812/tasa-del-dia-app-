@@ -7,7 +7,7 @@ jest.mock('expo-constants', () => ({
   expoConfig: {
     version: '1.0.1',
     extra: {
-      apiKey: 'test-api-key',
+      apiKey: 'MOCK_API_KEY_FOR_TESTS',
     },
   },
   manifest: {},
