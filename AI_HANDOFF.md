@@ -114,25 +114,25 @@ Skills leídas (aplicar cuando corresponda):
 | `release-automatic.yml` | ✅ Activo | Release con changelog automático |
 | `mobile-ci.yml` | ✅ Activo | Tests + lint en push/PR |
 
-### 🖥️ Desktop — Fix scroll vertical y thread-safe refresh
+### 🔒 Auditoría de Seguridad (22-Jun-2026)
 
-**Problema 1:** Scroll vertical no funcionaba dentro de las tabs con `ft.ListView`.
+Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
-**Fix:** Reemplazar `ft.ListView(expand=True, scroll=AUTO)` por `ft.Column(scroll=AUTO, expand=True)` en las 3 tabs. En historial, chips cambiaron de `scroll=AUTO` a `wrap=True` para evitar que el scroll anidado intercepte clicks.
+| Categoría | Count |
+|-----------|:-----:|
+| 🔴 Crítico | 0 |
+| 🟠 Alto | 0 |
+| 🟡 Medio | 3 (expo vulns moderadas, test-api-key en jest.setup.js, console.warn en ErrorBoundary) |
+| 🟢 Bajo/Info | 5 (AsyncStorage sin cifrar - esperado, solo HTTPS, permisos mínimos, sin eval/injection) |
 
-**Problema 2:** `threading.Timer` en PyInstaller EXE no actualizaba la UI (tarjetas mostraban "—").
-
-**Fix:** Reemplazar `threading.Timer(0.1, init_app)` por `page.run_thread(init_app)` — API thread-safe de Flet 0.85. Agregado feedback visual inmediato "🔄 Conectando con el servidor..." y logging detallado.
-
-**Build:** `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe` (80.5 MB, 1m 36s)
-
-### 🚀 Auto-Update — Fix endpoint GitHub + releases con tag semver
-
-**Problema:** `autoUpdate.js` consultaba `/releases/tags/latest` que devolvía tag literal "latest" (no semver), rompiendo `compareVersions()`.
-
-**Fix:** Cambiar endpoint a `/releases/latest` (API de GitHub devuelve el último release publicado con tag real) + validación semver con regex. Workflow ahora crea releases con tag `v1.0.2` (no "latest").
-
-**Versión:** 1.0.1 → 1.0.2
+**Hallazgos clave:**
+- ✅ Sin API keys reales expuestas
+- ✅ Solo HTTPS (usesCleartextTraffic: false)
+- ✅ Sin permisos extras (permissions: [])
+- ✅ Sin eval() ni inyección de código
+- ⚠️ 5 dependencias @expo/* con vulnerabilidades moderadas (build-time, no runtime)
+- ⚠️ `console.warn` en ErrorBoundary podría exponer stack traces en producción
+- ⚠️ `'test-api-key'` en jest.setup.js (mock, no real)
 
 ### 📱 APK Crash — Fix dependencias nativas (SDK 54 vs SDK 56)
 
@@ -140,7 +140,31 @@ Skills leídas (aplicar cuando corresponda):
 
 **Fix:** Pinned `expo-file-system@19.0.23` y `expo-linking@8.0.12` (versiones correctas para SDK 54).
 
-**Build actual:** [Run #27921889417](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27921889417) — en progreso (con dependencias corregidas)
+**APK verificada:** ✅ Funciona correctamente, sin crash al abrir.
+
+### 📡 Historial con DolarApi.com (+945 registros desde 2023)
+
+**Nuevo:** `fetchHistoricalFromAPI()` en `api.js` consulta `ve.dolarapi.com/v1/historicos/dolares` y mergea con datos locales.
+- API como base (bcv, paralelo), datos locales sobrescriben (BCV Lunes manual, Binance, Euro)
+- Cache de 1 hora en AsyncStorage
+- `getHistoricalRates()` ahora retorna datos mergeados (API + local)
+
+### 💾 Tasas locales retenidas 365 días
+
+`saveHistoricalRate()` lee/escribe solo storage local (no pasa por `getHistoricalRates()` que mergea API). Conserva máximo 365 entradas.
+
+### ⌨️ Fix teclado gasolina en Android
+
+`KeyboardAvoidingView` cambiado de `behavior={undefined}` a `behavior="padding"` en Android para evitar que el teclado tape el input de litros.
+
+### 🏗️ Builds exitosos
+
+| Commit | SHA | Cambio |
+|--------|-----|--------|
+| `3f7aa15` | feat + fix | Historial DolarApi, fix teclado gasolina, docs |
+| `88b7a98` | fix | saveHistoricalRate local-only + 365 días |
+| Builds | ✅ #27922474330, #27922787424 |
+| APK verificada | ✅ Sin crash al abrir |
 
 ---
 
