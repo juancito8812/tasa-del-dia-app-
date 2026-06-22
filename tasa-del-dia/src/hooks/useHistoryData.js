@@ -44,7 +44,9 @@ export default function useHistoryData() {
         .map((key) => ({ dateKey: key, ...data[key] }))
         .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
       setRatesData(arr);
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.warn('[History] loadHistory error:', err);
+    }
   };
 
   useEffect(() => {
@@ -58,7 +60,7 @@ export default function useHistoryData() {
     };
   }, []);
 
-  const last5 = ratesData.slice(0, 5);
+  const last10 = ratesData.slice(0, 10);
 
   const chartInfo = useMemo(() => {
     if (ratesData.length === 0) return null;
@@ -104,7 +106,9 @@ export default function useHistoryData() {
       setCopiedField(field);
       if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = setTimeout(() => setCopiedField(null), 1500);
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.warn('[History] handleCopy error:', err);
+    }
   };
 
   const handleCopyAll = async (data) => {
@@ -121,7 +125,7 @@ export default function useHistoryData() {
 
   return {
     ratesData, selectedDateKey, customDateText, copiedField, showCustomInput,
-    copyTimeoutRef, last5, chartInfo, selectedData,
+    copyTimeoutRef, last10, chartInfo, selectedData,
     setCustomDateText, setShowCustomInput,
     handleSelectDate, handleCustomDate, handleCopy, handleCopyAll,
   };

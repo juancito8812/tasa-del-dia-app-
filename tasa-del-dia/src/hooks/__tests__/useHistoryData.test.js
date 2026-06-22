@@ -115,8 +115,8 @@ describe('useHistoryData - Hook', () => {
       TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
     });
     await act(async () => {});
-    expect(hook.last5.length).toBe(3); // Only 3 entries total
-    expect(hook.last5[0].dateKey).toBe('2026-06-21');
+    expect(hook.last10.length).toBe(3); // Only 3 entries total
+    expect(hook.last10[0].dateKey).toBe('2026-06-21');
   });
 
   it('should generate chartInfo from last 5 reversed entries', async () => {

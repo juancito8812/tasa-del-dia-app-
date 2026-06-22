@@ -85,11 +85,11 @@ export default function HistoryScreen() {
           </View>
 
           <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-            {h.last5.length > 0 && (
+            {h.last10.length > 0 && (
               <>
-                <Text style={[styles.sectionLabel, { color: C.textMuted }]}>Seleccionar fecha</Text>
+                <Text style={[styles.sectionLabel, { color: C.textMuted }]}>Últimos 10 días</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                  {h.last5.map((item) => {
+                  {h.last10.map((item) => {
                     const isActive = item.dateKey === h.selectedDateKey;
                     return (
                       <TouchableOpacity
@@ -159,7 +159,7 @@ export default function HistoryScreen() {
             {!h.selectedDateKey && (
               <View style={styles.listContainer}>
                 {h.ratesData.length > 0 ? (
-                  h.ratesData.slice(0, 365).map((item) => (
+                  h.ratesData.slice(0, 10).map((item) => (
                     <TouchableOpacity
                       key={item.dateKey}
                       style={styles.listItem}
