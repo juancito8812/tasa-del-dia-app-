@@ -246,21 +246,126 @@ export async function loadCacheRates() {
   }
 }
 
-// ─── Historial de tasas ─────────────────────────────────────────────
+// ─── Historial de tasas (DolarApi + local) ────────────────────────────
 
 const STORAGE_KEY_HISTORICAL = '@tasa_del_dia/historical_rates';
+const STORAGE_KEY_HISTORICAL_API_CACHE = '@tasa_del_dia/historical_api_cache';
 
 /**
- * Obtiene el historial completo de tasas guardadas (por fecha).
- * Retorna un objeto { "YYYY-MM-DD": { bcv, paralelo, binance_p2p, euro, fetchedAt }, ... }
+ * Fetch historical rates desde DolarApi.com.
+ * Retorna un array de { dateKey, bcv, paralelo } o null si falla.
+ * El endpoint devuelve 945+ registros desde 2023 con fuentes "oficial" y "paralelo".
+ * ponytail: transformar el array plano a dict agrupado por fecha.
+ */
+async function fetchHistoricalFromAPI() {
+  try {
+    // Intentar cache primero (1 hora TTL)
+    const cached = await getHistoricalAPICache();
+    if (cached) return cached;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    let data;
+    try {
+      const res = await fetch('https://ve.dolarapi.com/v1/historicos/dolares', {
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      data = await res.json();
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    // Agrupar por fecha: un entry por día con bcv (oficial) y paralelo
+    const grouped = {};
+    for (const entry of data) {
+      const date = entry.fecha; // "YYYY-MM-DD"
+      if (!date) continue;
+      if (!grouped[date]) grouped[date] = { bcv: null, paralelo: null };
+      if (entry.fuente === 'oficial' && entry.promedio != null) {
+        grouped[date].bcv = entry.promedio;
+      } else if (entry.fuente === 'paralelo' && entry.promedio != null) {
+        grouped[date].paralelo = entry.promedio;
+      }
+    }
+
+    // Cachear por 1 hora
+    await setHistoricalAPICache(grouped);
+
+    return grouped;
+  } catch {
+    return null;
+  }
+}
+
+async function getHistoricalAPICache() {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL_API_CACHE);
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    if (Date.now() - cache.cachedAt > 60 * 60 * 1000) return null; // 1 hora
+    return cache.data;
+  } catch {
+    return null;
+  }
+}
+
+async function setHistoricalAPICache(data) {
+  try {
+    const cache = { data, cachedAt: Date.now() };
+    await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL_API_CACHE, JSON.stringify(cache));
+  } catch {}
+}
+
+/**
+ * Obtiene el historial completo:
+ * 1. Intenta DolarApi (con cache de 1h)
+ * 2. Merge con datos locales (BCV Lunes manual, Binance, Euro)
+ * 3. Los datos locales tienen prioridad (sobrescriben bcv si el usuario editó manualmente)
  */
 export async function getHistoricalRates() {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL);
-    if (!raw) return {};
-    return JSON.parse(raw);
+    // Cargar datos locales (siempre disponibles)
+    const localRaw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL);
+    const local = localRaw ? JSON.parse(localRaw) : {};
+
+    // Intentar datos de DolarApi (pueden fallar por red)
+    const apiData = await fetchHistoricalFromAPI();
+
+    if (!apiData) {
+      // Sin API: devolver solo datos locales
+      return local;
+    }
+
+    // Merge: API como base, local sobrescribe
+    const merged = { ...apiData };
+    for (const [dateKey, localEntry] of Object.entries(local)) {
+      if (merged[dateKey]) {
+        // Local sobrescribe campos específicos, conserva paralelo de API si local no lo tiene
+        merged[dateKey] = {
+          ...merged[dateKey],
+          ...localEntry,
+          bcv: localEntry.bcv ?? merged[dateKey].bcv,
+          paralelo: localEntry.paralelo ?? merged[dateKey].paralelo,
+        };
+      } else {
+        // Fecha que no existe en API (datos manuales del usuario)
+        merged[dateKey] = localEntry;
+      }
+    }
+
+    return merged;
   } catch {
-    return {};
+    // Fallback total: solo locales
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
   }
 }
 

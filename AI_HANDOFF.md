@@ -51,64 +51,103 @@ Skills leídas (aplicar cuando corresponda):
 
 ## 🚀 Últimos Cambios (Sesión 22-Jun-2026)
 
-### 🐛 Fix: Salto vertical al deslizar entre tabs (causa raíz)
+### ✅ Tests de Hooks y Componentes — 82 tests nuevos
 
-**Problema:** Las 3 pantallas tenían estructuras distintas (ScreenContainer/SafeAreaView/insets diferentes), causando que el PagerView re-calculara el layout al cambiar de tab.
+| Área | Archivos | Tests |
+|------|----------|-------|
+| **Hooks** | `__tests__/useRatesData.test.js`, `useConverterData.test.js`, `useHistoryData.test.js` | 48 |
+| **Componentes** | `__tests__/BCVModal.test.js`, `UpdateModal.test.js`, `RatesHeader.test.js`, `DateDetailCard.test.js`, `HistoryChart.test.js`, `ScreenContainer.test.js` | 34 |
 
-| Cambio | Archivos | Detalle |
-|--------|----------|---------|
-| **ScreenContainer único en App.js** | `App.js` + 3 screens | LinearGradient pasa a App.js (una sola vez), ya no se re-renderiza por cada tab change |
-| **SafeAreaView único en App.js** | `App.js` + 3 screens | SafeArea padding ahora consistente entre todas las páginas |
-| **bounces=false estandarizado** | `ConverterScreen.js` | Todas las pantallas ahora tienen `bounces={false}` en ScrollView |
-| **Eliminado useSafeAreaInsets** | `ConverterScreen.js` | Ya no calcula padding individual — SafeAreaView de App.js lo maneja |
+**Total: 156 tests, 20 suites — 100% passing**
 
-### 🔒 Seguridad (segunda pasada)
+### 🐛 Fix: Workflows fallaban por 403 y dotenv a stdout
 
-| Mejora | Archivo | Detalle |
-|--------|---------|---------|
-| **ErrorBoundary** | `App.js` | Mensaje genérico al usuario (sin leak de `error.message`), log completo a console.warn |
-| **usesCleartextTraffic** | `app.config.js` | `usesCleartextTraffic: false` via expo-build-properties (HTTPS-only en Android) |
-| **.env.example** | `.env.example` | Documentación actualizada, `COTIZAVE_API_KEY` comentada como obsoleta |
+**Problema 1:** `require('dotenv').config()` en `app.config.js` imprimía a stdout antes del número de versión (`◇ injected env...`), causando `Invalid format '1.0.1'` en `$GITHUB_OUTPUT`.
 
-### 🤖 Release Automático con Changelog
+**Fix:** Usar `grep -xE '[0-9]+\.[0-9]+\.[0-9]+'` en la extracción de versión en ambos workflows.
 
-| Cambio | Archivos | Detalle |
-|--------|----------|---------|
-| **Release workflow** | `.github/workflows/release-automatic.yml` | workflow_dispatch (version/bump_type inputs) + push tags v* |
-| **Changelog script** | `tasa-del-dia/scripts/generate-changelog.js` | Genera markdown desde git log con conventional commits |
-| **App version bump** | Incluido en workflow | Actualiza app.config.js + commit [skip ci] automático |
-| **APK build** | Incluido en workflow | Build local + subida a GitHub Release + actualiza "latest" |
+**Problema 2:** `GITHUB_TOKEN` sin permiso `contents: write` → 403 al crear GitHub Releases.
 
-Flujo: workflow_dispatch → bump version → git log changelog → build APK → GitHub Release (vX.Y.Z) + actualiza "latest"
+**Fix:** Agregar `permissions: contents: write` a `build-apk.yml` y `release-automatic.yml`.
+
+| Commit | Fix |
+|--------|-----|
+| `2a4d7ef` | permissions: contents: write en release-automatic.yml |
+| `61f7fb3` | grep -xE semver en extractVersion de ambos workflows |
+| `22a9ba7` | permissions: contents: write en build-apk.yml |
+| `a2544c8` | autoUpdate: endpoint /releases/latest + validación semver |
+| `f3988e3` | build-apk.yml: releases con tag semver (v1.0.2) en vez de "latest" |
+| `63dda20` | build-apk.yml: guard para versión vacía en release step |
+| `759eccc` | pin expo-file-system@19.0.23 y expo-linking@8.0.12 para SDK 54 |
+
+### 🔒 Auditoría de Seguridad
+
+| Resultado | Detalle |
+|-----------|---------|
+| **CRÍTICO** | 0 |
+| **ALTO** | 0 |
+| **MEDIO** | 0 |
+| **BAJO** | 3 (AsyncStorage sin cifrar, User-Agent spoofing, dotenv a stdout) |
+| **npm vulns** | 0 altas/críticas — solo 32 moderadas (expo) |
 
 ### 📦 Archivos creados en esta sesión
 
 | Archivo | Propósito |
 |---------|-----------|
-| `scripts/generate-changelog.js` | Generador de changelog desde conventional commits (sin dependencias) |
-| `.github/workflows/release-automatic.yml` | Release workflow con changelog automático |
+| `src/hooks/__tests__/useRatesData.test.js` | 11 tests: carga tasas, BCV Lunes, brecha, offline |
+| `src/hooks/__tests__/useConverterData.test.js` | 19 tests: extractRawDigits (7 formatos), conversión, swap, spreads |
+| `src/hooks/__tests__/useHistoryData.test.js` | 18 tests: formatCurrency, historial, chartInfo, fechas |
+| `src/components/__tests__/BCVModal.test.js` | 5 tests: visibilidad, edición, guardar |
+| `src/components/__tests__/UpdateModal.test.js` | 7 tests: versión, botones, skip, release notes |
+| `src/components/__tests__/RatesHeader.test.js` | 5 tests: título, banners, offline |
+| `src/components/__tests__/DateDetailCard.test.js` | 7 tests: date badge, copy, copied state |
+| `src/components/__tests__/HistoryChart.test.js` | 6 tests: null chart, legend, bar values, plural |
+| `src/components/__tests__/ScreenContainer.test.js` | 3 tests: dark/light mode, children |
 
-### 🗑️ Archivos modificados en esta sesión
+### 🗑️ Workflows consolidados
 
-| Archivo | Cambio |
-|---------|--------|
-| `App.js` | (sesión anterior) ScreenContainer + SafeAreaView unificados |
-| `.github/workflows/build-apk.yml` | (sesión anterior) Release "latest" automático |
+| Workflow | Estado | Motivo |
+|----------|--------|--------|
+| `release-apk.yml` | ❌ Eliminado | Reemplazado por release-automatic.yml (con changelog) |
+| `android-build.yml` | ❌ Eliminado | Redundante con build-apk.yml |
+| `build-apk.yml` | ✅ Activo | Build APK local + Release "latest" → ahora tags semver |
+| `release-automatic.yml` | ✅ Activo | Release con changelog automático |
+| `mobile-ci.yml` | ✅ Activo | Tests + lint en push/PR |
 
-### Último commit (sesión anterior)
-- **SHA:** `716fc31` — "feat: auto-update desde GitHub con Release latest y modal de actualización"
-- **8 archivos**, +715 / -12
+### 🖥️ Desktop — Fix scroll vertical y thread-safe refresh
 
-### Pendiente de commit
-- `scripts/generate-changelog.js` — nuevo
-- `.github/workflows/release-automatic.yml` — nuevo
+**Problema 1:** Scroll vertical no funcionaba dentro de las tabs con `ft.ListView`.
+
+**Fix:** Reemplazar `ft.ListView(expand=True, scroll=AUTO)` por `ft.Column(scroll=AUTO, expand=True)` en las 3 tabs. En historial, chips cambiaron de `scroll=AUTO` a `wrap=True` para evitar que el scroll anidado intercepte clicks.
+
+**Problema 2:** `threading.Timer` en PyInstaller EXE no actualizaba la UI (tarjetas mostraban "—").
+
+**Fix:** Reemplazar `threading.Timer(0.1, init_app)` por `page.run_thread(init_app)` — API thread-safe de Flet 0.85. Agregado feedback visual inmediato "🔄 Conectando con el servidor..." y logging detallado.
+
+**Build:** `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe` (80.5 MB, 1m 36s)
+
+### 🚀 Auto-Update — Fix endpoint GitHub + releases con tag semver
+
+**Problema:** `autoUpdate.js` consultaba `/releases/tags/latest` que devolvía tag literal "latest" (no semver), rompiendo `compareVersions()`.
+
+**Fix:** Cambiar endpoint a `/releases/latest` (API de GitHub devuelve el último release publicado con tag real) + validación semver con regex. Workflow ahora crea releases con tag `v1.0.2` (no "latest").
+
+**Versión:** 1.0.1 → 1.0.2
+
+### 📱 APK Crash — Fix dependencias nativas (SDK 54 vs SDK 56)
+
+**Problema:** `expo-file-system@56.0.8` y `expo-linking@56.0.14` (SDK 56) estaban instaladas en `node_modules` a pesar de que el proyecto usa Expo SDK 54, causando conflictos de módulos nativos en la APK compilada.
+
+**Fix:** Pinned `expo-file-system@19.0.23` y `expo-linking@8.0.12` (versiones correctas para SDK 54).
+
+**Build actual:** [Run #27921889417](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27921889417) — en progreso (con dependencias corregidas)
 
 ---
 
 ## 📋 Estado Actual
 
 ### Móvil (`tasa-del-dia/`)
-- **74 tests, 11 suites — 100% passing** ✅
+- **156 tests, 20 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env`: `COTIZAVE_API_KEY` obsoleta (no se usa en runtime)
@@ -117,7 +156,9 @@ Flujo: workflow_dispatch → bump version → git log changelog → build APK �
   - Cada build crea automáticamente un Release "latest" en GitHub con la APK
   - URL de descarga: `https://github.com/juancito8812/tasa-del-dia-app-/releases/latest/download/TasaDelDia.apk`
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
-- Último build: [Run #27919029524](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27919029524)
+- **Workflows:** `build-apk.yml`, `release-automatic.yml`, `mobile-ci.yml` (3 activos)
+- **Fixes aplicados:** `permissions: contents: write` + `grep -xE` para extracción de versión
+- Último build: [Run #27919937529](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27919937529)
 
 **Workflows móviles activos (3):**
 | Workflow | Trigger | Propósito |

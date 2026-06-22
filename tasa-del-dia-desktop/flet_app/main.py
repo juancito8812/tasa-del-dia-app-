@@ -171,7 +171,7 @@ def blend_color(color: str, alpha: float) -> str:
 
 def build_rates_tab():
     log.debug("build_rates_tab called")
-    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
+    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
     ctrl["rates_tab"] = tab
     tab.controls = [
         build_spread("spread_bcv", "BRECHA BCV VS PARALELO"),
@@ -185,7 +185,7 @@ def build_rates_tab():
         build_offline_banner(),
         build_info_bar(),
     ]
-    log.debug(f"build_rates_tab returning ListView with {len(tab.controls)} controls")
+    log.debug(f"build_rates_tab returning Column with {len(tab.controls)} controls")
     return tab
 
 
@@ -324,7 +324,7 @@ def build_info_bar():
 # ─── Converter Tab ────────────────────────────────────────────
 
 def build_converter_tab():
-    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
+    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True)
     ctrl["converter_tab"] = tab
     tab.controls = [
         build_conv_rate_sel(),
@@ -497,7 +497,7 @@ def update_conv_ui():
 def build_history_tab():
     log.debug("build_history_tab called")
     colors = c()
-    chips = ft.Row(spacing=4, scroll=ft.ScrollMode.AUTO)
+    chips = ft.Row(spacing=4, wrap=True)
     ctrl["hist_chips"] = chips
     date_inp = ft.TextField(value=datetime.now().strftime("%d/%m/%Y"), text_size=12,
                              border=ft.InputBorder.NONE,
@@ -510,7 +510,7 @@ def build_history_tab():
     ctrl["hist_detail_card"] = detail_card
     list_content = ft.Column(spacing=2)
     ctrl["hist_list"] = list_content
-    tab = ft.ListView(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True, controls=[
+    tab = ft.Column(spacing=6, scroll=ft.ScrollMode.AUTO, expand=True, controls=[
         ft.Text("SELECCIONAR FECHA", size=10, weight="bold", color=colors["muted"]),
         chips,
         ft.Row(controls=[date_inp, search_btn]),
@@ -518,7 +518,7 @@ def build_history_tab():
         list_content,
     ])
     ctrl["history_tab"] = tab
-    log.debug("build_history_tab returning ListView")
+    log.debug("build_history_tab returning Column")
     return tab
 
 
@@ -690,8 +690,10 @@ def start_reminder_check():
 
 def refresh_rates():
     global _is_loading
+    log.debug("refresh_rates called")
     with _lock:
         if _is_loading:
+            log.debug("refresh_rates: already loading, skipping")
             return
         _is_loading = True
     set_card_loading("card_bcv")
@@ -702,16 +704,22 @@ def refresh_rates():
         lbl.value = "..."
     if page:
         page.update()
+        log.debug("refresh_rates: page updated with 'Cargando...'")
     try:
+        log.debug("refresh_rates: calling fetch_all_rates()")
         rates = fetch_all_rates()
+        log.debug(f"refresh_rates: fetch_all_rates returned: {rates}")
         on_rates_loaded(rates)
     except ApiError as e:
+        log.error(f"refresh_rates: ApiError: {e}")
         on_rates_error(str(e))
     except Exception as e:
+        log.error(f"refresh_rates: unexpected error: {e}", exc_info=True)
         on_rates_error(str(e))
     finally:
         with _lock:
             _is_loading = False
+            log.debug("refresh_rates: completed")
 
 
 def set_card_loading(key: str):
@@ -759,10 +767,12 @@ def on_rates_loaded(rates):
 
 
 def on_rates_error(error_msg: str):
+    log.error(f"on_rates_error: {error_msg}")
     global _is_loading
     with _lock:
         _is_loading = False
     cache = load_cache_rates()
+    log.debug(f"on_rates_error: cache loaded: {cache}")
     if cache and cache.get("bcv") is not None:
         with _lock:
             _rates = cache
@@ -1030,6 +1040,14 @@ def main(p: ft.Page):
         ], spacing=4),
     )
     page.update()
+
+    # Feedback inmediato: mostrar que la app está conectando
+    info_lbl = ctrl.get("info_label")
+    if info_lbl:
+        info_lbl.value = "🔄 Conectando con el servidor..."
+        page.update()
+
+    # Iniciar carga de datos en segundo plano (timer thread-safe en Flet desktop)
     threading.Timer(0.1, init_app).start()
     threading.Timer(5.0, check_updates).start()
 

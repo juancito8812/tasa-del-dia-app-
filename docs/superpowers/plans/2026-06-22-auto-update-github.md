@@ -1,11 +1,5 @@
-# Auto-Update desde GitHub Implementation Plan
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
-**Goal:** La app Tasa del Día revise automáticamente si hay una APK más nueva en GitHub Releases y ofrezca descargarla/instalarla.
-
-**Arquitectura:** Dos componentes: (1) GitHub workflow ya modificado para crear Release "latest" con cada build. (2) Servicio `autoUpdate.js` que consulta la GitHub API pública, compara versiones, y si hay nueva disponible, muestra un modal `UpdateModal.js` con botón de descarga.
-
-**Tech Stack:** GitHub API (pública, sin auth), `expo-constants` (versión actual), `expo-file-system` (descarga APK), `expo-linking` (abrir instalador), AsyncStorage (cache de skip version).
+# ✅ Auto-Update desde GitHub — COMPLETADO
+> **Estado:** Todas las tareas implementadas y commiteadas. Build en progreso.
 
 ---
 

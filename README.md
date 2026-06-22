@@ -25,7 +25,7 @@
 
 ### Fuente de datos
 
-Las tasas se obtienen de [**Cotizave API**](https://cotizave.com) — BCV, paralelo, euro y Binance P2P en tiempo real.
+Las tasas se obtienen de [**DolarApi.com**](https://ve.dolarapi.com) (BCV, paralelo, euro) + Binance P2P directo — sin API key requerida.
 
 ---
 
@@ -44,7 +44,6 @@ Las tasas se obtienen de [**Cotizave API**](https://cotizave.com) — BCV, paral
 
 ```bash
 cd tasa-del-dia
-echo "COTIZAVE_API_KEY=tu_api_key_aqui" > .env
 npm install
 npx expo start
 # Escanea el QR con Expo Go en tu celular
@@ -56,7 +55,13 @@ npx expo start
 npx eas build --platform android --profile preview
 ```
 
-**Requisitos:** Node.js 22+, cuenta Expo, API key de Cotizave
+**Requisitos:** Node.js 22+, cuenta Expo
+
+### 🔄 Auto-Update
+
+Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.2`) en GitHub. La app verifica al iniciar si hay una versión más nueva consultando el endpoint `/releases/latest` de GitHub API y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
+
+**Comportamiento:** Al abrir la app, detecta automáticamente si hay una versión más nueva. Si la hay, muestra un modal con botones: *Descargar APK* (descarga + abre instalador Android), *Saltar esta versión* (no vuelve a preguntar), *Más tarde* (cierra el modal).
 
 ---
 
@@ -89,11 +94,13 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (62) |
-| **Desktop CI** | Push/PR a `main` con cambios en `tasa-del-dia-desktop/` | Tests (255+) |
-| **Build APK** | Push a `main` con cambios en `tasa-del-dia/` | APK |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (156) + lint |
+| **Desktop CI** | Push/PR a `main` con cambios en `tasa-del-dia-desktop/` | Tests (280: 267 pass, 9 legacy, 4 err) |
+| **Build APK** | Push a `main` + manual | APK + Release con tag semver automático |
+| **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog |
 | **Build EXE** | Push a `main` con cambios en `tasa-del-dia-desktop/` | .exe |
-| **Android Build** | Manual (workflow_dispatch) | APK con perfil seleccionable |
+
+> **Nota:** `release-apk.yml` y `android-build.yml` fueron eliminados (redundantes con `build-apk.yml` y `release-automatic.yml`).
 
 ---
 
@@ -105,7 +112,12 @@ Cuando no hay conexión:
 - AsyncStorage + expo-notifications + expo-background-fetch
 
 ### App Desktop
-- Python 3.14 + Flet 0.85
+- Python 3.14 + Flet 0.85.3
+- UI: `flet_app/main.py` (~1000 ln) con 3 tabs (Tasas/Conversor/Historial)
+- Scroll: `ft.Column(scroll=AUTO, expand=True)` (más fiable que `ft.ListView` para contenido intercambiable)
+- Thread-safety: `page.run_thread()` para actualizaciones en segundo plano
+- Persistencia: `%APPDATA%\TasaDelDia\` (config, cache, historial, logs)
+- Build: `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe` (~80 MB, ~2 min)
 - Share: `app/api.py`, `app/storage.py`, `app/auto_update.py`
 
 ---
