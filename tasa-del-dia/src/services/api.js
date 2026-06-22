@@ -371,12 +371,16 @@ export async function getHistoricalRates() {
 
 /**
  * Guarda un conjunto de tasas para una fecha específica.
+ * Lee/escribe SOLO el storage local (no pasa por getHistoricalRates que mergea API).
+ * Conserva máximo 365 días de historial local.
  * @param {string} dateKey - "YYYY-MM-DD"
  * @param {{ bcv, paralelo, binance_p2p, euro, fetchedAt }} rates
  */
 export async function saveHistoricalRate(dateKey, rates) {
   try {
-    const all = await getHistoricalRates();
+    const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL);
+    const all = raw ? JSON.parse(raw) : {};
+
     all[dateKey] = {
       ...all[dateKey],
       bcv: rates.bcv ?? all[dateKey]?.bcv ?? null,
@@ -385,6 +389,8 @@ export async function saveHistoricalRate(dateKey, rates) {
       euro: rates.euro ?? all[dateKey]?.euro ?? null,
       fetchedAt: rates.fetchedAt ?? all[dateKey]?.fetchedAt ?? new Date().toISOString(),
     };
+
+    // Mantener solo los últimos 365 días
     const entries = Object.entries(all);
     if (entries.length > 365) {
       entries.sort((a, b) => a[0].localeCompare(b[0]));
