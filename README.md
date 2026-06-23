@@ -59,7 +59,7 @@ npx eas build --platform android --profile preview
 
 ### 🔄 Auto-Update
 
-Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.2`) en GitHub. La app verifica al iniciar si hay una versión más nueva consultando el endpoint `/releases/latest` de GitHub API y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
+Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.3`) en GitHub. La app verifica al iniciar si hay una versión más nueva consultando el endpoint `/releases/latest` de GitHub API y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
 
 **Comportamiento:** Al abrir la app, detecta automáticamente si hay una versión más nueva. Si la hay, muestra un modal con botones: *Descargar APK* (descarga + abre instalador Android), *Saltar esta versión* (no vuelve a preguntar), *Más tarde* (cierra el modal).
 

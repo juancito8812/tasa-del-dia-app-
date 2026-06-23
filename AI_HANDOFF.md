@@ -19,37 +19,63 @@ API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
 
 ### ⚠️ Skills del repo externo — leídas y aplicadas (15/15)
 
-**Siempre que se trabaje en este proyecto, se DEBEN leer y aplicar todas las skills del repositorio:**  
+**Siempre que se trabaje en este proyecto, se DEBEN leer y aplicar TODAS las skills del repositorio:**  
 🔗 `https://github.com/juancito8812/mi-repo-de-skills`
 
 Skills activas permanentemente (modifican comportamiento base):
 
 | Skill | Efecto |
 |-------|--------|
-| **ponytail** | Solución más simple que funciona. YAGNI, stdlib primero, marcar con `ponytail:` |
-| **systematic-debugging** | Root cause antes de fix. 4 fases: investigar → analizar → hipótesis → implementar |
-| **verification-before-completion** | Evidencia fresca antes de claims. NO decir "debería funcionar" sin verificar |
-| **subagent-driven-development** | Flujo: implementer → spec review → quality review por cada tarea |
-| **using-superpowers** | Invocar skills relevantes antes de cada respuesta. Si hay 1% de posibilidad, invocar |
+| **ponytail** | Solución más simple que funciona. YAGNI, stdlib primero |
+| **systematic-debugging** | Root cause antes de fix. 4 fases |
+| **verification-before-completion** | Evidencia fresca antes de claims |
+| **subagent-driven-development** | Implementer → spec review → quality review |
+| **using-superpowers** | Invocar skills antes de cada respuesta |
+| **brainstorming** | Antes de trabajo creativo — spec → plan |
+| **dispatching-parallel-agents** | 2+ tareas independientes en paralelo |
+| **executing-plans** | Plan escrito → tareas → verificar |
+| **finishing-a-development-branch** | Tests pasan → opciones merge/PR |
+| **receiving-code-review** | Verificar feedback antes de implementar |
+| **requesting-code-review** | Dispatch reviewer con SHAs |
+| **test-driven-development** | RED → GREEN → REFACTOR |
+| **using-git-worktrees** | Workspace aislado para features |
+| **writing-plans** | Spec → plan con pasos de 2-5 min |
+| **writing-skills** | TDD para documentación de skills |
+| **find-skills** | Descubrir skills relevantes |
+| **auto-sync** | Auto-sync después de cambios |
+| **changelog-generator** | Generar changelogs |
+| **error-handling-patterns** | Patrones de manejo de errores |
+| **frontend-design** | Diseño visual distintivo |
+| **interface-design** | Diseño craft-first de interfaces |
+| **postgresql-table-design** | Diseño de schemas PostgreSQL |
+| **vercel-react-best-practices** | Optimización React/Next.js |
 
-Skills leídas (aplicar cuando corresponda):
-
-| Skill | Cuándo aplicar |
-|-------|---------------|
-| **brainstorming** | Antes de cualquier trabajo creativo — diseño → spec → plan, nunca implementar sin diseño aprobado |
-| **dispatching-parallel-agents** | 2+ fallos independientes → 1 agente por dominio en paralelo |
-| **executing-plans** | Tener un plan escrito → revisar → ejecutar tareas → verificar |
-| **finishing-a-development-branch** | Tests pasan → detectar entorno → presentar opciones (merge/PR/keep/discard) |
-| **receiving-code-review** | Recibir feedback → verificar antes de implementar, no performative agreement |
-| **requesting-code-review** | Después de cada tarea → dispatch reviewer con SHAs y contexto |
-| **test-driven-development** | RED (test fallido) → GREEN (código mínimo) → REFACTOR. Nunca código sin test fallido primero |
-| **using-git-worktrees** | Antes de features — workspace aislado via herramienta nativa o git worktree |
-| **writing-plans** | Spec aprobado → plan con pasos de 2-5 min, código completo en cada paso |
-| **writing-skills** | Crear skills nuevas → TDD aplicado a documentación (baseline → skill → verify) |
+Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, checklist y exit criteria.
 
 ---
 
-## 🚀 Últimos Cambios (Sesión 22-Jun-2026)
+## 🚀 Sesiones
+
+### Sesión 21-Jun-2026 — Auditoría de seguridad + Skills review
+
+- Auditoría general de código completada (~233 hallazgos en 6 áreas)
+- **Fixes de seguridad aplicados (6/7):**
+
+| # | Fix | Archivo | Estado |
+|---|-----|---------|--------|
+| 1 | API key real rotada/eliminada | `.env` | ✅ |
+| 2 | `.gitignore` creado (node_modules, .expo, .env, etc.) | raíz proyecto | ✅ |
+| 3 | ErrorBoundary: solo message en console.warn (sin stack traces) | `App.js:128` | ✅ |
+| 4 | Alert sanitizado: sin mensajes de error crudos al usuario | `useConverterData.js:106,109` | ✅ |
+| 5 | `catch {}` vacíos → console.warn con prefijo (~25 lugares) | api.js, autoUpdate.js, notifications.js, backgroundTasks.js, ThemeContext.js, hooks | ✅ |
+| 6 | `POST_NOTIFICATIONS` agregado para Android 13+ | `app.config.js:31` | ✅ |
+| 7 | `legacy-peer-deps=true` — **mantenido** (necesario por conflicto react 19.1.0 vs react-test-renderer 19.2.7) | `.npmrc` | ⚠️ No removible |
+
+- **Tests:** 156/156 passing — nada roto
+- Total de catch blocks con logging: ~25 (antes 0 con logging)
+- `__DEV__` guard en todos los console.warn de hooks y servicios
+
+### Sesión 22-Jun-2026 — Tests y Fixes
 
 ### ✅ Tests de Hooks y Componentes — 82 tests nuevos
 
@@ -288,6 +314,29 @@ src/
 4. Ajustes finos al glassmorphism / UI
 5. Notificaciones desktop (system tray)
 6. Widget flotante desktop (overlay)
+
+---
+
+### Sesión 22-Jun-2026 (tarde) — Fixes de entrada numérica + Historial 10 días + teclado
+
+- **Bug crítico:** Parseo de "1.50" → 150 en `useRatesData.js` corregido (detecta si hay coma para decidir si puntos son miles)
+- **Calculadora:** `extractRawDigits` ahora conserva el separador original (coma o punto) sin convertirlo. `keyboardType` cambiado a `decimal-pad` en Android (antes `numeric` no tenía coma/punto)
+- **Historial:** Ahora muestra solo últimos 10 días en chips y lista (antes 365). Buscador permite fechas desde 2023 (API DolarApi)
+- **Gasolina (Android):** `KeyboardAvoidingView` con `behavior` solo en iOS; Android usa `adjustResize` nativo
+- **Quick amounts:** Se adaptan al modo USD→Bs o Bs→USD según la tasa actual
+- **Auto-update:** Agregado permiso `REQUEST_INSTALL_PACKAGES` para Android 10+
+- **UpdateModal:** Renderizado condicional (solo si hay `updateInfo`)
+- **Release v1.0.3:** Tag pusheado, workflows en progreso
+- **Tests:** 156/156 passing
+
+| Commit | SHA | Cambio |
+|--------|-----|--------|
+| `bb9879f` | fix | input parsing decimales, quick amounts adaptativos, permiso instalación |
+| `fb4f0cb` | feat | historial solo últimos 10 días + buscador |
+| `10e2e6b` | fix | teclado gasolina Android (KeyboardAvoidingView solo iOS) |
+| `aa74dee` | fix | calculadora conserva coma/punto sin borrar + decimal-pad en Android |
+| `328d651` | chore | bump version 1.0.3 |
+| `a452e9e` | (amend) | chore: bump version to 1.0.3 |
 
 ---
 
