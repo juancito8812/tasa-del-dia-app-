@@ -30,8 +30,14 @@ def format_ves(val):
     if val is None:
         log.warning("format_ves called with None")
         return "—"
-    s = f"{val:,.2f}"
+    s = f"{val:,.4f}"
     result = s.replace(",", "X").replace(".", ",").replace("X", ".")
+    if "," in result:
+        whole, dec = result.split(",", 1)
+        dec = dec.rstrip("0")
+        if len(dec) < 2:
+            dec = dec + "0" * (2 - len(dec))
+        result = f"{whole},{dec}"
     log.debug(f"format_ves output: {result}")
     return result
 
@@ -542,7 +548,14 @@ def update_history_tab():
     if chips:
         chips.controls.clear()
         for d in dates[:20]:
-            lbl = ft.TextButton(content=format_date_key(d), on_click=lambda e, dt=d: select_hist_date(dt))
+            lbl = ft.Container(
+                content=ft.Text(format_date_key(d), size=11, color=colors["secondary"]),
+                padding=ft.Padding.symmetric(horizontal=10, vertical=6),
+                bgcolor=colors["accent"],
+                border_radius=16,
+                ink=True,
+                on_click=lambda e, dt=d: select_hist_date(dt),
+            )
             chips.controls.append(lbl)
     detail = ctrl.get("hist_detail_card")
     if detail:
@@ -1013,7 +1026,7 @@ def main(p: ft.Page):
     colors = c()
     tab_labels = ["📊  Tasas", "💱  Conversor", "📅  Historial"]
 
-    tab_container = ft.Container(expand=True, content=build_rates_tab())
+    tab_container = ft.Container(content=build_rates_tab())
     ctrl["tab_container"] = tab_container
 
     tab_btns = []
@@ -1030,14 +1043,14 @@ def main(p: ft.Page):
     ctrl["tab_btns"] = tab_btns
 
     page.add(
-        ft.Column(expand=True, controls=[
+        ft.Column(controls=[
             build_title_bar(),
             ft.Container(
                 content=ft.Row(controls=tab_btns, alignment=ft.MainAxisAlignment.CENTER),
                 padding=ft.Padding.only(left=8, right=8, top=4, bottom=0),
             ),
             ft.Column(expand=True, controls=[tab_container], spacing=0),
-        ], spacing=4),
+        ], spacing=4, expand=True),
     )
     page.update()
 
