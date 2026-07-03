@@ -11,16 +11,14 @@ const TABS = [
 
 export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
   return (
-    <BlurView intensity={Platform.OS === 'android' ? 50 : 80} tint="dark" style={[
+    <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint="dark" style={[
       styles.container,
       { borderTopColor: colors.tabBarBorder }
     ]}>
       <View style={styles.tabsRow}>
         {TABS.map((tab, i) => {
-          // Cada tab se activa cuando scrollOffset ≈ i
           const inputRange = [i - 1, i, i + 1];
 
-          // ponytail: opacity es redundante — el cambio de color (muted→highlight) ya es señal visual suficiente
           const activeProgress = scrollOffset.interpolate({
             inputRange,
             outputRange: [0, 1, 0],
@@ -47,18 +45,20 @@ export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOf
               accessibilityLabel={tab.key}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
+              activeOpacity={0.7}
             >
-              <Animated.View>
-                <Ionicons
-                  name={tab.icon}
-                  size={22}
-                  color={iconColor}
-                />
-              </Animated.View>
+              <View style={styles.iconWrapper}>
+                <Animated.View>
+                  <Ionicons
+                    name={tab.icon}
+                    size={22}
+                    color={iconColor}
+                  />
+                </Animated.View>
+              </View>
               <Animated.Text style={[styles.label, { color: iconColor }]}>
                 {tab.key}
               </Animated.Text>
-              {/* ponytail: el indicator y el scale son el mismo feedback visual — el indicator basta */}
               <Animated.View
                 style={[
                   styles.indicator,
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
   container: {
     borderTopWidth: 1,
     paddingTop: 4,
-    paddingBottom: 4,
-    height: 60,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 4,
+    height: Platform.OS === 'ios' ? 76 : 60,
   },
   tabsRow: {
     flexDirection: 'row',
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 2,
   },
-  iconContainer: {
+  iconWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
     width: 28,
@@ -111,5 +111,3 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 });
-
-
