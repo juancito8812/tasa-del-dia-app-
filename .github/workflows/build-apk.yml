@@ -128,6 +128,7 @@ jobs:
           if-no-files-found: error
 
       - name: Crear Release en GitHub con tag semver
+        if: github.ref_name == 'main' || github.ref_name == 'master'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
