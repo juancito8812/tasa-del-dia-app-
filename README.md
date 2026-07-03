@@ -19,7 +19,7 @@
 | Proyecto | Plataforma | Stack | Estado |
 |----------|-----------|-------|--------|
 | **App Móvil** | Android (APK) | React Native + Expo SDK 54 | ✅ Activa |
-| **App Desktop** | Windows (.exe) | Python + Flet 0.85 | ✅ Activa (Flet) |
+| **App Desktop** | Windows (.exe) | Python + Flet 0.85 | 🚧 Activa (rama `redesign`: Win11/Bento Grid) |
 | App Desktop (WinUp) | Windows (.exe) | Python + PySide6 | 🗑️ Deprecada |
 | App Desktop (Legacy) | Windows (.exe) | Python + customtkinter | 🗑️ Deprecada |
 
@@ -40,22 +40,34 @@ Las tasas se obtienen de [**DolarApi.com**](https://ve.dolarapi.com) (BCV, paral
 3. Abre el último run exitoso y descarga el artefacto
 4. Transfiere el APK a tu celular e instálalo
 
-**Opción 2 — Test rápido con Expo Go**
+> Nota: la release pública actual corresponde a `main`. Para probar los cambios del rediseño usá la rama `redesign`.
+
+**Opción 2 — Probar rama `redesign`**
 
 ```bash
+git checkout redesign
 cd tasa-del-dia
-npm install
+npm install --legacy-peer-deps
 npx expo start
 # Escanea el QR con Expo Go en tu celular
 ```
 
-**Opción 3 — Compilar APK**
+**Opción 3 — Compilar APK local**
 
 ```bash
-npx eas build --platform android --profile preview
+git checkout redesign
+cd tasa-del-dia
+npm install --legacy-peer-deps
+npx expo prebuild --clean --non-interactive
+cd android
+./gradlew.bat assembleDebug
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**Requisitos:** Node.js 22+, cuenta Expo
+**Requisitos:** Node.js 22+, Java 17, `ANDROID_HOME` configurado
+
+> Si `cd android && ./gradlew.bat assembleDebug` falla por `ANDROID_HOME`, definilo en `android/local.properties`:
+> `sdk.dir=C:\\Users\\JRCPU\\AppData\\Local\\Android\\Sdk`
 
 ### 🔄 Auto-Update
 
@@ -68,11 +80,15 @@ Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.3`
 ### 🖥️ App Desktop (.exe)
 
 ```bash
+git checkout main
 cd tasa-del-dia-desktop
 pip install -r requirements.txt
 python build_flet.py --quick
 # → dist/TasaDelDiaFlet.exe
 ```
+
+> Para probar el rediseño Win11/Bento Grid usá la rama `redesign`:
+> `git checkout redesign`
 
 ---
 

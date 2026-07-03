@@ -196,94 +196,54 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
 ## 📋 Estado Actual
 
-### Móvil (`tasa-del-dia/`)
+### Ramas principales
+- `main` — versión estable publicada en Releases.
+- `redesign` — desarrollo activo: rediseño mobile + desktop Win11.
+### Móvil / Mobile
 - **156 tests, 20 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env`: `COTIZAVE_API_KEY` obsoleta (no se usa en runtime)
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
-  - Cada build crea automáticamente un Release "latest" en GitHub con la APK
+  - Cada build crea automáticamente un Release en GitHub con la APK
   - URL de descarga: `https://github.com/juancito8812/tasa-del-dia-app-/releases/latest/download/TasaDelDia.apk`
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
-- **Workflows:** `build-apk.yml`, `release-automatic.yml`, `mobile-ci.yml` (3 activos)
-- **Fixes aplicados:** `permissions: contents: write` + `grep -xE` para extracción de versión
-- Último build: [Run #27919937529](https://github.com/juancito8812/tasa-del-dia-app-/actions/runs/27919937529)
 
 **Workflows móviles activos (3):**
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
-| `build-apk.yml` | Push a main + manual | Build APK local + Release "latest" |
+| `build-apk.yml` | Push a main + manual | Build + Auto-release |
 | `release-automatic.yml` | Manual + tags v* | Release con changelog + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests + lint + typecheck |
+| `mobile-ci.yml` | Push/PR a main | Tests + lint |
 
-**Workflows eliminados:** `release-apk.yml` (obsoleto, reemplazado por release-automatic), `android-build.yml` (redundante con build-apk)
+**Workflows eliminados:** `release-apk.yml` y `android-build.yml`
 
 ### ✨ Auto-Update desde GitHub
-
-La app verifica automáticamente al iniciar si hay una versión más nueva en GitHub Releases.
-
 | Componente | Archivo | Detalle |
 |------------|---------|---------|
-| **Auto-update service** | `src/services/autoUpdate.js` | Consulta GitHub API pública, compara semver, cache 30 min, skip version, descarga APK con expo-file-system + fallback navegador |
-| **Update Modal** | `src/components/UpdateModal.js` | Modal con versión actual/nueva, botón Descargar (lanza instalador Android), Saltar versión, Más tarde |
-| **Integración** | `App.js` | Check automático al montar (delay 2s para no interrumpir primera renderización) |
-| **GitHub Release** | `.github/workflows/build-apk.yml` | Crea/actualiza Release "latest" con la APK después de cada build exitoso |
-| **Tests** | `src/services/__tests__/autoUpdate.test.js` | 12 tests: compareVersions, isUpdateAvailable, getCurrentVersion |
+| Auto-update service | `src/services/autoUpdate.js` | Consulta GitHub API pública, compara semver, cache 30 min, skip version, descarga APK |
+| Update Modal | `src/components/UpdateModal.js` | Modal con botones Descargar / Saltar / Más tarde |
+| Integración | `App.js` | Check automático al montar, delay 2s |
+| Tests | `src/services/__tests__/autoUpdate.test.js` | 12 tests |
 
-Flujo: `checkLatestRelease()` → compara con `getCurrentVersion()` → si hay nueva y no fue saltada → muestra `UpdateModal` → usuario toca Descargar → `downloadAndInstall()` descarga APK y abre instalador.
-
-### Arquitectura Mobile (actualizada)
-
-```
-App.js
-└── SafeAreaProvider → ThemeProvider → ErrorBoundary
-    └── AnimatedAppContent
-        ├── StatusBar (expo-status-bar, único)
-        ├── ScreenContainer (LinearGradient, único)
-        │   └── SafeAreaView (único)
-        │       └── View
-        │           ├── PagerView
-        │           │   ├── View → RatesScreen
-        │           │   ├── View → ConverterScreen
-        │           │   └── View → HistoryScreen
-        │           └── CustomTabBar
-        └── UpdateModal (Modal nativo, portal sobre todo)
-
-src/
-  screens/
-    RatesScreen.js          # ~190 ln, usa useRatesData + RatesHeader + BCVModal
-    ConverterScreen.js      # ~195 ln, usa useConverterData
-    HistoryScreen.js        # ~170 ln, usa useHistoryData + HistoryChart + DateDetailCard
-  components/
-    RatesHeader.js           # Header con banners
-    BCVModal.js              # Modal de BCV Lunes
-    HistoryChart.js          # NativeBarChart
-    DateDetailCard.js        # Detail de fecha
-    UpdateModal.js           # Modal de actualización disponible
-    CustomTabBar.js          # Tab bar con animación suave (interpolación continua)
-    RateCard.js, ShimmerEffect.js, ThemeToggleMini.js, ScreenContainer.js
-  hooks/
-    useRatesData.js          # Fetching + BCV Lunes + recordatorio + retry
-    useConverterData.js      # Fetching + conversión + copy/paste + spreads
-    useHistoryData.js        # Historial + selección fecha + chart data
-    useAutoRefresh.js
-  services/
-    api.js, backgroundTasks.js, notifications.js, autoUpdate.js
-```
-
-### Desktop (`tasa-del-dia-desktop/`)
+### 🖥️ Desktop (`tasa-del-dia-desktop/`)
 - Flet 0.85.3 es la única UI activa
-- Fuentes: DolarApi.com + Binance P2P (ambas sin API key)
+- Fuentes: DolarApi.com + Binance P2P (sin API key)
 - Build: `python build_flet.py --quick` (~2 min, genera `dist/TasaDelDiaFlet.exe`)
-- Unique constraint: **NO usar módulos flet con `__getattr__` dinámico** (`.pyi` stubs) — PyInstaller no los resuelve. Usar clases con mayúscula: `ft.Padding`, `ft.Icons`, `ft.Border`, `ft.Alignment`
-- Tab system: `Container` único con `content` intercambiable (evita layout conflictos de múltiples `expand=True`)
-- Tabs se reconstruyen al cambiar (cada builder se llama de nuevo)
+- **Base rediseño Win11:** `redesign` → `feat(desktop): base UI Win11 (estilos + componentes)` + `ui: rediseño completo Bento Grid + paleta Venezuela 2026`
+- `flet_app/styles.py`: paleta Windows 11 + acento Venezuela
+- Componentes nuevos: `rate_card.py`, `conv_input.py`, `history_chart.py`, `spread_chart.py`
+- Restricción PyInstaller: usar APIs con mayúscula (`ft.Padding`, `ft.Icons`, `ft.Border`, `ft.Alignment`)
+- Tabs: `Container` único con `content` intercambiable
 - Formato: `format_ves()` para locale venezolano
-- API necesita User-Agent tipo navegador (urllib no envía default)
-- **Problemas conocidos sin resolver**: scroll vertical dentro de tabs no funciona, historial no responde a clicks, formato tasas "2 cifras"
-- `%APPDATA%\TasaDelDia\` para persistencia (config, cache, historial, logs)
-- Para debug: `python flet_app/main.py` directamente (sin build)
+- API necesita User-Agent tipo navegador
+- `storage.py`: persistencia en `%APPDATA%\TasaDelDia\`
+- Para debug: `python flet_app/main.py` directamente
+
+### 🧪 Tests Desktop
+- Tests unitarios en `tasa-del-dia-desktop/tests/` para API y Flet
+- CI en GitHub Actions: `Desktop CI` y `Mobile CI`
 
 ### Skills repo
 - Skills en `skills/` (~40 skills)
@@ -340,4 +300,13 @@ src/
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 22-Jun-2026*
+### Sesión 03-Jul-2026 — Rediseño mobile + build APK debug desde workflow (`redesign`)
+- `redesign` ahora incluye rediseño mobile completo: Bento Grid + paleta Venezuela 2026 (`8d35780`)
+- Desktop: base UI Win11 con estilos + componentes separados: `rate_card.py`, `conv_input.py`, `history_chart.py`, `spread_chart.py`
+- Workflow `build-apk.yml` actualizado en `redesign` para saltar releases en branches que no sean `main`
+- Build EAS preview lanzado desde workspace; alternativa local documentada en README para `assembleDebug`
+- Pendiente: APK debug compilada del commit `8d35780`
+
+---
+
+*Fin del documento de traspaso — Última actualización: 03-Jul-2026*
