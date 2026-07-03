@@ -89,7 +89,7 @@ describe('RateCard', () => {
     expect(titleText).toBeFalsy();
   });
 
-  it('shows USD info when rate is available and not compact', () => {
+  it('shows USD info when rate is available and size=large', () => {
     let renderer;
     TestRenderer.act(() => {
       renderer = TestRenderer.create(
@@ -99,14 +99,14 @@ describe('RateCard', () => {
           icon="bank"
           color="#00b894"
           loading={false}
-          compact={false}
+          size="large"
+          updatedAt="2026-07-03T00:00:00Z"
         />
       );
     });
     const root = renderer.root;
     const texts = root.findAllByType('Text');
     const usdText = texts.find(t => {
-      // children may be a string or an array of strings
       const children = t.props.children;
       if (Array.isArray(children)) {
         return children.some(c => typeof c === 'string' && c.includes('1 USD'));
