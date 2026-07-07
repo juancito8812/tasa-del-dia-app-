@@ -9,7 +9,6 @@
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
 | `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android) |
-| `tasa-del-dia-desktop/` | Python + Flet 0.85.3 | `main` | ✅ Activa |
 
 API Mobile: `https://ve.dolarapi.com/v1` + Binance P2P directo
 API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo

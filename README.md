@@ -19,7 +19,7 @@
 | Proyecto | Plataforma | Stack | Estado |
 |----------|-----------|-------|--------|
 | **App Móvil** | Android (APK) | React Native + Expo SDK 54 | ✅ Activa |
-| **App Desktop** | Windows (.exe) | Python + Flet 0.85 | 🚧 Activa (rama `redesign`: Win11/Bento Grid) |
+| App Desktop | Windows (.exe) | Python + Flet 0.85 | 🗑️ Eliminada |
 | App Desktop (WinUp) | Windows (.exe) | Python + PySide6 | 🗑️ Deprecada |
 | App Desktop (Legacy) | Windows (.exe) | Python + customtkinter | 🗑️ Deprecada |
 
@@ -77,18 +77,9 @@ Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.3`
 
 ---
 
-### 🖥️ App Desktop (.exe)
+### 🖥️ App Desktop
 
-```bash
-git checkout main
-cd tasa-del-dia-desktop
-pip install -r requirements.txt
-python build_flet.py --quick
-# → dist/TasaDelDiaFlet.exe
-```
-
-> Para probar el rediseño Win11/Bento Grid usá la rama `redesign`:
-> `git checkout redesign`
+> La app de escritorio fue eliminada del repositorio porque solo se usa en teléfono.
 
 ---
 
@@ -111,10 +102,8 @@ Cuando no hay conexión:
 | Workflow | Evento | Producto |
 |----------|--------|----------|
 | **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (156) + lint |
-| **Desktop CI** | Push/PR a `main` con cambios en `tasa-del-dia-desktop/` | Tests (280: 267 pass, 9 legacy, 4 err) |
 | **Build APK** | Push a `main` + manual | APK + Release con tag semver automático |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog |
-| **Build EXE** | Push a `main` con cambios en `tasa-del-dia-desktop/` | .exe |
 
 > **Nota:** `release-apk.yml` y `android-build.yml` fueron eliminados (redundantes con `build-apk.yml` y `release-automatic.yml`).
 
