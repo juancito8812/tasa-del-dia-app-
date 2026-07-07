@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedNumber from './AnimatedNumber';
 import ShimmerEffect from './ShimmerEffect';
@@ -16,120 +17,209 @@ const ICON_NAMES = {
 
 function createStyles(C) {
   return StyleSheet.create({
-    card: {
+    // === LARGE (hero card, 2 columns) ===
+    cardLarge: {
       borderRadius: 20,
       borderWidth: 1,
       borderColor: C.cardBorder,
-      padding: 18,
-      marginBottom: 12,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 8,
+      padding: 20,
+      marginBottom: 8,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 20,
+      elevation: 10,
       overflow: 'hidden',
     },
-    compactCard: {
-      padding: 10,
-      marginBottom: 0,
-      borderRadius: 14,
+    glowAccentLarge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      opacity: 0.7,
     },
-    glowAccent: {
+    headerLarge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    iconContainerLarge: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 14,
+    },
+    titleLarge: {
+      fontSize: 18,
+      fontWeight: '800',
+      letterSpacing: 0.3,
+    },
+    subtitleLarge: {
+      fontSize: 12,
+      marginTop: 2,
+      letterSpacing: 0.2,
+    },
+    rateRowLarge: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 6,
+    },
+    ratePrefixLarge: {
+      fontSize: 20,
+      fontWeight: '700',
+      opacity: 0.7,
+    },
+    rateValueLarge: {
+      fontSize: 38,
+      fontWeight: '900',
+      letterSpacing: 0.5,
+      fontVariant: ['tabular-nums'],
+    },
+    rateMetaLarge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 8,
+      paddingTop: 10,
+      borderTopWidth: 1,
+    },
+
+    // === MEDIUM (1 column, standard) ===
+    cardMedium: {
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: C.cardBorder,
+      padding: 14,
+      marginBottom: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 14,
+      elevation: 6,
+      overflow: 'hidden',
+    },
+    glowAccentMedium: {
       position: 'absolute',
       top: 0,
       left: 0,
       right: 0,
       height: 3,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      borderTopLeftRadius: 18,
+      borderTopRightRadius: 18,
       opacity: 0.6,
     },
-    glowAccentCompact: {
-      height: 2,
-      opacity: 0.5,
-    },
-    header: {
+    headerMedium: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 14,
+      marginBottom: 12,
     },
-    headerCompact: {
-      marginBottom: 8,
-    },
-    iconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+    iconContainerMedium: {
+      width: 32,
+      height: 32,
+      borderRadius: 10,
       justifyContent: 'center',
       alignItems: 'center',
-      marginRight: 12,
+      marginRight: 10,
     },
-    iconContainerCompact: {
-      width: 28,
-      height: 28,
-      borderRadius: 8,
-      marginRight: 8,
-    },
-    titleBlock: {
-      flex: 1,
-    },
-    title: {
-      fontSize: 16,
+    titleMedium: {
+      fontSize: 13,
       fontWeight: '700',
-      color: C.textPrimary,
       letterSpacing: 0.3,
     },
-    compactTitle: {
-      fontSize: 11,
+    rateRowMedium: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 4,
+    },
+    ratePrefixMedium: {
+      fontSize: 14,
       fontWeight: '600',
-      color: C.textPrimary,
+      opacity: 0.7,
     },
-    subtitle: {
-      fontSize: 11,
-      color: C.textSecondary,
-      marginTop: 2,
-      letterSpacing: 0.2,
+    rateValueMedium: {
+      fontSize: 24,
+      fontWeight: '800',
+      letterSpacing: 0.3,
+      fontVariant: ['tabular-nums'],
     },
-    rateRow: {
+    rateMetaMedium: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      marginBottom: 0,
+      marginTop: 6,
+      paddingTop: 6,
+      borderTopWidth: 1,
     },
-    ratePrefix: {
-      fontSize: 18,
+
+    // === COMPACT (small, inline) ===
+    cardCompact: {
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: C.cardBorder,
+      padding: 10,
+      marginBottom: 0,
+      overflow: 'hidden',
+    },
+    glowAccentCompact: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 2,
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+      opacity: 0.5,
+    },
+    headerCompact: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    iconContainerCompact: {
+      width: 24,
+      height: 24,
+      borderRadius: 7,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 6,
+    },
+    titleCompact: {
+      fontSize: 11,
       fontWeight: '600',
-      opacity: 0.7,
-      color: C.textPrimary,
+    },
+    rateRowCompact: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      gap: 3,
     },
     ratePrefixCompact: {
-      fontSize: 13,
-    },
-    rateValue: {
-      fontSize: 30,
-      fontWeight: '800',
-      letterSpacing: 0.5,
-      fontVariant: ['tabular-nums'],
+      fontSize: 12,
+      fontWeight: '600',
+      opacity: 0.7,
     },
     rateValueCompact: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '700',
+      letterSpacing: 0.3,
+      fontVariant: ['tabular-nums'],
     },
+
+    // Shared
     editButton: {
       padding: 4,
       marginLeft: 4,
     },
-    usdRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      paddingTop: 8,
-      borderTopWidth: 1,
-      borderTopColor: C.cardBorder,
+    metaText: {
+      fontSize: 10,
     },
-    usdText: {
-      fontSize: 11,
-      color: C.textMuted,
-      letterSpacing: 0.3,
+    usdIcon: {
+      fontSize: 10,
+    },
+    titleBlock: {
+      flex: 1,
     },
   });
 }
@@ -142,7 +232,7 @@ export default function RateCard({
   color,
   loading,
   updatedAt,
-  compact = false,
+  size = 'medium',
   onEdit,
   type,
 }) {
@@ -150,6 +240,7 @@ export default function RateCard({
   const styles = useMemo(() => createStyles(C), [C]);
 
   const formatRate = useCallback((value) => {
+    if (value === null || value === undefined) return '—';
     return Number(value).toLocaleString('es-VE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -159,12 +250,9 @@ export default function RateCard({
   const formatTime = (dateString) => {
     if (!dateString) return '';
     try {
-      const date = new Date(dateString);
-      return date.toLocaleString('es-VE', {
+      return new Date(dateString).toLocaleTimeString('es-VE', {
         hour: '2-digit',
         minute: '2-digit',
-        day: '2-digit',
-        month: '2-digit',
       });
     } catch {
       return '';
@@ -179,40 +267,73 @@ export default function RateCard({
     gasolina: C.glowGasolina,
   }[type] || 'rgba(255,255,255,0.05)';
 
+  const isLarge = size === 'large';
+  const isCompact = size === 'compact';
+  const isMedium = size === 'medium';
+
   if (loading) {
-    return <ShimmerEffect style={compact ? styles.compactCard : undefined} />;
+    return <ShimmerEffect style={isCompact ? {} : { marginBottom: 8, borderRadius: isLarge ? 20 : isMedium ? 18 : 14, height: isLarge ? 140 : isMedium ? 110 : 80 }} />;
   }
 
+  const cardStyle = isLarge ? styles.cardLarge : isMedium ? styles.cardMedium : styles.cardCompact;
+  const glowStyle = isLarge ? styles.glowAccentLarge : isMedium ? styles.glowAccentMedium : styles.glowAccentCompact;
+  const headerStyle = isLarge ? styles.headerLarge : isMedium ? styles.headerMedium : styles.headerCompact;
+  const iconContainerStyle = isLarge ? styles.iconContainerLarge : isMedium ? styles.iconContainerMedium : styles.iconContainerCompact;
+  const iconSize = isLarge ? 22 : isMedium ? 16 : 13;
+  const titleStyle = isLarge ? styles.titleLarge : isMedium ? styles.titleMedium : styles.titleCompact;
+  const rateRowStyle = isLarge ? styles.rateRowLarge : isMedium ? styles.rateRowMedium : styles.rateRowCompact;
+  const prefixStyle = isLarge ? styles.ratePrefixLarge : isMedium ? styles.ratePrefixMedium : styles.ratePrefixCompact;
+  const valueStyle = isLarge ? styles.rateValueLarge : isMedium ? styles.rateValueMedium : styles.rateValueCompact;
+
   return (
-    <View style={[styles.card, compact && styles.compactCard, { shadowColor: glowColor }]}>
+    <View style={[cardStyle, { shadowColor: glowColor }]}>
       <BlurView
         intensity={Platform.OS === 'android' ? 30 : 40}
         tint={isDark ? 'dark' : 'light'}
         style={StyleSheet.absoluteFill}
       />
-      <View style={[styles.glowAccent, compact && styles.glowAccentCompact, { backgroundColor: color }]} />
-      <View style={[styles.header, compact && styles.headerCompact]}>
-        <View style={[styles.iconContainer, compact && styles.iconContainerCompact, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
-          <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={compact ? 14 : 20} color={color} />
+      <View style={[glowStyle, { backgroundColor: color }]} />
+      <View style={headerStyle}>
+        <View style={[iconContainerStyle, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
+          <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={iconSize} color={color} />
         </View>
         <View style={styles.titleBlock}>
-          <Text style={[styles.title, compact && styles.compactTitle]} numberOfLines={1}>{title}</Text>
-          {subtitle && !compact && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <Text style={[titleStyle, { color: C.textPrimary }]} numberOfLines={1}>{title}</Text>
+          {subtitle && !isCompact && (
+            <Text style={isLarge ? styles.subtitleLarge : { fontSize: 10, color: C.textMuted, marginTop: 1 }}>
+              {subtitle}
+            </Text>
+          )}
         </View>
-      </View>
-      <View style={styles.rateRow}>
-        <Text style={[styles.ratePrefix, compact && styles.ratePrefixCompact, { color }]}>Bs.</Text>
-        <AnimatedNumber value={rate} style={[styles.rateValue, compact && styles.rateValueCompact, { color }]} format={formatRate} duration={1000} />
         {onEdit && (
           <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="pencil" size={compact ? 12 : 16} color={color} />
+            <Ionicons name="pencil" size={isLarge ? 16 : 12} color={color} />
           </TouchableOpacity>
         )}
       </View>
-      {rate !== null && rate !== undefined && !compact && (
-        <View style={styles.usdRow}>
-          <Ionicons name="logo-usd" size={11} color={C.textMuted} />
-          <Text style={styles.usdText}>1 USD = {formatRate(rate)} Bs.</Text>
+      <View style={rateRowStyle}>
+        <Text style={[prefixStyle, { color }]}>Bs.</Text>
+        <AnimatedNumber
+          value={rate}
+          style={[valueStyle, { color }]}
+          format={formatRate}
+          duration={isLarge ? 1200 : 800}
+        />
+      </View>
+      {updatedAt && !isCompact && (
+        <View style={[isLarge ? styles.rateMetaLarge : styles.rateMetaMedium, { borderTopColor: C.cardBorder }]}>
+          <Ionicons name="time-outline" size={isLarge ? 12 : 10} color={C.textMuted} />
+          <Text style={[styles.metaText, { color: C.textMuted }]}>
+            {formatTime(updatedAt)}
+          </Text>
+          {isLarge && (
+            <>
+              <Ionicons name="logo-usd" size={10} color={C.textMuted} style={{ marginLeft: 8 }} />
+              <Text style={[styles.metaText, { color: C.textMuted }]}>
+                1 USD = {formatRate(rate)} Bs.
+              </Text>
+            </>
+          )}
         </View>
       )}
     </View>

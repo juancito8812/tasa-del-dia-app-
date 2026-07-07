@@ -8,7 +8,7 @@ export default function ScreenContainer({ children }) {
   if (isDark) {
     return (
       <LinearGradient
-        colors={['#0a0a14', '#141428', '#1a1a3e']}
+        colors={['#0b0b16', '#10102a', '#151540']}
         locations={[0, 0.5, 1]}
         style={styles.container}
       >
@@ -16,7 +16,15 @@ export default function ScreenContainer({ children }) {
       </LinearGradient>
     );
   }
-  return <View style={[styles.container, { backgroundColor: '#f0f2f5' }]}>{children}</View>;
+  return (
+    <LinearGradient
+      colors={['#f5f0eb', '#faf6f2']}
+      locations={[0, 1]}
+      style={styles.container}
+    >
+      {children}
+    </LinearGradient>
+  );
 }
 
 const styles = StyleSheet.create({
