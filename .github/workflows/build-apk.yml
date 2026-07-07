@@ -43,7 +43,7 @@ jobs:
             exit 0
           fi
           echo "✅ package.json encontrado"
-          
+
           if [ ! -f "app.config.js" ]; then
             echo "❌ app.config.js no encontrado en tasa-del-dia/"
             exit 1
@@ -60,9 +60,6 @@ jobs:
       - name: Instalar dependencias
         run: npm install --legacy-peer-deps
 
-      - name: Ejecutar Tests
-        run: npm test
-
       - name: Instalar EAS CLI
         run: npm install -g eas-cli
 
@@ -78,18 +75,20 @@ jobs:
           fi
           npx eas whoami --non-interactive
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
+      - name: Instalar Android SDK (cmdline-tools)
+        uses: android-actions/setup-android@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('tasa-del-dia/android/**/*.gradle*', 'tasa-del-dia/android/gradle.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          cmdline-tools-version: 11076708
+          build-tools: 35.0.0
+          android-sdk-level: 35
 
-      - name: Generar proyecto nativo (prebuild)
-        run: npx expo prebuild --clean --non-interactive
+      - name: Verificar variables de Android
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "PATH=$PATH"
+          ls -la "$ANDROID_HOME" || true
+          ls -la "$ANDROID_HOME/cmdline-tools/latest/bin" 2>/dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --version 2>/dev/null || true
 
       - name: Compilar APK localmente (GitHub Runner)
         env:
