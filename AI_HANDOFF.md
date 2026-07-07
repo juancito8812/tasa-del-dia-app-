@@ -232,7 +232,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ---
 
 ### Sesión 03-Jul-2026 — Rediseño mobile + build APK debug desde workflow (`redesign`)
-- `redesign` ahora incluye rediseño mobile completo: Bento Grid + paleta Venezuela 2026 (`8d35780`)
+- `redesign` ahora incluye rediseño mobile completo: paleta Venezuela 2026 (`8d35780`)
 - Workflow `build-apk.yml` actualizado en `redesign` para saltar releases en branches que no sean `main`
 - Build EAS preview lanzado desde workspace; alternativa local documentada en README para `assembleDebug`
 - Pendiente: APK debug compilada del commit `8d35780`
