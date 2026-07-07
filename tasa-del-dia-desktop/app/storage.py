@@ -213,7 +213,7 @@ def save_today_historical_rate(
     today_key = datetime.now().strftime("%Y-%m-%d")
     try:
         all_rates = get_historical_rates()
-        should_save = today_key not in all_rates or bcv is not None
+        should_save = (today_key not in all_rates) or (bcv is not None) or (paralelo is not None or binance_p2p is not None or euro is not None)
         logger.debug(
             "save_today_historical_rate: today=%s, already_exists=%s, "
             "bcv_provided=%s, should_save=%s, total_historicos=%d",
