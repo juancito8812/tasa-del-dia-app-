@@ -101,52 +101,8 @@ jobs:
           sed -i "s/version: \"[0-9.]\+\"/version: \"${{ steps.version.outputs.version }}\"/" app.config.js
           echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
 
-      - name: Commit de la actualización de versión
-        run: |
-          git config user.name "release-bot[bot]"
-          git config user.email "release-bot[bot]@users.noreply.github.com"
-          git add app.config.js
-          git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
-          git push
-          echo "✅ Version bump commiteado (build-apk.yml omitido por [skip ci])"
-
-      - name: Instalar EAS CLI
-        run: npm install -g eas-cli
-
-      - name: Autenticar en Expo
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: |
-          if [ -z "$EXPO_TOKEN" ]; then
-            echo "⚠️  EXPO_TOKEN no configurado"
-            exit 1
-          fi
-          npx eas whoami --non-interactive
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('tasa-del-dia/android/**/*.gradle*', 'tasa-del-dia/android/gradle.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Generar proyecto nativo (prebuild)
-        run: npx expo prebuild --clean --non-interactive
-
-      - name: Compilar APK
+      - name: Verificar APK y release assets
         timeout-minutes: 60
-        run: |
-          npx eas build \
-            --platform android \
-            --profile preview \
-            --local \
-            --non-interactive \
-            --output TasaDelDia-${{ steps.version.outputs.tag }}.apk
-
-      - name: Verificar APK
         run: |
           if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
             echo "✅ APK: $(ls -lh TasaDelDia-${{ steps.version.outputs.tag }}.apk | awk '{print $5}')"
@@ -155,7 +111,7 @@ jobs:
             exit 1
           fi
 
-      - name: Crear GitHub Release
+      - name: Crear/Actualizar GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
