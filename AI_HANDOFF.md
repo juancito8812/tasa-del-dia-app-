@@ -4,18 +4,19 @@
 
 ## 📌 Contexto del Proyecto
 
-**Tasa del Día** — App multiplataforma para consultar tasas de cambio en Venezuela.
+**Tasa del Día** — App móvil para consultar tasas de cambio en Venezuela.
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
 | `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android) |
+| `redesign` | Agrega rediseño mobile | feature branch | 🚧 En prueba |
 
 **Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery → frontend-ui-engineering → ponytail → systematic-debugging → verification-before-completion → subagent-driven-development
 **Método de trabajo:** git worktree (`.worktrees/` ignorado via `.gitignore`)
 
 ### ⚠️ Skills del repo externo — leídas y aplicadas (15/15)
 
-**Siempre que se trabaje en este proyecto, se DEBEN leer y aplicar TODAS las skills del repositorio:**  
+**Siempre que se trabaje en este proyecto, se DEBEN leer y aplicar TODAS las skills del repositorio:**
 🔗 `https://github.com/juancito8812/mi-repo-de-skills`
 
 Skills activas permanentemente (modifican comportamiento base):
@@ -85,11 +86,9 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ### 🐛 Fix: Workflows fallaban por 403 y dotenv a stdout
 
 **Problema 1:** `require('dotenv').config()` en `app.config.js` imprimía a stdout antes del número de versión (`◇ injected env...`), causando `Invalid format '1.0.1'` en `$GITHUB_OUTPUT`.
-
 **Fix:** Usar `grep -xE '[0-9]+\.[0-9]+\.[0-9]+'` en la extracción de versión en ambos workflows.
 
 **Problema 2:** `GITHUB_TOKEN` sin permiso `contents: write` → 403 al crear GitHub Releases.
-
 **Fix:** Agregar `permissions: contents: write` a `build-apk.yml` y `release-automatic.yml`.
 
 | Commit | Fix |
@@ -97,7 +96,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 | `2a4d7ef` | permissions: contents: write en release-automatic.yml |
 | `61f7fb3` | grep -xE semver en extractVersion de ambos workflows |
 | `22a9ba7` | permissions: contents: write en build-apk.yml |
-| `a2544c8` | autoUpdate: endpoint /releases/latest + validación semver |
+| `a2544c8` | autoUpdate: endpoint releases versionadas + validación semver |
 | `f3988e3` | build-apk.yml: releases con tag semver (v1.0.2) en vez de "latest" |
 | `63dda20` | build-apk.yml: guard para versión vacía en release step |
 | `759eccc` | pin expo-file-system@19.0.23 y expo-linking@8.0.12 para SDK 54 |
@@ -112,41 +111,6 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 | **BAJO** | 3 (AsyncStorage sin cifrar, User-Agent spoofing, dotenv a stdout) |
 | **npm vulns** | 0 altas/críticas — solo 32 moderadas (expo) |
 
-### 📦 Archivos creados en esta sesión
-
-| Archivo | Propósito |
-|---------|-----------|
-| `src/hooks/__tests__/useRatesData.test.js` | 11 tests: carga tasas, BCV Lunes, brecha, offline |
-| `src/hooks/__tests__/useConverterData.test.js` | 19 tests: extractRawDigits (7 formatos), conversión, swap, spreads |
-| `src/hooks/__tests__/useHistoryData.test.js` | 18 tests: formatCurrency, historial, chartInfo, fechas |
-| `src/components/__tests__/BCVModal.test.js` | 5 tests: visibilidad, edición, guardar |
-| `src/components/__tests__/UpdateModal.test.js` | 7 tests: versión, botones, skip, release notes |
-| `src/components/__tests__/RatesHeader.test.js` | 5 tests: título, banners, offline |
-| `src/components/__tests__/DateDetailCard.test.js` | 7 tests: date badge, copy, copied state |
-| `src/components/__tests__/HistoryChart.test.js` | 6 tests: null chart, legend, bar values, plural |
-| `src/components/__tests__/ScreenContainer.test.js` | 3 tests: dark/light mode, children |
-
-### 🗑️ Workflows consolidados
-
-| Workflow | Estado | Motivo |
-|----------|--------|--------|
-| `release-apk.yml` | ❌ Eliminado | Reemplazado por release-automatic.yml (con changelog) |
-| `android-build.yml` | ❌ Eliminado | Redundante con build-apk.yml |
-| `build-apk.yml` | ✅ Activo | Build APK local + Release "latest" → ahora tags semver |
-| `release-automatic.yml` | ✅ Activo | Release con changelog automático |
-| `mobile-ci.yml` | ✅ Activo | Tests + lint en push/PR |
-
-### 🔒 Auditoría de Seguridad (22-Jun-2026)
-
-Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
-
-| Categoría | Count |
-|-----------|:-----:|
-| 🔴 Crítico | 0 |
-| 🟠 Alto | 0 |
-| 🟡 Medio | 3 (expo vulns moderadas, test-api-key en jest.setup.js, console.warn en ErrorBoundary) |
-| 🟢 Bajo/Info | 5 (AsyncStorage sin cifrar - esperado, solo HTTPS, permisos mínimos, sin eval/injection) |
-
 **Hallazgos clave:**
 - ✅ Sin API keys reales expuestas
 - ✅ Solo HTTPS (usesCleartextTraffic: false)
@@ -159,9 +123,7 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 ### 📱 APK Crash — Fix dependencias nativas (SDK 54 vs SDK 56)
 
 **Problema:** `expo-file-system@56.0.8` y `expo-linking@56.0.14` (SDK 56) estaban instaladas en `node_modules` a pesar de que el proyecto usa Expo SDK 54, causando conflictos de módulos nativos en la APK compilada.
-
 **Fix:** Pinned `expo-file-system@19.0.23` y `expo-linking@8.0.12` (versiones correctas para SDK 54).
-
 **APK verificada:** ✅ Funciona correctamente, sin crash al abrir.
 
 ### 📡 Historial con DolarApi.com (+945 registros desde 2023)
@@ -185,8 +147,8 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 |--------|-----|--------|
 | `3f7aa15` | feat + fix | Historial DolarApi, fix teclado gasolina, docs |
 | `88b7a98` | fix | saveHistoricalRate local-only + 365 días |
-| Builds | ✅ #27922474330, #27922787424 |
-| APK verificada | ✅ Sin crash al abrir |
+| Builds | ✅ #27922474330, #27922787424 | |
+| APK verificada | ✅ Sin crash al abrir | |
 
 ---
 
@@ -195,6 +157,7 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 ### Ramas principales
 - `main` — versión estable publicada en Releases.
 - `redesign` — desarrollo activo: rediseño mobile.
+
 ### Móvil / Mobile
 - **156 tests, 20 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
@@ -202,7 +165,7 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 - `.env`: `COTIZAVE_API_KEY` obsoleta (no se usa en runtime)
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
-  - Cada build crea automáticamente un Release en GitHub con la APK
+  - Cada build puede crear automáticamente un Release en GitHub con la APK
   - URL de descarga: `https://github.com/juancito8812/tasa-del-dia-app-/releases/latest/download/TasaDelDia.apk`
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
 
@@ -218,12 +181,11 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 ### ✨ Auto-Update desde GitHub
 | Componente | Archivo | Detalle |
 |------------|---------|---------|
-| Auto-update service | `src/services/autoUpdate.js` | Consulta GitHub API pública, compara semver, cache 30 min, skip version, descarga APK |
+| Auto-update service | `src/services/autoUpdate.js` | Consulta releases versionadas, compara semver, cache 30 min, skip version, descarga APK |
 | Update Modal | `src/components/UpdateModal.js` | Modal con botones Descargar / Saltar / Más tarde |
 | Integración | `App.js` | Check automático al montar, delay 2s |
 | Tests | `src/services/__tests__/autoUpdate.test.js` | 12 tests |
 
-### ✨ Auto-Update desde GitHub
 - Skills en `skills/` (~40 skills)
 - Config global en `~/.config/opencode/opencode.json`
 - Marketplace externo: `wshobson/agents` en `~/agents/`
@@ -232,15 +194,14 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
 ## 📂 Docs de referencia
 
-|| Archivo | Qué contiene |
-|---------|---------|
-|| `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
-|| `docs/superpowers/specs/` | Specs de features diseñadas |
-|| `docs/superpowers/plans/` | Planes de implementación |
+| Archivo | Qué contiene |
+|---------|-------------|
+| `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
+| `docs/superpowers/specs/` | Specs de features diseñadas |
+| `docs/superpowers/plans/` | Planes de implementación |
 
 ---
 
-## ⏭️ Próximos Pasos Posibles
 ## ⏭️ Próximos Pasos Posibles
 1. **Probar la APK nueva** — instalar el último build y verificar que la actualización automática funciona
 2. Build local APK con EAS
@@ -249,7 +210,6 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 ---
 
 ### Sesión 22-Jun-2026 (tarde) — Fixes de entrada numérica + Historial 10 días + teclado
-
 - **Bug crítico:** Parseo de "1.50" → 150 en `useRatesData.js` corregido (detecta si hay coma para decidir si puntos son miles)
 - **Calculadora:** `extractRawDigits` ahora conserva el separador original (coma o punto) sin convertirlo. `keyboardType` cambiado a `decimal-pad` en Android (antes `numeric` no tenía coma/punto)
 - **Historial:** Ahora muestra solo últimos 10 días en chips y lista (antes 365). Buscador permite fechas desde 2023 (API DolarApi)

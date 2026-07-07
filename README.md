@@ -57,12 +57,11 @@ cd android
 
 **Requisitos:** Node.js 22+, Java 17, `ANDROID_HOME` configurado
 
-> Si `cd android && ./gradlew.bat assembleDebug` falla por `ANDROID_HOME`, definilo en `android/local.properties`:
-> `sdk.dir=C:\\Users\\JRCPU\\AppData\\Local\\Android\\Sdk`
+> Si `cd android && ./gradlew.bat assembleDebug` falla por `ANDROID_HOME`, creá o editá `android/local.properties` con tu ruta SDK, por ejemplo: `sdk.dir=C:\\Users\\<usuario>\\AppData\\Local\\Android\\Sdk`
 
 ### 🔄 Auto-Update
 
-Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.3`) en GitHub. La app verifica al iniciar si hay una versión más nueva consultando el endpoint `/releases/latest` de GitHub API y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
+Cada build exitoso puede generar una Release con tag semver. La app verifica al iniciar si hay una versión más nueva consultando las releases versionadas de GitHub y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
 
 **Comportamiento:** Al abrir la app, detecta automáticamente si hay una versión más nueva. Si la hay, muestra un modal con botones: *Descargar APK* (descarga + abre instalador Android), *Saltar esta versión* (no vuelve a preguntar), *Más tarde* (cierra el modal).
 
@@ -108,6 +107,7 @@ Cuando no hay conexión:
 - React Native 0.81 + Expo SDK 54
 - React Navigation 7 (Bottom Tabs)
 - AsyncStorage + expo-notifications + expo-background-fetch
+- DolarApi.com + Binance P2P directo
 
 ---
 
