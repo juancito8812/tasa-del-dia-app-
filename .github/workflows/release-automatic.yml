@@ -175,22 +175,3 @@ jobs:
 
           echo "✅ Release v$VERSION creado en GitHub"
           echo "📎 https://github.com/${{ github.repository }}/releases/tag/$TAG"
-
-      - name: Crear/Actualizar Release "latest" para auto-update
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # Eliminar release "latest" anterior si existe
-          gh release delete latest --yes 2>/dev/null || true
-
-          # Crear nuevo release "latest" como el latest oficial
-          gh release create latest \
-            --title "v${{ steps.version.outputs.version }}" \
-            --notes "${{ steps.changelog.outputs.changelog }}" \
-            --latest
-
-          # Subir APK
-          gh release upload latest TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber
-
-          echo "✅ Release 'latest' actualizado"
-          echo "📎 Descarga: https://github.com/${{ github.repository }}/releases/latest/download/TasaDelDia.apk"

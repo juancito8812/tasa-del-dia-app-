@@ -25,23 +25,25 @@ function compareVersions(a, b) {
 }
 
 /**
- * Fetch latest release info desde GitHub API pública.
- * Retorna { version, apkUrl, notes, publishedAt } o null si falla.
+ * Obtiene la última release semver desde GitHub,
+ * sin depender de /releases/latest.
  */
+function parseSemver(tag) {
+  return tag.replace(/^v/i, '').match(/^(\d+\.\d+\.\d+)$/)?.[1] || null;
+}
+
 export async function checkLatestRelease() {
   try {
-    // Intentar cache primero (30 min TTL para no abusar API)
     const cached = await getCachedUpdateInfo();
     if (cached) return cached;
 
-    // AbortController wrapper (Hermes-safe, mismo patrón que api.js)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     let data;
     try {
       const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+        `https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10`,
         {
           headers: { Accept: 'application/vnd.github.v3+json' },
           signal: controller.signal,
@@ -53,21 +55,33 @@ export async function checkLatestRelease() {
       clearTimeout(timeoutId);
     }
 
-    const tagName = data.tag_name || '';
-    const version = tagName.replace(/^v/i, '');
-    // Validar que la versión sea semver válida (ej: "1.0.2"), no un tag como "latest"
-    if (!version || !/^\d+\.\d+\.\d+$/.test(version)) return null;
-    const apkAsset = data.assets?.find(a => a.name?.endsWith('.apk'));
+    if (!Array.isArray(data) || data.length === 0) return null;
+
+    const releases = data
+      .map(release => ({
+        tag_name: release.tag_name || '',
+        version: parseSemver(release.tag_name || ''),
+        assets: release.assets || [],
+        body: release.body || '',
+        published_at: release.published_at || null,
+      }))
+      .filter(release => Boolean(release.version));
+
+    if (releases.length === 0) return null;
+
+    releases.sort((a, b) => compareVersions(a.version, b.version));
+
+    const latest = releases[releases.length - 1];
+    const apkAsset = latest.assets.find(a => a.name?.endsWith('.apk'));
     if (!apkAsset) return null;
 
     const info = {
-      version,
+      version: latest.version,
       apkUrl: apkAsset.browser_download_url,
-      notes: data.body || '',
-      publishedAt: data.published_at,
+      notes: latest.body,
+      publishedAt: latest.published_at,
     };
 
-    // Cachear por 30 min
     await cacheUpdateInfo(info);
     return info;
   } catch {
@@ -106,7 +120,6 @@ export async function downloadAndInstall(apkUrl) {
     }
     return false;
   } catch {
-    // Fallback: abrir URL en navegador
     try {
       await Linking.openURL(apkUrl);
       return true;

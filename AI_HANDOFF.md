@@ -10,9 +10,6 @@
 |-------|-------|------|--------|
 | `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android) |
 
-API Mobile: `https://ve.dolarapi.com/v1` + Binance P2P directo
-API Desktop: `https://ve.dolarapi.com/v1` + Binance P2P directo
-
 **Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery → frontend-ui-engineering → ponytail → systematic-debugging → verification-before-completion → subagent-driven-development
 **Método de trabajo:** git worktree (`.worktrees/` ignorado via `.gitignore`)
 
