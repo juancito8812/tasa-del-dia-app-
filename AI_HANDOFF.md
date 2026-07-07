@@ -273,7 +273,6 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
 ### Sesión 03-Jul-2026 — Rediseño mobile + build APK debug desde workflow (`redesign`)
 - `redesign` ahora incluye rediseño mobile completo: Bento Grid + paleta Venezuela 2026 (`8d35780`)
-- Desktop: base UI Win11 con estilos + componentes separados: `rate_card.py`, `conv_input.py`, `history_chart.py`, `spread_chart.py`
 - Workflow `build-apk.yml` actualizado en `redesign` para saltar releases en branches que no sean `main`
 - Build EAS preview lanzado desde workspace; alternativa local documentada en README para `assembleDebug`
 - Pendiente: APK debug compilada del commit `8d35780`
