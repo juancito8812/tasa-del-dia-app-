@@ -7,31 +7,22 @@
 <br>
 
 [![Mobile CI](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/mobile-ci.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/mobile-ci.yml)
-[![Desktop CI](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/desktop-ci.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/desktop-ci.yml)
 [![Build APK](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/build-apk.yml/badge.svg)](https://github.com/juancito8812/tasa-del-dia-app-/actions/workflows/build-apk.yml)
 
 </div>
 
 ---
 
-## 📱 Proyectos
+## 📱 App Móvil (APK)
 
-| Proyecto | Plataforma | Stack | Estado |
-|----------|-----------|-------|--------|
-| **App Móvil** | Android (APK) | React Native + Expo SDK 54 | ✅ Activa |
-| App Desktop | Windows (.exe) | Python + Flet 0.85 | 🗑️ Eliminada |
-| App Desktop (WinUp) | Windows (.exe) | Python + PySide6 | 🗑️ Deprecada |
-| App Desktop (Legacy) | Windows (.exe) | Python + customtkinter | 🗑️ Deprecada |
+| Detalle | Valor |
+|---------|-------|
+| Plataforma | Android |
+| Stack | React Native + Expo SDK 54 |
+| Estado | ✅ Activa |
+| Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
 
-### Fuente de datos
-
-Las tasas se obtienen de [**DolarApi.com**](https://ve.dolarapi.com) (BCV, paralelo, euro) + Binance P2P directo — sin API key requerida.
-
----
-
-## 🚀 Instalación
-
-### 📱 App Móvil (APK)
+### Instalación
 
 **Opción 1 — Descargar APK (recomendado)**
 
@@ -77,17 +68,22 @@ Cada build exitoso crea automáticamente un Release con tag semver (ej: `v1.0.3`
 
 ---
 
-### 🖥️ App Desktop
+## 📂 Estructura del repo
 
-> La app de escritorio fue eliminada del repositorio porque solo se usa en teléfono.
+```
+tasa-del-dia-app/
+├── tasa-del-dia/             # App móvil React Native + Expo
+├── .github/workflows/        # CI/CD mobile
+├── README.md
+└── AI_HANDOFF.md
+```
 
 ---
 
 ## 🔄 Caché Offline
 
-Ambas apps guardan automáticamente las últimas tasas para funcionar sin conexión:
+La app guarda automáticamente las últimas tasas para funcionar sin conexión:
 - **Android:** AsyncStorage (interno de la app)
-- **Desktop:** `%APPDATA%\TasaDelDia\cache_rates.json`
 
 Cuando no hay conexión:
 - ✅ Últimas tasas cacheadas visibles
@@ -105,25 +101,13 @@ Cuando no hay conexión:
 | **Build APK** | Push a `main` + manual | APK + Release con tag semver automático |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog |
 
-> **Nota:** `release-apk.yml` y `android-build.yml` fueron eliminados (redundantes con `build-apk.yml` y `release-automatic.yml`).
-
 ---
 
 ## 🛠️ Stack Tecnológico
 
-### App Móvil
 - React Native 0.81 + Expo SDK 54
 - React Navigation 7 (Bottom Tabs)
 - AsyncStorage + expo-notifications + expo-background-fetch
-
-### App Desktop
-- Python 3.14 + Flet 0.85.3
-- UI: `flet_app/main.py` (~1000 ln) con 3 tabs (Tasas/Conversor/Historial)
-- Scroll: `ft.Column(scroll=AUTO, expand=True)` (más fiable que `ft.ListView` para contenido intercambiable)
-- Thread-safety: `page.run_thread()` para actualizaciones en segundo plano
-- Persistencia: `%APPDATA%\TasaDelDia\` (config, cache, historial, logs)
-- Build: `python build_flet.py --quick` → `dist/TasaDelDiaFlet.exe` (~80 MB, ~2 min)
-- Share: `app/api.py`, `app/storage.py`, `app/auto_update.py`
 
 ---
 
