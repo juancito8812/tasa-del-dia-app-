@@ -194,7 +194,7 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
 ### Ramas principales
 - `main` — versión estable publicada en Releases.
-- `redesign` — desarrollo activo: rediseño mobile + desktop Win11.
+- `redesign` — desarrollo activo: rediseño mobile.
 ### Móvil / Mobile
 - **156 tests, 20 suites — 100% passing** ✅
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
@@ -223,25 +223,7 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 | Integración | `App.js` | Check automático al montar, delay 2s |
 | Tests | `src/services/__tests__/autoUpdate.test.js` | 12 tests |
 
-### 🖥️ Desktop (`tasa-del-dia-desktop/`)
-- Flet 0.85.3 es la única UI activa
-- Fuentes: DolarApi.com + Binance P2P (sin API key)
-- Build: `python build_flet.py --quick` (~2 min, genera `dist/TasaDelDiaFlet.exe`)
-- **Base rediseño Win11:** `redesign` → `feat(desktop): base UI Win11 (estilos + componentes)` + `ui: rediseño completo Bento Grid + paleta Venezuela 2026`
-- `flet_app/styles.py`: paleta Windows 11 + acento Venezuela
-- Componentes nuevos: `rate_card.py`, `conv_input.py`, `history_chart.py`, `spread_chart.py`
-- Restricción PyInstaller: usar APIs con mayúscula (`ft.Padding`, `ft.Icons`, `ft.Border`, `ft.Alignment`)
-- Tabs: `Container` único con `content` intercambiable
-- Formato: `format_ves()` para locale venezolano
-- API necesita User-Agent tipo navegador
-- `storage.py`: persistencia en `%APPDATA%\TasaDelDia\`
-- Para debug: `python flet_app/main.py` directamente
-
-### 🧪 Tests Desktop
-- Tests unitarios en `tasa-del-dia-desktop/tests/` para API y Flet
-- CI en GitHub Actions: `Desktop CI` y `Mobile CI`
-
-### Skills repo
+### ✨ Auto-Update desde GitHub
 - Skills en `skills/` (~40 skills)
 - Config global en `~/.config/opencode/opencode.json`
 - Marketplace externo: `wshobson/agents` en `~/agents/`
@@ -250,26 +232,19 @@ Se realizó auditoría completa de seguridad en ambos proyectos. Resultados:
 
 ## 📂 Docs de referencia
 
-| Archivo | Qué contiene |
-|---------|-------------|
-| `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
-| `docs/superpowers/specs/` | Specs de features diseñadas |
-| `docs/superpowers/plans/` | Planes de implementación |
-| `tasa-del-dia-desktop/flet_app/main.py` | UI completa Flet (~990 ln) |
-| `tasa-del-dia-desktop/app/api.py` | `fetch_all_rates()` con DolarApi + Binance |
-| `tasa-del-dia-desktop/app/storage.py` | Persistencia en `%APPDATA%` |
-| `tasa-del-dia-desktop/build_flet.py` | Build script PyInstaller |
+|| Archivo | Qué contiene |
+|---------|---------|
+|| `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
+|| `docs/superpowers/specs/` | Specs de features diseñadas |
+|| `docs/superpowers/plans/` | Planes de implementación |
 
 ---
 
 ## ⏭️ Próximos Pasos Posibles
-
-1. **Debug scroll/history Desktop** — probar con `ft.run()` en vez de `ft.app()`, verificar que ListView/Container recibe altura correcta
-2. **Probar la APK nueva** — instalar el último build y verificar que el "salto" ya no ocurre
-3. Build local APK con EAS
-4. Ajustes finos al glassmorphism / UI
-5. Notificaciones desktop (system tray)
-6. Widget flotante desktop (overlay)
+## ⏭️ Próximos Pasos Posibles
+1. **Probar la APK nueva** — instalar el último build y verificar que la actualización automática funciona
+2. Build local APK con EAS
+3. Ajustes finos al glassmorphism / UI
 
 ---
 
