@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import useConverterData, {
-  extractRawDigits, formatRawDisplay, QUICK_USD, formatCurrency,
-} from '../useConverterData';
+import useConverterData from '../useConverterData';
+import { extractRawDigits, formatRawDisplay, QUICK_USD, formatCurrency } from '../../utils/formatting';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../../services/api';
 
 jest.mock('../../services/api', () => ({

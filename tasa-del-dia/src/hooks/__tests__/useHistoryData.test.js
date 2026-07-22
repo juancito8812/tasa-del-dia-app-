@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
-import useHistoryData, {
-  formatCurrency, getWeekDay, getMonthAbbr, getDay, formatDateKey,
-} from '../useHistoryData';
+import useHistoryData, { formatDateKey } from '../useHistoryData';
+import { formatCurrency, getWeekDay, getMonthAbbr, getDay } from '../../utils/formatting';
 import { getHistoricalRates } from '../../services/api';
 
 // Mock api

@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { API_CONFIG } from '../constants';
 
 const GITHUB_REPO = 'juancito8812/tasa-del-dia-app-';
 const STORAGE_KEY_SKIP = '@tasa_del_dia/skip_version';
@@ -164,7 +165,7 @@ async function getCachedUpdateInfo() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_UPDATE_CACHE);
     if (!raw) return null;
     const cache = JSON.parse(raw);
-    if (Date.now() - cache.cachedAt > 30 * 60 * 1000) return null;
+    if (Date.now() - cache.cachedAt > API_CONFIG.UPDATE_CACHE_TTL) return null;
     return cache.info;
   } catch {
     return null;

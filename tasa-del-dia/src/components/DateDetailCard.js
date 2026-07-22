@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { formatCurrency, getWeekDay, formatDateKey } from '../hooks/useHistoryData';
+import { formatCurrency, getWeekDay } from '../utils/formatting';
+import { formatDateKey } from '../hooks/useHistoryData';
 
 export default function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAll, onClose }) {
   if (!selectedData) return null;

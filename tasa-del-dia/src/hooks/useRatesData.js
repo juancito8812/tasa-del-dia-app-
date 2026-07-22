@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Alert } from 'react-native';
+import { API_CONFIG } from '../constants';
 import {
   fetchWithOfflineFallback,
   getStoredBCVLunes,
@@ -102,9 +103,12 @@ export default function useRatesData() {
     let cancelled = false;
     if (offlineMode) {
       retryCountRef.current = 0;
+      const maxRetries = API_CONFIG.OFFLINE_RETRY_MAX_ATTEMPTS;
+      const initialDelay = API_CONFIG.OFFLINE_RETRY_INITIAL_DELAY;
+      const maxDelay = API_CONFIG.OFFLINE_RETRY_MAX_DELAY;
       const tryReconnect = async () => {
         retryCountRef.current++;
-        if (retryCountRef.current > 10) return;
+        if (retryCountRef.current > maxRetries) return;
         try {
           const { data: result, fromCache } = await fetchWithOfflineFallback();
           if (result && !fromCache && !cancelled) {
@@ -118,10 +122,10 @@ export default function useRatesData() {
           if (__DEV__) console.warn('[Rates] retry fetch error:', err);
         }
         if (cancelled) return;
-        const delay = Math.min(30000 * 1.5 ** (retryCountRef.current - 1), 300000);
+        const delay = Math.min(initialDelay * 1.5 ** (retryCountRef.current - 1), maxDelay);
         retryRef.current = setTimeout(tryReconnect, delay);
       };
-      retryRef.current = setTimeout(tryReconnect, 30000);
+      retryRef.current = setTimeout(tryReconnect, initialDelay);
     }
     return () => {
       cancelled = true;

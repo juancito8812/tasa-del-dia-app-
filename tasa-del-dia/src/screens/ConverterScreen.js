@@ -6,9 +6,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
-import useConverterData, {
-  getRateTypes, formatCurrency,
-} from '../hooks/useConverterData';
+import useConverterData from '../hooks/useConverterData';
+import { getRateTypes, formatCurrency } from '../utils/formatting';
 
 const TAB_BAR_HEIGHT = 60;
 

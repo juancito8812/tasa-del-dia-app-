@@ -1,30 +1,11 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { Alert, Keyboard } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import { API_CONFIG } from '../constants';
 import { getHistoricalRates, formatDateKey, parseDateDDMMYYYY } from '../services/api';
+import { formatCurrency, getWeekDay, getMonthAbbr, getDay } from '../utils/formatting';
 
 export { formatDateKey };
-
-export function formatCurrency(v) {
-  if (v == null) return '—';
-  return Number(v).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-export function getWeekDay(dateKey) {
-  const [y, m, d] = dateKey.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  return ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'][date.getDay()];
-}
-
-export function getMonthAbbr(dateKey) {
-  const [, m] = dateKey.split('-');
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return months[parseInt(m, 10) - 1] || m;
-}
-
-export function getDay(dateKey) {
-  return dateKey.split('-')[2];
-}
 
 export default function useHistoryData() {
   const [ratesData, setRatesData] = useState([]);
@@ -64,7 +45,7 @@ export default function useHistoryData() {
 
   const chartInfo = useMemo(() => {
     if (ratesData.length === 0) return null;
-    const reversed = [...ratesData].reverse().slice(-5);
+    const reversed = [...ratesData].reverse().slice(-API_CONFIG.HISTORICAL_CHART_ENTRIES);
     if (reversed.length < 2) return null;
     const labels = reversed.map((item) => item.dateKey.slice(5).replace('-', '/'));
     const bcvData = reversed.map((item) => item.bcv || 0);

@@ -6,11 +6,7 @@ const STORAGE_KEY_REMINDER = '@tasa_del_dia/reminder_enabled';
 
 const { BASE_URL } = API_CONFIG;
 
-/**
- * Wrapper around fetch with AbortController timeout.
- * Aborts the request if it takes longer than timeoutMs.
- */
-async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_CONFIG.FETCH_TIMEOUT) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -259,12 +255,11 @@ const STORAGE_KEY_HISTORICAL_API_CACHE = '@tasa_del_dia/historical_api_cache';
  */
 async function fetchHistoricalFromAPI() {
   try {
-    // Intentar cache primero (1 hora TTL)
     const cached = await getHistoricalAPICache();
     if (cached) return cached;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.HISTORICAL_FETCH_TIMEOUT);
 
     let data;
     try {
@@ -306,7 +301,7 @@ async function getHistoricalAPICache() {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_HISTORICAL_API_CACHE);
     if (!raw) return null;
     const cache = JSON.parse(raw);
-    if (Date.now() - cache.cachedAt > 60 * 60 * 1000) return null; // 1 hora
+    if (Date.now() - cache.cachedAt > API_CONFIG.HISTORICAL_API_CACHE_TTL) return null;
     return cache.data;
   } catch {
     return null;
@@ -390,11 +385,11 @@ export async function saveHistoricalRate(dateKey, rates) {
       fetchedAt: rates.fetchedAt ?? all[dateKey]?.fetchedAt ?? new Date().toISOString(),
     };
 
-    // Mantener solo los últimos 365 días
+    const maxDays = API_CONFIG.HISTORICAL_LOCAL_RETENTION_DAYS;
     const entries = Object.entries(all);
-    if (entries.length > 365) {
+    if (entries.length > maxDays) {
       entries.sort((a, b) => a[0].localeCompare(b[0]));
-      const trimmed = Object.fromEntries(entries.slice(-365));
+      const trimmed = Object.fromEntries(entries.slice(-maxDays));
       await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(trimmed));
     } else {
       await AsyncStorage.setItem(STORAGE_KEY_HISTORICAL, JSON.stringify(all));

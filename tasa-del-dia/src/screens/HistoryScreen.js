@@ -6,7 +6,8 @@ import {
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
-import useHistoryData, { formatDateKey, getMonthAbbr, getDay, formatCurrency } from '../hooks/useHistoryData';
+import useHistoryData, { formatDateKey } from '../hooks/useHistoryData';
+import { getMonthAbbr, getDay, formatCurrency } from '../utils/formatting';
 import HistoryChart from '../components/HistoryChart';
 import DateDetailCard from '../components/DateDetailCard';
 

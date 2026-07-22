@@ -2,60 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Keyboard, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
-
-const QUICK_USD = [100, 500, 1000, 5000, 10000, 50000];
-const QUICK_BS = [100, 500, 1000, 5000, 10000, 50000];
-
-export { QUICK_USD, QUICK_BS };
-
-export function extractRawDigits(text) {
-  if (!text) return '';
-  // Si hay coma, los puntos son separadores de miles → se eliminan
-  const cleaned = text.includes(',') ? text.replace(/\./g, '') : text;
-  // Conservar solo dígitos + el primer separador (coma o punto)
-  let result = '';
-  let seenSep = false;
-  for (const ch of cleaned) {
-    if (ch >= '0' && ch <= '9') {
-      result += ch;
-    } else if ((ch === '.' || ch === ',') && !seenSep) {
-      result += ch;
-      seenSep = true;
-    }
-  }
-  return result;
-}
-
-export function formatRawDisplay(raw) {
-  if (!raw) return '';
-  const dotIdx = raw.indexOf('.');
-  const commaIdx = raw.indexOf(',');
-  const sepIdx = dotIdx !== -1 ? dotIdx : commaIdx;
-  if (sepIdx !== -1) {
-    const intPart = raw.slice(0, sepIdx);
-    const decPart = raw.slice(sepIdx + 1);
-    const intNum = parseInt(intPart, 10);
-    const formattedInt = isNaN(intNum) ? (intPart === '' ? '0' : intPart) : intNum.toLocaleString('es-VE');
-    return decPart === '' ? `${formattedInt},` : `${formattedInt},${decPart}`;
-  }
-  const num = parseInt(raw, 10);
-  if (isNaN(num)) return raw;
-  return num.toLocaleString('es-VE');
-}
-
-export function getRateTypes(C) {
-  return [
-    { key: 'bcv', label: 'BCV (Oficial)', color: C.success },
-    { key: 'paralelo', label: 'Paralelo', color: C.highlight },
-    { key: 'binance_p2p', label: 'Binance P2P', color: C.warning },
-    { key: 'euro', label: 'Euro (BCV)', color: C.info },
-    { key: 'bcv_lunes', label: 'BCV (Lunes)', color: C.bcvLunes },
-  ];
-}
-
-export function formatCurrency(v) {
-  return v.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
+import { extractRawDigits, formatRawDisplay, QUICK_USD, QUICK_BS } from '../utils/formatting';
 
 export default function useConverterData() {
   const [rates, setRates] = useState({

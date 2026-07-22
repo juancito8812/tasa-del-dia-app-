@@ -57,7 +57,16 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'tasa-del-dia/package-lock.json'
 
-      - name: Instalar dependencias
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        id: cache-node-modules
+        with:
+          path: tasa-del-dia/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('tasa-del-dia/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      - if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        name: Instalar dependencias
         run: npm install --legacy-peer-deps
 
       - name: Instalar EAS CLI
