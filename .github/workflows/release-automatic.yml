@@ -110,13 +110,48 @@ jobs:
           sed -i "s/version: \"[0-9.]\+\"/version: \"${{ steps.version.outputs.version }}\"/" app.config.js
           echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
 
-      - name: Verificar APK y release assets
+      - name: Instalar EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Autenticar en Expo
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "⚠️  EXPO_TOKEN no configurado"
+            echo "Crea un token en: https://expo.dev/accounts/jr8812/settings/access-tokens"
+            echo "Luego agrégalo como secreto en GitHub: EXPO_TOKEN"
+            exit 1
+          fi
+          npx eas whoami --non-interactive
+
+      - name: Instalar Android SDK (cmdline-tools)
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: 11076708
+          build-tools: 35.0.0
+          android-sdk-level: 35
+
+      - name: Compilar APK localmente
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         timeout-minutes: 60
         run: |
-          if [ -f "TasaDelDia-${{ steps.version.outputs.tag }}.apk" ]; then
-            echo "✅ APK: $(ls -lh TasaDelDia-${{ steps.version.outputs.tag }}.apk | awk '{print $5}')"
+          APK_NAME="TasaDelDia-${{ steps.version.outputs.tag }}.apk"
+          npx eas build \
+            --platform android \
+            --profile preview \
+            --local \
+            --non-interactive \
+            --output "$APK_NAME"
+
+      - name: Verificar APK generada
+        run: |
+          APK_NAME="TasaDelDia-${{ steps.version.outputs.tag }}.apk"
+          if [ -f "$APK_NAME" ]; then
+            echo "✅ APK: $(ls -lh "$APK_NAME" | awk '{print $5}')"
           else
-            echo "❌ APK no encontrada"
+            echo "❌ APK no encontrada: $APK_NAME"
             exit 1
           fi
 
