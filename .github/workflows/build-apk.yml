@@ -135,30 +135,30 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: Crear Release en GitHub con tag semver
+      - name: Subir APK como artefacto de Release (solo en push a main)
         if: github.ref_name == 'main' || github.ref_name == 'master'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION="v${{ steps.app_version.outputs.version }}"
-          echo "📦 Versión: $VERSION"
+          TAG="v${{ steps.app_version.outputs.version }}"
+          echo "📦 Subiendo APK al tag $TAG"
 
-          # Validar que la versión no esté vacía
-          if [ -z "${{ steps.app_version.outputs.version }}" ] || [ "$VERSION" = "v" ]; then
+          if [ -z "${{ steps.app_version.outputs.version }}" ] || [ "$TAG" = "v" ]; then
             echo "❌ No se pudo extraer una versión válida"
             exit 1
           fi
 
-          # Eliminar release previo con este tag si existe
-          gh release delete "$VERSION" --yes 2>/dev/null || echo "No existing release $VERSION to delete"
-
-          # Crear nuevo release con tag = versión semver
-          gh release create "$VERSION" \
-            --title "$VERSION" \
-            --notes "Build automático del ${{ github.ref_name }} — $(date -u '+%Y-%m-%d %H:%M UTC')" \
-            --latest
-
-          # Subir APK al release
-          gh release upload "$VERSION" TasaDelDia.apk --clobber
-          echo "✅ APK subida a GitHub Release $VERSION"
-          echo "📎 Descarga: https://github.com/${{ github.repository }}/releases/download/$VERSION/TasaDelDia.apk"
+          # Verificar si el tag ya existe como release
+          if gh release view "$TAG" --json tagName --jq .tagName 2>/dev/null; then
+            # Ya existe: solo subir/actualizar el APK
+            gh release upload "$TAG" TasaDelDia.apk --clobber
+            echo "✅ APK actualizada en release existente $TAG"
+          else
+            # No existe: crear nuevo release con el APK
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --notes "Build automático del ${{ github.ref_name }} — $(date -u '+%Y-%m-%d %H:%M UTC')" \
+              --latest
+            gh release upload "$TAG" TasaDelDia.apk --clobber
+            echo "✅ Release $TAG creado con APK"
+          fi
