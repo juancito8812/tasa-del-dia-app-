@@ -150,7 +150,7 @@ export default function useConverterData() {
   const handleSwapMode = () => {
     setMode((p) => (p === 'usd-to-bs' ? 'bs-to-usd' : 'usd-to-bs'));
     setResult(null);
-    setRawAmount('');
+    // Conservar el monto escrito por el usuario al cambiar de modo (fix: no borrarlo)
   };
 
   const handleChangeText = (text) => setRawAmount(extractRawDigits(text));

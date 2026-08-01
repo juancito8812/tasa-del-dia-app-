@@ -144,10 +144,26 @@ describe('useConverterData - Hook', () => {
     await act(async () => {
       TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
     });
+    act(() => { hook.setRawAmount('123.45'); });
     act(() => { hook.handleSwapMode(); });
     expect(hook.mode).toBe('bs-to-usd');
     expect(hook.result).toBeNull();
-    expect(hook.rawAmount).toBe('');
+    expect(hook.rawAmount).toBe('123.45');
+  });
+
+  it('should clear stale result on swap but keep amount', async () => {
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    act(() => { hook.setRawAmount('10'); });
+    act(() => { hook.setMode('usd-to-bs'); });
+    // simulate a previous conversion result
+    act(() => { hook.setResult({ amount: 10, rate: 100, converted: 1000 }); });
+    act(() => { hook.handleSwapMode(); });
+    expect(hook.mode).toBe('bs-to-usd');
+    expect(hook.rawAmount).toBe('10');
+    expect(hook.result).toBeNull();
   });
 
   it('should change selected rate', async () => {
