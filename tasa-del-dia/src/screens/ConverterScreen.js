@@ -174,7 +174,7 @@ export default function ConverterScreen() {
               </TouchableOpacity>
 
               {/* Display */}
-              <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (h.rawAmount) h.handleCopy(`${h.mode === 'usd-to-bs' ? 'USD ' : 'Bs. '}${formatCurrency(h.numericAmount)}`, 'amount'); }}>
+              <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (h.rawAmount) h.handleCopy(formatCurrency(h.numericAmount), 'amount'); }}>
                 <Text style={styles.displayLabel}>{h.copiedType === 'amount' ? '¡Copiado!' : h.mode === 'usd-to-bs' ? 'Dólares (USD)' : 'Bolívares (Bs.)'}</Text>
                 <Text style={[styles.displayValue, { color: h.copiedType === 'amount' ? C.success : currentColor }]}>{h.rawAmount ? h.displayAmount : '0,00'}</Text>
                 {h.rawAmount.length > 0 && h.copiedType !== 'amount' && <Text style={styles.displaySubtext}>{h.mode === 'usd-to-bs' ? `× ${getRateLabel().split(' ')[0]} =` : `÷ ${getRateLabel().split(' ')[0]} =`}</Text>}
@@ -232,7 +232,7 @@ export default function ConverterScreen() {
                       <Text style={[styles.resultItemValue, { color: h.copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrency(h.result.converted)}</Text>
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity activeOpacity={0.7} onPress={() => h.handleCopy(`Bs. ${formatCurrency(h.result.rate)}`, 'rate')}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => h.handleCopy(formatCurrency(h.result.rate), 'rate')}>
                     <Text style={styles.resultMeta}>Tasa: {getRateLabel()} — <Text style={{ fontWeight: '700' }}>{h.copiedType === 'rate' ? '¡Copiado!' : `Bs. ${formatCurrency(h.result.rate)}`}</Text></Text>
                   </TouchableOpacity>
                 </View>
@@ -282,7 +282,7 @@ export default function ConverterScreen() {
                 {h.gasLitrosNum > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Text style={{ fontSize: 14, color: C.textSecondary }}>{h.gasLitros}L</Text>
-                    <TouchableOpacity onPress={() => h.handleCopy(`Bs. ${(h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 'gasolina')} activeOpacity={0.7}>
+                    <TouchableOpacity onPress={() => h.handleCopy((h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'gasolina')} activeOpacity={0.7}>
                       <Text style={{ fontSize: 18, fontWeight: '800', color: h.copiedType === 'gasolina' ? C.success : C.warning, fontVariant: ['tabular-nums'] }}>
                         {h.copiedType === 'gasolina' ? 'Copiado!' : `Bs. ${(h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </Text>
