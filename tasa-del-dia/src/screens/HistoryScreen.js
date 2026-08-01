@@ -60,7 +60,7 @@ export default function HistoryScreen() {
     <TouchableOpacity
       style={styles.rateCol}
       activeOpacity={0.7}
-      onPress={() => value && h.handleCopy(`Bs. ${formatCurrency(value)}`, `${label}-${value}`)}
+      onPress={() => value && h.handleCopy(formatCurrency(value), `${label}-${value}`)}
     >
       <View style={{ width: 3, height: 16, borderRadius: 1.5, backgroundColor: color }} />
       <View style={{ flex: 1 }}>

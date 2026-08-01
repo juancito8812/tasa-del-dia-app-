@@ -53,7 +53,7 @@ export default function DateDetailCard({ selectedData, C, copiedField, handleCop
             {r.value != null && (
               <TouchableOpacity
                 style={[styles.copyBtn, { backgroundColor: copiedField === r.key ? C.success + '20' : (C.inputBg || C.secondary) }]}
-                onPress={() => handleCopy(`Bs. ${formatCurrency(r.value)}`, r.key)}
+                onPress={() => handleCopy(formatCurrency(r.value), r.key)}
                 activeOpacity={0.7}
               >
                 <Ionicons name={copiedField === r.key ? 'checkmark' : 'copy-outline'} size={12} color={copiedField === r.key ? C.success : C.textMuted} />

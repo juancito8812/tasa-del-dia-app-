@@ -121,6 +121,37 @@ describe('DateDetailCard', () => {
     expect(copyTexts.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('copies only the number (sin prefijo Bs.) al pulsar Copiar', () => {
+    let copiedText = null;
+    let renderer;
+    TestRenderer.act(() => {
+      renderer = TestRenderer.create(
+        <DateDetailCard
+          selectedData={mockData}
+          C={C}
+          copiedField={null}
+          handleCopy={(text) => { copiedText = text; }}
+          handleCopyAll={() => {}}
+          onClose={() => {}}
+        />
+      );
+    });
+    const root = renderer.root;
+    // Simulate pressing the first rate's "Copiar" button (BCV)
+    const copyButtons = root.findAllByProps({ children: 'Copiar' });
+    expect(copyButtons.length).toBeGreaterThanOrEqual(1);
+    // Find the nearest ancestor with an onPress handler (the TouchableOpacity)
+    const copyTextEl = copyButtons[0];
+    let touchable = copyTextEl;
+    while (touchable && typeof touchable.props.onPress !== 'function') {
+      touchable = touchable.parent;
+    }
+    expect(touchable).toBeTruthy();
+    TestRenderer.act(() => { touchable.props.onPress(); });
+    expect(copiedText).toBe('80,50');
+    expect(copiedText.startsWith('Bs.')).toBe(false);
+  });
+
   it('renders "Copiar todo" button', () => {
     let renderer;
     TestRenderer.act(() => {
