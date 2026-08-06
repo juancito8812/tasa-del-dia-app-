@@ -7,7 +7,8 @@ const REMINDER_NOTIFICATION_ID = 'bcv-lunes-friday-reminder';
 // Configurar cómo se muestran las notificaciones en primer plano
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -31,22 +32,11 @@ export async function requestNotificationPermissions() {
 }
 
 /**
- * Determina si la tasa fue ingresada hoy.
+ * Programa un recordatorio SEMANAL recurrente los viernes a las 6:00 PM.
+ * Usa el trigger WEEKLY (weekday 1-7, 1 = domingo) para que se repita solo
+ * cada semana sin depender de que el usuario vuelva a abrir la app.
  */
-function wasEnteredToday(updatedAt) {
-  if (!updatedAt) return false;
-  const now = new Date();
-  const updated = new Date(updatedAt);
-  return now.toDateString() === updated.toDateString();
-}
-
-/**
- * Programa un recordatorio semanal los viernes a las 6:00 PM.
- * Si hoy es viernes y la tasa ya fue ingresada hoy, agenda para el próximo viernes.
- *
- * @param {string|null} bcvLunesUpdatedAt - ISO timestamp de cuándo se ingresó la última tasa
- */
-export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
+export async function scheduleFridayReminder() {
   const granted = await requestNotificationPermissions();
   if (!granted) return false;
 
@@ -60,16 +50,6 @@ export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
     }
   } catch {}
 
-  const now = new Date();
-  const isFriday = now.getDay() === 5;
-  if (isFriday && wasEnteredToday(bcvLunesUpdatedAt)) return true;
-
-  // Calculate next Friday at 6 PM
-  const target = new Date();
-  const daysUntilFriday = (5 - target.getDay() + 7) % 7 || 7;
-  target.setDate(target.getDate() + daysUntilFriday);
-  target.setHours(18, 0, 0, 0);
-
   await Notifications.scheduleNotificationAsync({
     identifier: REMINDER_NOTIFICATION_ID,
     content: {
@@ -78,8 +58,10 @@ export async function scheduleFridayReminder(bcvLunesUpdatedAt) {
       sound: 'default',
     },
     trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: target,
+      type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+      weekday: 6, // viernes (1 = domingo, 7 = sábado)
+      hour: 18,
+      minute: 0,
     },
   });
 
@@ -97,7 +79,7 @@ export async function ensureReminderScheduled() {
     if (!enabled) return;
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const hasReminder = scheduled.some(n => n.identifier === REMINDER_NOTIFICATION_ID);
-    if (!hasReminder) await scheduleFridayReminder(null);
+    if (!hasReminder) await scheduleFridayReminder();
   } catch {}
 }
 

@@ -5,7 +5,19 @@ import { darkTheme, lightTheme } from '../constants/themes';
 
 const THEME_STORAGE_KEY = '@tasa_del_dia_theme_pref';
 
-const ThemeContext = createContext({
+/**
+ * @typedef {object} ThemeContextValue
+ * @property {'dark'|'light'} theme
+ * @property {typeof darkTheme} colors
+ * @property {'system'|'dark'|'light'} themePref
+ * @property {(pref: 'system'|'dark'|'light') => void} setTheme
+ * @property {boolean} isDark
+ * @property {boolean} isSystem
+ * @property {boolean} loaded
+ */
+
+/** @type {ThemeContextValue} */
+const defaultThemeContext = {
   theme: 'dark',
   colors: darkTheme,
   themePref: 'system',
@@ -13,11 +25,13 @@ const ThemeContext = createContext({
   isDark: true,
   isSystem: true,
   loaded: true,
-});
+};
+
+const ThemeContext = createContext(defaultThemeContext);
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
-  const [themePref, setThemePref] = useState('system');
+  const [themePref, setThemePref] = useState(/** @type {'system'|'dark'|'light'} */ ('system'));
   const [loaded, setLoaded] = useState(false);
 
   // Load saved preference on mount

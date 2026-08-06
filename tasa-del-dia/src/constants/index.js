@@ -3,7 +3,6 @@ export { darkTheme, lightTheme };
 
 export const API_CONFIG = {
   BASE_URL: 'https://ve.dolarapi.com/v1',
-  REFRESH_INTERVAL: 12 * 60 * 60 * 1000,
   FETCH_TIMEOUT: 15000,
   HISTORICAL_FETCH_TIMEOUT: 10000,
   HISTORICAL_API_CACHE_TTL: 60 * 60 * 1000,

@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+// IMPORTANTE: desde expo-file-system v19 (SDK 54) la API legacy solo está
+// disponible vía el subpath '/legacy'. El import por defecto exporta la nueva
+// API (File/Directory) y wrappers que lanzan error en runtime.
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
@@ -72,19 +75,25 @@ export async function checkLatestRelease() {
 
     releases.sort((a, b) => compareVersions(a.version, b.version));
 
-    const latest = releases[releases.length - 1];
-    const apkAsset = latest.assets.find(a => a.name?.endsWith('.apk'));
-    if (!apkAsset) return null;
+    // Iterar de la más nueva a la más vieja: devolver la primera con APK,
+    // aunque la release más nueva no tenga asset (evita perder updates).
+    for (let i = releases.length - 1; i >= 0; i--) {
+      const release = releases[i];
+      const apkAsset = release.assets.find(a => a.name?.endsWith('.apk'));
+      if (!apkAsset) continue;
 
-    const info = {
-      version: latest.version,
-      apkUrl: apkAsset.browser_download_url,
-      notes: latest.body,
-      publishedAt: latest.published_at,
-    };
+      const info = {
+        version: release.version,
+        apkUrl: apkAsset.browser_download_url,
+        notes: release.body,
+        publishedAt: release.published_at,
+      };
 
-    await cacheUpdateInfo(info);
-    return info;
+      await cacheUpdateInfo(info);
+      return info;
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -116,11 +125,15 @@ export async function downloadAndInstall(apkUrl) {
     const download = FileSystem.createDownloadResumable(apkUrl, fileUri);
     const result = await download.downloadAsync();
     if (result?.uri) {
-      await Linking.openURL(result.uri);
+      // En Android 7+ no se puede abrir file:// directamente
+      // (FileUriExposedException): hay que pedir un content:// URI.
+      const contentUri = await FileSystem.getContentUriAsync(result.uri);
+      await Linking.openURL(contentUri);
       return true;
     }
     return false;
   } catch {
+    // Fallback: abrir la URL en el navegador
     try {
       await Linking.openURL(apkUrl);
       return true;

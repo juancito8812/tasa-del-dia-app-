@@ -2,7 +2,6 @@ import React, { useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedNumber from './AnimatedNumber';
 import ShimmerEffect from './ShimmerEffect';
@@ -224,6 +223,19 @@ function createStyles(C) {
   });
 }
 
+/**
+ * @param {object} props
+ * @param {string} props.title
+ * @param {string} [props.subtitle]
+ * @param {number|null} [props.rate]
+ * @param {string} [props.icon]
+ * @param {string} [props.color]
+ * @param {boolean} [props.loading]
+ * @param {string} [props.updatedAt]
+ * @param {'large'|'medium'|'compact'} [props.size]
+ * @param {() => void} [props.onEdit]
+ * @param {string} [props.type]
+ */
 export default function RateCard({
   title,
   subtitle,

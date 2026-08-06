@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Text, View, StyleSheet } from 'react-native';
+import { Animated, Text, View, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -16,7 +16,7 @@ import UpdateModal from './src/components/UpdateModal';
 import { checkLatestRelease, isUpdateAvailable, getCurrentVersion, isVersionSkipped } from './src/services/autoUpdate';
 
 function AnimatedAppContent() {
-  const { colors: C, isDark, theme } = useTheme();
+  const { colors: C, isDark, theme, loaded } = useTheme();
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const prevTheme = useRef(theme);
   const pagerRef = useRef(null);
@@ -57,6 +57,7 @@ function AnimatedAppContent() {
 
   // Auto-update: check on mount, delay so it doesn't interrupt first render
   useEffect(() => {
+    let showTimer = null;
     const check = async () => {
       try {
         const release = await checkLatestRelease();
@@ -66,13 +67,32 @@ function AnimatedAppContent() {
         const skipped = await isVersionSkipped(release.version);
         if (skipped) return;
         setUpdateInfo(release);
-        setTimeout(() => setShowUpdate(true), 2000);
+        showTimer = setTimeout(() => setShowUpdate(true), 2000);
       } catch (err) {
         if (__DEV__) console.warn('[AutoUpdate] Check failed:', err);
       }
     };
     check();
+    return () => { if (showTimer) clearTimeout(showTimer); };
   }, []);
+
+  // Android: el botón "atrás" vuelve a la pestaña anterior en vez de cerrar la app
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (activeIndex > 0) {
+        pagerRef.current?.setPage(activeIndex - 1);
+        setActiveIndex(activeIndex - 1);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [activeIndex]);
+
+  // Evitar flash de tema mientras se carga la preferencia guardada
+  if (!loaded) {
+    return <View style={{ flex: 1, backgroundColor: '#0b0b16' }} />;
+  }
 
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
@@ -131,6 +151,7 @@ class ErrorBoundary extends React.Component {
       console.warn('[ErrorBoundary] Component crash:', error?.message);
     }
   }
+  handleRetry = () => this.setState({ hasError: false });
   render() {
     if (this.state.hasError) {
       return (
@@ -145,6 +166,13 @@ class ErrorBoundary extends React.Component {
           <Text style={{ fontSize:12, color:'#636e82', textAlign:'center' }}>
             Si el problema persiste, contacta al soporte.
           </Text>
+          <TouchableOpacity
+            onPress={this.handleRetry}
+            activeOpacity={0.8}
+            style={{ marginTop: 16, backgroundColor: '#2b6cb0', paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12 }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#ffffff' }}>Reintentar</Text>
+          </TouchableOpacity>
         </View>
       );
     }

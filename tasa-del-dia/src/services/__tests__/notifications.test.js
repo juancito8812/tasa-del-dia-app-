@@ -38,21 +38,17 @@ describe('notifications service', () => {
     it('returns false when permissions not granted', async () => {
       Notifications.requestPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
 
-      const result = await scheduleFridayReminder(null);
+      const result = await scheduleFridayReminder();
 
       expect(result).toBe(false);
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
-    it('schedules notification for next Friday at 6 PM', async () => {
-      const originalGetDay = Date.prototype.getDay;
-      Date.prototype.getDay = jest.fn().mockReturnValue(3); // Wednesday
+    it('schedules a repeating weekly reminder for Friday at 6 PM', async () => {
       Notifications.requestPermissionsAsync.mockResolvedValueOnce({ status: 'granted' });
       Notifications.getAllScheduledNotificationsAsync.mockResolvedValueOnce([]);
 
-      const result = await scheduleFridayReminder(null);
-
-      Date.prototype.getDay = originalGetDay;
+      const result = await scheduleFridayReminder();
 
       expect(result).toBe(true);
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
@@ -61,9 +57,12 @@ describe('notifications service', () => {
           content: expect.objectContaining({
             title: 'BCV (Lunes)',
           }),
-          trigger: expect.objectContaining({
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-          }),
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday: 6, // viernes (1 = domingo)
+            hour: 18,
+            minute: 0,
+          },
         })
       );
     });
@@ -75,26 +74,11 @@ describe('notifications service', () => {
         { identifier: 'bcv-lunes-friday-reminder' },
       ]);
 
-      await scheduleFridayReminder(null);
+      await scheduleFridayReminder();
 
       expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
         'bcv-lunes-friday-reminder'
       );
-    });
-
-    it('returns early without scheduling when already entered today on Friday', async () => {
-      Notifications.requestPermissionsAsync.mockResolvedValueOnce({ status: 'granted' });
-      Notifications.getAllScheduledNotificationsAsync.mockResolvedValueOnce([]);
-      const today = new Date().toISOString();
-
-      const originalGetDay = Date.prototype.getDay;
-      Date.prototype.getDay = jest.fn().mockReturnValue(5); // Friday
-
-      await scheduleFridayReminder(today);
-
-      Date.prototype.getDay = originalGetDay;
-
-      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
   });
 

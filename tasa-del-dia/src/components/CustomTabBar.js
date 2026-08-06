@@ -1,17 +1,19 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useTheme } from '../context/ThemeContext';
 
-const TABS = [
+const TABS = /** @type {const} */ ([
   { key: 'Tasas', icon: 'pulse' },
   { key: 'Conversor', icon: 'swap-horizontal' },
   { key: 'Historial', icon: 'stats-chart' },
-];
+]);
 
 export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
+  const { isDark } = useTheme();
   return (
-    <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint="dark" style={[
+    <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint={isDark ? 'dark' : 'light'} style={[
       styles.container,
       { borderTopColor: colors.tabBarBorder }
     ]}>

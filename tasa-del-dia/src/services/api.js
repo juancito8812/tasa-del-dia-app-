@@ -117,29 +117,53 @@ export async function setReminderEnabled(enabled) {
 
 /**
  * Fetch Binance P2P USDT/VES rate directly from Binance's public API.
- * Uses POST with JSON body — no API key required.
- * Returns the best sell offer price or null on failure.
+ * Usa POST con JSON body — no requiere API key.
+ *
+ * Solución robusta vs el endpoint oficial (que no expone P2P):
+ * 1. Pide las 10 mejores ofertas BUY en vez de una sola.
+ * 2. Descarta el outlier más alto y el más bajo (promedio recortado),
+ *    para que una oferta anómala no distorsione la tasa.
+ * 3. Envía User-Agent de navegador (Binance rechaza algunos UA de fetch).
+ * Retorna el promedio redondeado o null si falla.
  */
+const BINANCE_P2P_URL = 'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search';
+const BINANCE_UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36';
+
+async function fetchBinanceOffers(rows = 10) {
+  const res = await fetchWithTimeout(
+    BINANCE_P2P_URL,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': BINANCE_UA,
+      },
+      body: JSON.stringify({
+        asset: 'USDT',
+        fiat: 'VES',
+        tradeType: 'BUY',
+        rows,
+        page: 1,
+      }),
+    },
+  );
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json?.data || [])
+    .map(offer => parseFloat(offer?.adv?.price))
+    .filter(price => Number.isFinite(price) && price > 0);
+}
+
 export async function fetchBinanceP2P() {
   try {
-    const res = await fetchWithTimeout(
-      'https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          asset: 'USDT',
-          fiat: 'VES',
-          tradeType: 'BUY',
-          rows: 1,
-          page: 1,
-        }),
-      },
-    );
-    if (!res.ok) return null;
-    const json = await res.json();
-    const price = json?.data?.[0]?.adv?.price;
-    return price ? parseFloat(price) : null;
+    const prices = await fetchBinanceOffers(10);
+    if (prices.length === 0) return null;
+
+    // Promedio recortado: elimina el mínimo y el máximo para resistir outliers
+    prices.sort((a, b) => a - b);
+    const trimmed = prices.length >= 4 ? prices.slice(1, -1) : prices;
+    const avg = trimmed.reduce((sum, p) => sum + p, 0) / trimmed.length;
+    return Math.round(avg * 100) / 100;
   } catch {
     return null;
   }
@@ -148,8 +172,12 @@ export async function fetchBinanceP2P() {
 /**
  * Fetch all data needed for the app in parallel.
  * Uses allSettled so one endpoint failing doesn't kill the other.
+ * Deduplica llamadas concurrentes: si RatesScreen y ConverterScreen
+ * montan al mismo tiempo, comparten una sola petición de red.
  */
-export async function fetchAllData() {
+let fetchAllDataInFlight = null;
+
+async function doFetchAllData() {
   const [usdResult, bcvResult, binanceResult] = await Promise.allSettled([
     fetchAllRates(),
     fetchBCVCurrencies(),
@@ -159,9 +187,10 @@ export async function fetchAllData() {
   const usdRates = usdResult.status === 'fulfilled' ? usdResult.value : null;
   const bcvCurrencies = bcvResult.status === 'fulfilled' ? bcvResult.value : null;
   const tasaBinanceP2P = binanceResult.status === 'fulfilled' ? binanceResult.value : null;
+  const usdError = usdResult.status === 'rejected' ? usdResult.reason : null;
 
   if (!usdRates) {
-    throw new Error(usdResult.reason?.message || 'Error al obtener tasas USD');
+    throw new Error(usdError?.message || 'Error al obtener tasas USD');
   }
 
   const result = {
@@ -177,6 +206,16 @@ export async function fetchAllData() {
   await saveCacheRates(result);
 
   return result;
+}
+
+export async function fetchAllData() {
+  if (fetchAllDataInFlight) return fetchAllDataInFlight;
+  fetchAllDataInFlight = doFetchAllData();
+  try {
+    return await fetchAllDataInFlight;
+  } finally {
+    fetchAllDataInFlight = null;
+  }
 }
 
 /**
@@ -369,7 +408,7 @@ export async function getHistoricalRates() {
  * Lee/escribe SOLO el storage local (no pasa por getHistoricalRates que mergea API).
  * Conserva máximo 365 días de historial local.
  * @param {string} dateKey - "YYYY-MM-DD"
- * @param {{ bcv, paralelo, binance_p2p, euro, fetchedAt }} rates
+ * @param {{ bcv?: number|null, paralelo?: number|null, binance_p2p?: number|null, euro?: number|null, fetchedAt?: string|null }} rates
  */
 export async function saveHistoricalRate(dateKey, rates) {
   try {
@@ -417,7 +456,10 @@ export function parseDateDDMMYYYY(text) {
   const dd = parseInt(cleaned.slice(0, 2), 10);
   const mm = parseInt(cleaned.slice(2, 4), 10);
   const yyyy = parseInt(cleaned.slice(4, 8), 10);
-  if (dd < 1 || dd > 31 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > new Date().getFullYear() + 1) return null;
+  if (dd < 1 || mm < 1 || mm > 12 || yyyy < 2020 || yyyy > new Date().getFullYear() + 1) return null;
+  // Validar días reales del mes (30/02, 31/04, etc.)
+  const daysInMonth = new Date(yyyy, mm, 0).getDate();
+  if (dd > daysInMonth) return null;
   return `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
 }
 

@@ -90,8 +90,8 @@ jest.mock('expo-linking', () => ({
   useLatestURL: jest.fn().mockReturnValue(null),
 }));
 
-// Mock expo-file-system
-jest.mock('expo-file-system', () => ({
+// Mock expo-file-system (y su subpath /legacy, usado por autoUpdate.js)
+const mockExpoFileSystem = {
   cacheDirectory: '/mock/cache/',
   documentDirectory: '/mock/docs/',
   createDownloadResumable: jest.fn().mockReturnValue({
@@ -105,7 +105,10 @@ jest.mock('expo-file-system', () => ({
   StorageAccessFramework: {
     requestDirectoryPermissionsAsync: jest.fn(),
   },
-}));
+};
+
+jest.mock('expo-file-system', () => mockExpoFileSystem);
+jest.mock('expo-file-system/legacy', () => mockExpoFileSystem);
 
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => {

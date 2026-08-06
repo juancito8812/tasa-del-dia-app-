@@ -1,0 +1,22 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "checkJs": true,
+    "allowJs": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noEmit": true
+  },
+  "include": ["**/*.js", "**/*.jsx"],
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    "scripts",
+    "jest.setup.js",
+    "**/__tests__/**",
+    "**/*.test.js",
+    "**/*.spec.js"
+  ]
+}

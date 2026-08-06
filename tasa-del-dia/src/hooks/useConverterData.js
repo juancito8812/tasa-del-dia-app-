@@ -76,15 +76,6 @@ export default function useConverterData() {
     return () => { mountedRef.current = false; };
   }, [loadRates]);
 
-  // Cargar BCV Lunes al montar
-  useEffect(() => {
-    let mounted = true;
-    getStoredBCVLunes().then((d) => {
-      if (mounted) setRates((prev) => ({ ...prev, bcv_lunes: d.value }));
-    });
-    return () => { mounted = false; };
-  }, []);
-
   // Keyboard listeners
   useEffect(() => {
     const showSub = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));

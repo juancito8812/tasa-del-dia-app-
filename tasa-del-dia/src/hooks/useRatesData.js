@@ -16,15 +16,27 @@ import {
   ensureReminderScheduled,
 } from '../services/notifications';
 
+/**
+ * @typedef {object} RatesData
+ * @property {number|null} tasaBCV
+ * @property {number|null} tasaParalelo
+ * @property {number|null} tasaEuro
+ * @property {number|null} tasaBinanceP2P
+ * @property {string|null} usdFetchedAt
+ * @property {string|null} eurCapturedAt
+ */
+
 export default function useRatesData() {
-  const [data, setData] = useState({
+  /** @type {RatesData} */
+  const initialData = {
     tasaBCV: null,
     tasaParalelo: null,
     tasaEuro: null,
     tasaBinanceP2P: null,
     usdFetchedAt: null,
     eurCapturedAt: null,
-  });
+  };
+  const [data, setData] = useState(initialData);
   const [tasaBCVLunes, setTasaBCVLunes] = useState(null);
   const [bcvLunesUpdatedAt, setBcvLunesUpdatedAt] = useState(null);
   const [reminderEnabled, setReminderEnabledLocal] = useState(false);
@@ -157,7 +169,7 @@ export default function useRatesData() {
 
   const handleToggleReminder = async (value) => {
     if (value) {
-      const success = await scheduleFridayReminder(bcvLunesUpdatedAt);
+      const success = await scheduleFridayReminder();
       if (success) {
         setReminderEnabledLocal(true);
         persistReminderEnabled(true);
@@ -178,12 +190,12 @@ export default function useRatesData() {
     if (!iso) return '';
     try {
       const d = new Date(iso);
-      const diffMin = Math.floor((Date.now() - d) / 60000);
+      const diffMin = Math.floor((Date.now() - d.getTime()) / 60000);
       if (diffMin < 1) return 'Ahora';
       if (diffMin < 60) return `Hace ${diffMin} min`;
       const diffHour = Math.floor(diffMin / 60);
       if (diffHour < 24) return `Hace ${diffHour}h`;
-      return d.toLocaleDateString('es-VE', {
+      return d.toLocaleString('es-VE', {
         day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
       });
     } catch {
@@ -192,11 +204,16 @@ export default function useRatesData() {
   };
 
   // Valores derivados
-  const brecha = data.tasaBCV != null && data.tasaParalelo != null
-    ? ((data.tasaParalelo - data.tasaBCV) / data.tasaBCV) * 100 : null;
+  const bcv = Number(data.tasaBCV);
+  const paralelo = Number(data.tasaParalelo);
+  const lunes = Number(tasaBCVLunes);
+  const brecha = data.tasaBCV != null && data.tasaParalelo != null && bcv > 0
+    ? ((paralelo - bcv) / bcv) * 100
+    : null;
 
-  const brechaLunes = tasaBCVLunes != null && data.tasaParalelo != null
-    ? ((data.tasaParalelo - tasaBCVLunes) / tasaBCVLunes) * 100 : null;
+  const brechaLunes = tasaBCVLunes != null && data.tasaParalelo != null && lunes > 0
+    ? ((paralelo - lunes) / lunes) * 100
+    : null;
 
   return {
     data, tasaBCVLunes, bcvLunesUpdatedAt, reminderEnabled,

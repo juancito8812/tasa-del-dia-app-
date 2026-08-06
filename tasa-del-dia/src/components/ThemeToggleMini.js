@@ -10,7 +10,7 @@ export default function ThemeToggleMini() {
   const { themePref, setTheme, colors: C } = useTheme();
 
   const cycleTheme = () => {
-    const modes = ['system', 'dark', 'light'];
+    const modes = /** @type {const} */ (['system', 'dark', 'light']);
     const idx = modes.indexOf(themePref);
     setTheme(modes[(idx + 1) % modes.length]);
   };

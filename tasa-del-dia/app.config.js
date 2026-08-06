@@ -5,7 +5,7 @@ module.exports = {
     version: "1.3.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
-    userInterfaceStyle: "dark",
+    userInterfaceStyle: "automatic",
     splash: {
       backgroundColor: "#1a1a2e",
     },
