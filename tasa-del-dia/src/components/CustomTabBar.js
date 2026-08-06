@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
+import { hapticLight } from '../utils/haptics';
 
 const TABS = /** @type {const} */ ([
   { key: 'Tasas', icon: 'pulse' },
@@ -42,7 +43,7 @@ export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOf
           return (
             <TouchableOpacity
               key={tab.key}
-              onPress={() => onTabPress(i)}
+              onPress={() => { hapticLight(); onTabPress(i); }}
               style={styles.tab}
               accessibilityLabel={tab.key}
               accessibilityRole="tab"

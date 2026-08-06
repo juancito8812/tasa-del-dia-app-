@@ -1,10 +1,13 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import React, { useMemo, useCallback, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedNumber from './AnimatedNumber';
 import ShimmerEffect from './ShimmerEffect';
+import PressableScale from './PressableScale';
+import useReduceMotion from '../hooks/useReduceMotion';
 
 const ICON_NAMES = {
   bank: 'bank',
@@ -206,6 +209,40 @@ function createStyles(C) {
       fontVariant: ['tabular-nums'],
     },
 
+    // Glass 2.0 — specular edge highlight (brillo superior)
+    specularEdge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 1.5,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+    },
+
+    // Chip EN VIVO
+    liveChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: 6,
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 20,
+      marginBottom: 10,
+      borderWidth: 1,
+    },
+    liveDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 3.5,
+    },
+    liveText: {
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1.2,
+    },
+
     // Shared
     editButton: {
       padding: 4,
@@ -282,6 +319,22 @@ export default function RateCard({
   const isLarge = size === 'large';
   const isCompact = size === 'compact';
   const isMedium = size === 'medium';
+  const reduceMotion = useReduceMotion();
+
+  // Chip EN VIVO — pulso del punto (solo en el hero BCV)
+  const livePulse = useRef(new Animated.Value(1)).current;
+  const isLive = isLarge && type === 'bcv';
+  useEffect(() => {
+    if (!isLive || reduceMotion) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(livePulse, { toValue: 0.25, duration: 900, useNativeDriver: true }),
+        Animated.timing(livePulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [isLive, reduceMotion, livePulse]);
 
   if (loading) {
     return <ShimmerEffect style={isCompact ? {} : { marginBottom: 8, borderRadius: isLarge ? 20 : isMedium ? 18 : 14, height: isLarge ? 140 : isMedium ? 110 : 80 }} />;
@@ -298,56 +351,74 @@ export default function RateCard({
   const valueStyle = isLarge ? styles.rateValueLarge : isMedium ? styles.rateValueMedium : styles.rateValueCompact;
 
   return (
-    <View style={[cardStyle, { shadowColor: glowColor }]}>
-      <BlurView
-        intensity={Platform.OS === 'android' ? 30 : 40}
-        tint={isDark ? 'dark' : 'light'}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={[glowStyle, { backgroundColor: color }]} />
-      <View style={headerStyle}>
-        <View style={[iconContainerStyle, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
-          <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={iconSize} color={color} />
-        </View>
-        <View style={styles.titleBlock}>
-          <Text style={[titleStyle, { color: C.textPrimary }]} numberOfLines={1}>{title}</Text>
-          {subtitle && !isCompact && (
-            <Text style={isLarge ? styles.subtitleLarge : { fontSize: 10, color: C.textMuted, marginTop: 1 }}>
-              {subtitle}
-            </Text>
+    <PressableScale onPress={onEdit} scaleTo={0.98}>
+      <View style={[cardStyle, { shadowColor: glowColor }]}>
+        <BlurView
+          intensity={Platform.OS === 'android' ? 30 : 40}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={[glowStyle, { backgroundColor: color }]} />
+        {/* Glass 2.0 — brillo especular superior (más sutil en tema claro) */}
+        <LinearGradient
+          colors={[isDark ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.65)', 'rgba(255,255,255,0)']}
+          start={{ x: 0.2, y: 0 }}
+          end={{ x: 0.8, y: 1 }}
+          style={[styles.specularEdge, { borderRadius: isLarge ? 20 : isMedium ? 18 : 14 }]}
+          pointerEvents="none"
+        />
+
+        {isLive && rate != null && (
+          <View style={[styles.liveChip, { backgroundColor: color + '12', borderColor: color + '30' }]}>
+            <Animated.View style={[styles.liveDot, { backgroundColor: color, opacity: livePulse }]} />
+            <Text style={[styles.liveText, { color }]}>EN VIVO</Text>
+          </View>
+        )}
+
+        <View style={headerStyle}>
+          <View style={[iconContainerStyle, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
+            <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={iconSize} color={color} />
+          </View>
+          <View style={styles.titleBlock}>
+            <Text style={[titleStyle, { color: C.textPrimary }]} numberOfLines={1}>{title}</Text>
+            {subtitle && !isCompact && (
+              <Text style={isLarge ? styles.subtitleLarge : { fontSize: 10, color: C.textMuted, marginTop: 1 }}>
+                {subtitle}
+              </Text>
+            )}
+          </View>
+          {onEdit && (
+            <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Ionicons name="pencil" size={isLarge ? 16 : 12} color={color} />
+            </TouchableOpacity>
           )}
         </View>
-        {onEdit && (
-          <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="pencil" size={isLarge ? 16 : 12} color={color} />
-          </TouchableOpacity>
+        <View style={rateRowStyle}>
+          <Text style={[prefixStyle, { color }]}>Bs.</Text>
+          <AnimatedNumber
+            value={rate}
+            style={[valueStyle, { color }]}
+            format={formatRate}
+            duration={isLarge ? 1200 : 800}
+          />
+        </View>
+        {updatedAt && !isCompact && (
+          <View style={[isLarge ? styles.rateMetaLarge : styles.rateMetaMedium, { borderTopColor: C.cardBorder }]}>
+            <Ionicons name="time-outline" size={isLarge ? 12 : 10} color={C.textMuted} />
+            <Text style={[styles.metaText, { color: C.textMuted }]}>
+              {formatTime(updatedAt)}
+            </Text>
+            {isLarge && (
+              <>
+                <Ionicons name="logo-usd" size={10} color={C.textMuted} style={{ marginLeft: 8 }} />
+                <Text style={[styles.metaText, { color: C.textMuted }]}>
+                  1 USD = {formatRate(rate)} Bs.
+                </Text>
+              </>
+            )}
+          </View>
         )}
       </View>
-      <View style={rateRowStyle}>
-        <Text style={[prefixStyle, { color }]}>Bs.</Text>
-        <AnimatedNumber
-          value={rate}
-          style={[valueStyle, { color }]}
-          format={formatRate}
-          duration={isLarge ? 1200 : 800}
-        />
-      </View>
-      {updatedAt && !isCompact && (
-        <View style={[isLarge ? styles.rateMetaLarge : styles.rateMetaMedium, { borderTopColor: C.cardBorder }]}>
-          <Ionicons name="time-outline" size={isLarge ? 12 : 10} color={C.textMuted} />
-          <Text style={[styles.metaText, { color: C.textMuted }]}>
-            {formatTime(updatedAt)}
-          </Text>
-          {isLarge && (
-            <>
-              <Ionicons name="logo-usd" size={10} color={C.textMuted} style={{ marginLeft: 8 }} />
-              <Text style={[styles.metaText, { color: C.textMuted }]}>
-                1 USD = {formatRate(rate)} Bs.
-              </Text>
-            </>
-          )}
-        </View>
-      )}
-    </View>
+    </PressableScale>
   );
 }
