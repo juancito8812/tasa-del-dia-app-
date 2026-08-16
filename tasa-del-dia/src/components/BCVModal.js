@@ -13,7 +13,7 @@ import { hapticSuccess } from '../utils/haptics';
  * BCVModal — hoja deslizante desde abajo (bottom sheet, tendencia 2026).
  * Al abrir: el panel entra con spring físico y el fondo se funde.
  */
-export default function BCVModal({
+function BCVModal({
   visible, onClose, editValue, onChangeText, onSave, bcvLunesColor, C,
 }) {
   const reduceMotion = useReduceMotion();
@@ -111,6 +111,8 @@ export default function BCVModal({
     </Modal>
   );
 }
+
+export default React.memo(BCVModal);
 
 const styles = StyleSheet.create({
   overlay: {

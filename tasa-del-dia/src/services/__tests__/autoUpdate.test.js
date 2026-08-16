@@ -1,5 +1,4 @@
 import { compareVersions, isUpdateAvailable, getCurrentVersion } from '../autoUpdate';
-import Constants from 'expo-constants';
 
 describe('autoUpdate - Pure Functions', () => {
   describe('compareVersions', () => {

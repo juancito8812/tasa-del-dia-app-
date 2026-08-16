@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
-  View, Text, ScrollView, StyleSheet, Platform,
+  View, Text, ScrollView, StyleSheet,
   TouchableOpacity, TextInput,
 } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import useHistoryData, { formatDateKey } from '../hooks/useHistoryData';
 import { getMonthAbbr, getDay, formatCurrency } from '../utils/formatting';
@@ -51,16 +51,19 @@ function createStyles(C) {
   });
 }
 
-export default function HistoryScreen() {
-  const { colors: C } = useTheme();
+/**
+ * Item de la lista de historial, memoizado: solo se re-renderiza cuando cambia
+ * el dato, el tema o sus handlers (que son estables). Al teclear en el buscador,
+ * cambiar la selección o copiar, los 10 items NO se re-renderizan.
+ */
+function HistoryListItemView({ item, C, onPress, handleCopy }) {
   const styles = useMemo(() => createStyles(C), [C]);
-  const h = useHistoryData();
 
   const renderRateCol = (label, value, color) => (
     <TouchableOpacity
       style={styles.rateCol}
       activeOpacity={0.7}
-      onPress={() => value && h.handleCopy(formatCurrency(value), `${label}-${value}`)}
+      onPress={() => value && handleCopy(formatCurrency(value), `${label}-${value}`)}
     >
       <View style={{ width: 3, height: 16, borderRadius: 1.5, backgroundColor: color }} />
       <View style={{ flex: 1 }}>
@@ -76,6 +79,43 @@ export default function HistoryScreen() {
     </TouchableOpacity>
   );
 
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      activeOpacity={0.7}
+      onPress={() => onPress(item.dateKey)}
+    >
+      <View style={styles.dateRow}>
+        <Ionicons name="calendar" size={14} color={C.info} />
+        <Text style={[styles.dateText, { color: C.textPrimary }]}>{formatDateKey(item.dateKey)}</Text>
+        {item.manual && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto', gap: 4 }}>
+            <Ionicons name="create-outline" size={12} color={C.textMuted} />
+            <Text style={{ fontSize: 10, color: C.textMuted }}>Manual</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.ratesRow}>
+        {renderRateCol('BCV', item.bcv, C.success)}
+        {renderRateCol('Paralelo', item.paralelo, C.highlight)}
+        {renderRateCol('Binance', item.binance_p2p, C.warning)}
+        {renderRateCol('Euro', item.euro, C.info)}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const HistoryListItem = React.memo(HistoryListItemView);
+
+export default function HistoryScreen() {
+  const { colors: C } = useTheme();
+  const styles = useMemo(() => createStyles(C), [C]);
+  const h = useHistoryData();
+  const { handleSelectDate, selectedDateKey } = h;
+
+  // Handlers estables para los componentes memoizados de la lista/detalle
+  const handleSelectItem = useCallback((dateKey) => handleSelectDate(dateKey), [handleSelectDate]);
+  const handleCloseDetail = useCallback(() => handleSelectDate(selectedDateKey), [handleSelectDate, selectedDateKey]);
   return (
         <View style={styles.container}>
           <View style={styles.header}>
@@ -147,7 +187,7 @@ export default function HistoryScreen() {
                 copiedField={h.copiedField}
                 handleCopy={h.handleCopy}
                 handleCopyAll={h.handleCopyAll}
-                onClose={() => h.handleSelectDate(h.selectedDateKey)}
+                onClose={handleCloseDetail}
               />
             )}
 
@@ -161,29 +201,13 @@ export default function HistoryScreen() {
               <View style={styles.listContainer}>
                 {h.ratesData.length > 0 ? (
                   h.ratesData.slice(0, 10).map((item) => (
-                    <TouchableOpacity
+                    <HistoryListItem
                       key={item.dateKey}
-                      style={styles.listItem}
-                      activeOpacity={0.7}
-                      onPress={() => h.handleSelectDate(item.dateKey)}
-                    >
-                      <View style={styles.dateRow}>
-                        <Ionicons name="calendar" size={14} color={C.info} />
-                        <Text style={[styles.dateText, { color: C.textPrimary }]}>{formatDateKey(item.dateKey)}</Text>
-                        {item.manual && (
-                          <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 'auto', gap: 4 }}>
-                            <Ionicons name="create-outline" size={12} color={C.textMuted} />
-                            <Text style={{ fontSize: 10, color: C.textMuted }}>Manual</Text>
-                          </View>
-                        )}
-                      </View>
-                      <View style={styles.ratesRow}>
-                        {renderRateCol('BCV', item.bcv, C.success)}
-                        {renderRateCol('Paralelo', item.paralelo, C.highlight)}
-                        {renderRateCol('Binance', item.binance_p2p, C.warning)}
-                        {renderRateCol('Euro', item.euro, C.info)}
-                      </View>
-                    </TouchableOpacity>
+                      item={item}
+                      C={C}
+                      onPress={handleSelectItem}
+                      handleCopy={h.handleCopy}
+                    />
                   ))
                 ) : (
                   <View style={styles.emptyState}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Keyboard, Alert } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { fetchWithOfflineFallback, getStoredBCVLunes } from '../services/api';
+import { fetchWithOfflineFallback, loadCacheRates, getStoredBCVLunes } from '../services/api';
 import { extractRawDigits, formatRawDisplay, QUICK_USD, QUICK_BS } from '../utils/formatting';
 
 export default function useConverterData() {
@@ -31,6 +31,19 @@ export default function useConverterData() {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
+
+      // Fase 1 — SWR: mostrar la caché guardada al instante (sin banner
+      // offline) mientras la red revalida en background.
+      const cache = await loadCacheRates();
+      if (cache && (cache.tasaBCV !== null || cache.tasaParalelo !== null) && mountedRef.current) {
+        setRates({
+          bcv: cache.tasaBCV, paralelo: cache.tasaParalelo,
+          euro: cache.tasaEuro, binance_p2p: cache.tasaBinanceP2P,
+          bcv_lunes: null,
+        });
+        setLoading(false);
+        setRefreshing(false);
+      }
 
       const [result, bcvLunesData] = await Promise.all([
         fetchWithOfflineFallback(),

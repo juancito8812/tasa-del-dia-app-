@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import ThemeToggleMini from './ThemeToggleMini';
 
-export default function RatesHeader({ C, error, offlineMode, offlineCachedAt }) {
+function RatesHeader({ C, error, offlineMode, offlineCachedAt }) {
   return (
     <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 2 }}>
       {/* Header row */}
@@ -58,6 +58,8 @@ export default function RatesHeader({ C, error, offlineMode, offlineCachedAt }) 
     </View>
   );
 }
+
+export default React.memo(RatesHeader);
 
 const styles = StyleSheet.create({
   headerBg: {

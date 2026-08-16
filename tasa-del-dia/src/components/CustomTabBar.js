@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
 import { hapticLight } from '../utils/haptics';
@@ -11,7 +11,7 @@ const TABS = /** @type {const} */ ([
   { key: 'Historial', icon: 'stats-chart' },
 ]);
 
-export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
+function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
   const { isDark } = useTheme();
   return (
     <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint={isDark ? 'dark' : 'light'} style={[
@@ -78,6 +78,8 @@ export default function CustomTabBar({ activeIndex, onTabPress, colors, scrollOf
     </BlurView>
   );
 }
+
+export default React.memo(CustomTabBar);
 
 const styles = StyleSheet.create({
   container: {

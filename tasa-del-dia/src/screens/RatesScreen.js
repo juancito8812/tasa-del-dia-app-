@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,9 @@ import {
   StyleSheet,
   RefreshControl,
   ScrollView,
-  Platform,
-  TouchableOpacity,
 } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import useRatesData from '../hooks/useRatesData';
 import RateCard from '../components/RateCard';
@@ -92,6 +90,9 @@ export default function RatesScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editValue, setEditValue] = useState('');
 
+  // Desestructurado: deps estables para los useCallback (evita re-crearlos por render)
+  const { tasaBCVLunes, handleSaveBCVLunes: saveBcvLunes } = hook;
+
   const bcvLunesColor = C.bcvLunes;
 
   const brechaColor = hook.brecha !== null
@@ -101,15 +102,16 @@ export default function RatesScreen() {
     ? hook.brechaLunes > 15 ? C.highlight : hook.brechaLunes > 8 ? C.warning : C.success
     : C.textMuted;
 
-  const handleEditBCVLunes = () => {
-    setEditValue(hook.tasaBCVLunes ? String(hook.tasaBCVLunes) : '');
+  // Handlers estables: se pasan a RateCard/BCVModal (memoizados)
+  const handleEditBCVLunes = useCallback(() => {
+    setEditValue(tasaBCVLunes ? String(tasaBCVLunes) : '');
     setModalVisible(true);
-  };
+  }, [tasaBCVLunes]);
 
-  const handleSaveBCVLunes = () => {
-    hook.handleSaveBCVLunes(editValue);
+  const handleSaveBCVLunes = useCallback(() => {
+    saveBcvLunes(editValue);
     setModalVisible(false);
-  };
+  }, [saveBcvLunes, editValue]);
 
   return (
     <View style={styles.container}>

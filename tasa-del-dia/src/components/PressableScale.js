@@ -15,7 +15,7 @@ import useReduceMotion from '../hooks/useReduceMotion';
  * @param {object} [props.style]
  * @param {number} [props.scaleTo] - escala al presionar (default 0.97)
  */
-export default function PressableScale({ children, onPress, style, scaleTo = 0.97, ...rest }) {
+function PressableScale({ children, onPress, style, scaleTo = 0.97, ...rest }) {
   const reduceMotion = useReduceMotion();
   const scale = useSharedValue(1);
 
@@ -54,3 +54,5 @@ export default function PressableScale({ children, onPress, style, scaleTo = 0.9
     </Pressable>
   );
 }
+
+export default React.memo(PressableScale);

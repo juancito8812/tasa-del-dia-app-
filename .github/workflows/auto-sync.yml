@@ -18,11 +18,18 @@ jobs:
   sync:
     name: Sincronizar cambios automáticos
     runs-on: ubuntu-latest
+    # Guard de rama: si alguien dispara workflow_dispatch sobre otra rama
+    # (ej. feature/ui-2026), el job se salta entero y no commitea nada.
+    if: github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout repositorio
         uses: actions/checkout@v6
         with:
+          # Rama fijada: este workflow SOLO opera sobre main. Sin esto, un
+          # workflow_dispatch permitiría elegir otra rama y el auto-sync
+          # commitearía ahí (historial contaminado con "chore" diarios).
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -34,7 +41,9 @@ jobs:
       - name: Verificar cambios
         id: status
         run: |
-          STATUS=$(git status --porcelain)
+          # -uno: ignora archivos untracked — este workflow solo commitea
+          # archivos YA trackeados (nunca archivos nuevos/ignorados).
+          STATUS=$(git status --porcelain -uno)
           echo "status<<EOF" >> $GITHUB_OUTPUT
           echo "$STATUS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -76,12 +85,22 @@ jobs:
       - name: Hacer commit y push
         if: steps.status.outputs.has_changes == 'true'
         run: |
-          git add .
+          # git add restringido: solo archivos trackeados (-u) y con exclusiones
+          # explícitas de patrones sensibles (belt-and-suspenders sobre .gitignore).
+          # NUNCA se agregan archivos untracked (vector de fuga de secretos/generados).
+          git add -u -- . \
+            ':(exclude)*.env' ':(exclude)*.env.*' \
+            ':(exclude)*.jks' ':(exclude)*.p12' ':(exclude)*.p8' \
+            ':(exclude)*.key' ':(exclude)*.mobileprovision' \
+            ':(exclude)*.apk' ':(exclude)*.aab' ':(exclude)*.keystore'
           if git diff --cached --quiet; then
-            echo "🟢 No hay cambios nuevos después del add, saltando commit"
+            echo "🟢 No hay cambios relevantes después del add, saltando commit"
             exit 0
           fi
           git commit -m "${{ steps.commit-message.outputs.message }}"
+          # Si main avanzó en el remoto entre el checkout y el push, rebase
+          # antes de pushear (nunca --force): fallo seguro, sin sobrescribir.
+          git pull --rebase origin main
           git push
           echo "✅ Commit y push realizados"
 

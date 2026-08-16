@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatCurrency, getWeekDay } from '../utils/formatting';
 import { formatDateKey } from '../hooks/useHistoryData';
 
-export default function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAll, onClose }) {
+function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAll, onClose }) {
   if (!selectedData) return null;
 
   const rates = [
@@ -79,6 +79,8 @@ export default function DateDetailCard({ selectedData, C, copiedField, handleCop
     </View>
   );
 }
+
+export default React.memo(DateDetailCard);
 
 const styles = StyleSheet.create({
   card: { borderRadius: 20, borderWidth: 1, padding: 16, marginBottom: 16, overflow: 'hidden' },

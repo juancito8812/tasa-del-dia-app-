@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Alert, Keyboard } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { API_CONFIG } from '../constants';
 import { getHistoricalRates, formatDateKey, parseDateDDMMYYYY } from '../services/api';
-import { formatCurrency, getWeekDay, getMonthAbbr, getDay } from '../utils/formatting';
+import { formatCurrency } from '../utils/formatting';
 
 export { formatDateKey };
 
@@ -58,13 +58,13 @@ export default function useHistoryData() {
     ? ratesData.find((r) => r.dateKey === selectedDateKey)
     : null;
 
-  const handleSelectDate = (dateKey) => {
-    setSelectedDateKey(dateKey === selectedDateKey ? null : dateKey);
+  const handleSelectDate = useCallback((dateKey) => {
+    setSelectedDateKey((prev) => (dateKey === prev ? null : dateKey));
     setShowCustomInput(false);
     setCustomDateText('');
-  };
+  }, []);
 
-  const handleCustomDate = () => {
+  const handleCustomDate = useCallback(() => {
     Keyboard.dismiss();
     const parsed = parseDateDDMMYYYY(customDateText);
     if (!parsed) {
@@ -79,9 +79,9 @@ export default function useHistoryData() {
     setSelectedDateKey(parsed);
     setShowCustomInput(false);
     setCustomDateText('');
-  };
+  }, [customDateText, ratesData]);
 
-  const handleCopy = async (text, field) => {
+  const handleCopy = useCallback(async (text, field) => {
     try {
       await Clipboard.setStringAsync(text);
       setCopiedField(field);
@@ -90,9 +90,9 @@ export default function useHistoryData() {
     } catch (err) {
       if (__DEV__) console.warn('[History] handleCopy error:', err);
     }
-  };
+  }, []);
 
-  const handleCopyAll = async (data) => {
+  const handleCopyAll = useCallback((data) => {
     const lines = [
       `Fecha: ${formatDateKey(data.dateKey)}`,
       `BCV: Bs. ${formatCurrency(data.bcv)}`,
@@ -102,7 +102,7 @@ export default function useHistoryData() {
     ];
     if (data.manual) lines.push('Ingreso manual');
     handleCopy(lines.join('\n'), 'all');
-  };
+  }, [handleCopy]);
 
   return {
     ratesData, selectedDateKey, customDateText, copiedField, showCustomInput,

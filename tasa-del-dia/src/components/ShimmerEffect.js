@@ -61,7 +61,7 @@ function createStyles(C) {
   });
 }
 
-export default function ShimmerEffect({ style }) {
+function ShimmerEffect({ style }) {
   const { colors: C } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
   const shimmerAnim = useRef(new Animated.Value(0)).current;
@@ -97,3 +97,5 @@ export default function ShimmerEffect({ style }) {
     </View>
   );
 }
+
+export default React.memo(ShimmerEffect);

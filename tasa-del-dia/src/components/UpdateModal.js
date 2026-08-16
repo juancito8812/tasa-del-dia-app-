@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, Modal, StyleSheet, ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { downloadAndInstall, skipVersion } from '../services/autoUpdate';
 
-export default function UpdateModal({
+function UpdateModal({
   visible, onClose, currentVersion, latestVersion, apkUrl, notes, C,
 }) {
   const [downloading, setDownloading] = useState(false);
@@ -94,6 +94,8 @@ export default function UpdateModal({
     </Modal>
   );
 }
+
+export default React.memo(UpdateModal);
 
 const styles = StyleSheet.create({
   overlay: {

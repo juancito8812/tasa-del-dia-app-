@@ -3,7 +3,7 @@ import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
   ScrollView, RefreshControl, Platform, KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import useConverterData from '../hooks/useConverterData';

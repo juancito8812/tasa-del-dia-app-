@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -273,7 +273,7 @@ function createStyles(C) {
  * @param {() => void} [props.onEdit]
  * @param {string} [props.type]
  */
-export default function RateCard({
+function RateCard({
   title,
   subtitle,
   rate,
@@ -321,6 +321,11 @@ export default function RateCard({
   const isMedium = size === 'medium';
   const reduceMotion = useReduceMotion();
 
+  // BlurView es costoso en Android (render effect por instancia). Solo se usa
+  // en la tarjeta hero (large); el resto usa glassCard (translúcido, ~costo cero).
+  // En iOS el blur es nativo y barato, se mantiene en todas.
+  const useBlur = Platform.OS === 'ios' || isLarge;
+
   // Chip EN VIVO — pulso del punto (solo en el hero BCV)
   const livePulse = useRef(new Animated.Value(1)).current;
   const isLive = isLarge && type === 'bcv';
@@ -336,6 +341,10 @@ export default function RateCard({
     return () => loop.stop();
   }, [isLive, reduceMotion, livePulse]);
 
+  const valueStyle = isLarge ? styles.rateValueLarge : isMedium ? styles.rateValueMedium : styles.rateValueCompact;
+  // Estable entre renders (memo de AnimatedNumber): el color solo cambia con el tema
+  const numberStyle = useMemo(() => [valueStyle, { color }], [valueStyle, color]);
+
   if (loading) {
     return <ShimmerEffect style={isCompact ? {} : { marginBottom: 8, borderRadius: isLarge ? 20 : isMedium ? 18 : 14, height: isLarge ? 140 : isMedium ? 110 : 80 }} />;
   }
@@ -348,16 +357,17 @@ export default function RateCard({
   const titleStyle = isLarge ? styles.titleLarge : isMedium ? styles.titleMedium : styles.titleCompact;
   const rateRowStyle = isLarge ? styles.rateRowLarge : isMedium ? styles.rateRowMedium : styles.rateRowCompact;
   const prefixStyle = isLarge ? styles.ratePrefixLarge : isMedium ? styles.ratePrefixMedium : styles.ratePrefixCompact;
-  const valueStyle = isLarge ? styles.rateValueLarge : isMedium ? styles.rateValueMedium : styles.rateValueCompact;
 
   return (
     <PressableScale onPress={onEdit} scaleTo={0.98}>
-      <View style={[cardStyle, { shadowColor: glowColor }]}>
-        <BlurView
-          intensity={Platform.OS === 'android' ? 30 : 40}
-          tint={isDark ? 'dark' : 'light'}
-          style={StyleSheet.absoluteFill}
-        />
+      <View style={[cardStyle, { shadowColor: glowColor }, !useBlur && { backgroundColor: C.glassCard }]}>
+        {useBlur && (
+          <BlurView
+            intensity={Platform.OS === 'android' ? 30 : 40}
+            tint={isDark ? 'dark' : 'light'}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         <View style={[glowStyle, { backgroundColor: color }]} />
         {/* Glass 2.0 — brillo especular superior (más sutil en tema claro) */}
         <LinearGradient
@@ -397,9 +407,12 @@ export default function RateCard({
           <Text style={[prefixStyle, { color }]}>Bs.</Text>
           <AnimatedNumber
             value={rate}
-            style={[valueStyle, { color }]}
+            style={numberStyle}
             format={formatRate}
             duration={isLarge ? 1200 : 800}
+            // Solo la tarjeta hero (large) anima el conteo: las 4 restantes
+            // muestran el valor directo (menos trabajo JS en el arranque/refresh)
+            animate={isLarge}
           />
         </View>
         {updatedAt && !isCompact && (
@@ -422,3 +435,5 @@ export default function RateCard({
     </PressableScale>
   );
 }
+
+export default React.memo(RateCard);
