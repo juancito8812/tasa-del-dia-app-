@@ -131,6 +131,11 @@ jest.mock('expo-linking', () => ({
   useLatestURL: jest.fn().mockReturnValue(null),
 }));
 
+// Mock expo-intent-launcher (usado por autoUpdate para abrir el instalador)
+jest.mock('expo-intent-launcher', () => ({
+  startActivityAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
 // Mock expo-file-system (y su subpath /legacy, usado por autoUpdate.js)
 const mockExpoFileSystem = {
   cacheDirectory: '/mock/cache/',
