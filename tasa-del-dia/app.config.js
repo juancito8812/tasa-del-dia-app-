@@ -1,8 +1,21 @@
+// Versión semver única. El release workflow (release-automatic.yml) la bumpa
+// vía sed sobre esta línea (formato: const VERSION = 'x.y.z').
+const VERSION = '1.4.2';
+
+// versionCode Android derivado de la versión: 1.4.2 → 10402.
+// Debe CRECER en cada release para poder publicar en Play Store.
+// (Antes EAS auto-generaba el mismo código para todas las versiones, lo que
+// bloqueaba subir builds nuevos a Google Play.)
+const ANDROID_VERSION_CODE = (() => {
+  const [major, minor, patch] = VERSION.split('.').map(Number);
+  return major * 10000 + minor * 100 + patch;
+})();
+
 module.exports = {
   expo: {
     name: "Tasa del Día",
     slug: "tasa-del-dia",
-    version: "1.4.2",
+    version: VERSION,
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
@@ -26,6 +39,7 @@ module.exports = {
         backgroundColor: "#1a1a2e",
       },
       package: "com.tasadeldia.app",
+      versionCode: ANDROID_VERSION_CODE,
       permissions: ['POST_NOTIFICATIONS', 'REQUEST_INSTALL_PACKAGES'],
     },
     plugins: [

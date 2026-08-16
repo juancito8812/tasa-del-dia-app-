@@ -113,7 +113,9 @@ jobs:
             git fetch origin main
             git checkout -b ci-release origin/main
           fi
-          sed -i "s/version: \"[0-9.]\+\"/version: \"${{ steps.version.outputs.version }}\"/" app.config.js
+          # El bump actualiza la const VERSION de app.config.js; el versionCode
+          # Android se deriva automáticamente de la versión (mayor*10000+menor*100+patch).
+          sed -i "s/const VERSION = '[0-9.]*'/const VERSION = '${{ steps.version.outputs.version }}'/" app.config.js
           echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
 
       - name: Commit version bump a main
