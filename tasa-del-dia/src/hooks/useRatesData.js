@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { API_CONFIG } from '../constants';
 import {
   fetchWithOfflineFallback,
+  loadCacheRates,
   getStoredBCVLunes,
   setStoredBCVLunes,
   getReminderEnabled,
@@ -46,13 +47,29 @@ export default function useRatesData() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [offlineCachedAt, setOfflineCachedAt] = useState(null);
 
+  // SWR (stale-while-revalidate): mientras se muestra la caché guardada,
+  // no guardar historial con datos viejos como si fueran de hoy.
+  const staleRef = useRef(false);
+
   const loadRates = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
 
+      // Fase 1 — mostrar la caché guardada al instante (sin banner offline),
+      // mientras la red revalida en background. Mejora el primer pintado
+      // en conexiones lentas: el usuario ve tasas de inmediato.
+      const cache = await loadCacheRates();
+      if (cache && (cache.tasaBCV !== null || cache.tasaParalelo !== null)) {
+        staleRef.current = true;
+        setData(cache);
+        setLoading(false);
+        setRefreshing(false);
+      }
+
       const { data: result, fromCache, error: fetchError, cacheInfo } = await fetchWithOfflineFallback();
+      staleRef.current = false;
 
       if (fromCache && result) {
         setData(result);
@@ -94,8 +111,10 @@ export default function useRatesData() {
     return () => { mounted.current = false; };
   }, [loadRates]);
 
-  // Auto-guardar tasas de hoy
+  // Auto-guardar tasas de hoy (solo cuando los datos vinieron de la red;
+  // si se está mostrando caché mientras se revalida, no contaminar el historial)
   useEffect(() => {
+    if (staleRef.current) return;
     if (data.tasaBCV !== null || data.tasaParalelo !== null) {
       saveHistoricalRate(getTodayKey(), {
         bcv: data.tasaBCV,
@@ -146,10 +165,10 @@ export default function useRatesData() {
     };
   }, [offlineMode]);
 
-  // Handlers
-  const onRefresh = () => loadRates(true);
+  // Handlers (estables: se pasan a componentes memoizados como BCVModal/RateCard)
+  const onRefresh = useCallback(() => loadRates(true), [loadRates]);
 
-  const handleSaveBCVLunes = (editValue) => {
+  const handleSaveBCVLunes = useCallback((editValue) => {
     const normalized = editValue.includes(',')
       ? editValue.replace(/\./g, '').replace(',', '.')
       : editValue.replace(',', '.');
@@ -165,9 +184,9 @@ export default function useRatesData() {
       setBcvLunesUpdatedAt(null);
       setStoredBCVLunes(null);
     }
-  };
+  }, []);
 
-  const handleToggleReminder = async (value) => {
+  const handleToggleReminder = useCallback(async (value) => {
     if (value) {
       const success = await scheduleFridayReminder();
       if (success) {
@@ -184,7 +203,7 @@ export default function useRatesData() {
       setReminderEnabledLocal(false);
       persistReminderEnabled(false);
     }
-  };
+  }, []);
 
   const formatEditTime = (iso) => {
     if (!iso) return '';

@@ -20,7 +20,7 @@ TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
     }
     return BackgroundFetch.BackgroundFetchResult.NoData;
   } catch (error) {
-    console.warn('Background fetch failed:', error);
+    if (__DEV__) console.warn('[BackgroundFetch] Task failed:', error);
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
@@ -35,12 +35,12 @@ export async function registerBackgroundFetchAsync() {
       startOnBoot: true,
     });
   } catch (err) {
-    console.warn('Failed to register background fetch:', err);
+    if (__DEV__) console.warn('[BackgroundFetch] Register failed:', err);
   }
 }
 
 export async function unregisterBackgroundFetchAsync() {
   try {
     return await BackgroundFetch.unregisterTaskAsync(BACKGROUND_FETCH_TASK);
-  } catch (err) {}
+  } catch (_err) {}
 }

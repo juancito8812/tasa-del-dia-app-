@@ -1,12 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 
 const SIZE = 32;
 const ICON_SIZE = 16;
 
-export default function ThemeToggleMini() {
+function ThemeToggleMini() {
   const { themePref, setTheme, colors: C } = useTheme();
 
   const cycleTheme = () => {
@@ -35,6 +35,8 @@ export default function ThemeToggleMini() {
     </TouchableOpacity>
   );
 }
+
+export default React.memo(ThemeToggleMini);
 
 const styles = StyleSheet.create({
   toggle: {

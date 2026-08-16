@@ -3,11 +3,12 @@ import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
   ScrollView, RefreshControl, Platform, KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import useConverterData from '../hooks/useConverterData';
 import { getRateTypes, formatCurrency } from '../utils/formatting';
+import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../utils/haptics';
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -161,7 +162,7 @@ export default function ConverterScreen() {
             <View style={styles.converterCard}>
               <View style={[styles.cardGlow, { backgroundColor: currentColor }]} />
               {/* Mode Toggle */}
-              <TouchableOpacity style={styles.modeToggle} onPress={h.handleSwapMode} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.modeToggle} onPress={() => { hapticSelection(); h.handleSwapMode(); }} activeOpacity={0.7}>
                 <View style={[styles.modeSide, h.mode === 'usd-to-bs' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
                   <Ionicons name="logo-usd" size={16} color={h.mode === 'usd-to-bs' ? currentColor : C.textMuted} />
                   <Text style={[styles.modeText, h.mode === 'usd-to-bs' && { color: currentColor, fontWeight: '700' }]}>USD</Text>
@@ -174,7 +175,7 @@ export default function ConverterScreen() {
               </TouchableOpacity>
 
               {/* Display */}
-              <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (h.rawAmount) h.handleCopy(formatCurrency(h.numericAmount), 'amount'); }}>
+              <TouchableOpacity style={styles.displayContainer} activeOpacity={0.7} onPress={() => { if (h.rawAmount) { hapticSuccess(); h.handleCopy(formatCurrency(h.numericAmount), 'amount'); } }}>
                 <Text style={styles.displayLabel}>{h.copiedType === 'amount' ? '¡Copiado!' : h.mode === 'usd-to-bs' ? 'Dólares (USD)' : 'Bolívares (Bs.)'}</Text>
                 <Text style={[styles.displayValue, { color: h.copiedType === 'amount' ? C.success : currentColor }]}>{h.rawAmount ? h.displayAmount : '0,00'}</Text>
                 {h.rawAmount.length > 0 && h.copiedType !== 'amount' && <Text style={styles.displaySubtext}>{h.mode === 'usd-to-bs' ? `× ${getRateLabel().split(' ')[0]} =` : `÷ ${getRateLabel().split(' ')[0]} =`}</Text>}
@@ -192,7 +193,7 @@ export default function ConverterScreen() {
                 <TextInput ref={h.inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0.00" placeholderTextColor={C.textMuted}
                   keyboardType="decimal-pad" value={h.rawAmount} onChangeText={h.handleChangeText}
                   returnKeyType="done" onSubmitEditing={h.handleConvert} />
-                <TouchableOpacity onPress={h.handlePaste} activeOpacity={0.6} style={styles.pasteBtn}>
+                <TouchableOpacity onPress={() => { hapticLight(); h.handlePaste(); }} activeOpacity={0.6} style={styles.pasteBtn}>
                   <View style={[styles.pasteInner, { backgroundColor: h.pasteFeedback ? C.success + '20' : currentColor + '20' }]}>
                     <Ionicons name={h.pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={h.pasteFeedback ? C.success : currentColor} />
                     <Text style={[styles.pasteText, { color: h.pasteFeedback ? C.success : currentColor }]}>{h.pasteFeedback ? '¡Pegado!' : 'Pegar'}</Text>
@@ -204,14 +205,14 @@ export default function ConverterScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow} contentContainerStyle={styles.quickContent}>
                 {h.quickAmounts.map((val) => (
                   <TouchableOpacity key={val} style={[styles.quickChip, h.numericAmount === val && { backgroundColor: currentColor + '20', borderColor: currentColor }]}
-                    onPress={() => h.handleQuickAmount(val)} activeOpacity={0.7}>
+                    onPress={() => { hapticSelection(); h.handleQuickAmount(val); }} activeOpacity={0.7}>
                     <Text style={[styles.quickChipText, h.numericAmount === val && { color: currentColor, fontWeight: '700' }]}>{val.toLocaleString('es-VE')}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
 
               {/* Convert button */}
-              <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={h.handleConvert} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={() => { hapticMedium(); h.handleConvert(); }} activeOpacity={0.8}>
                 <Ionicons name="calculator" size={18} color="#fff" />
                 <Text style={styles.convertButtonText}>Convertir</Text>
               </TouchableOpacity>
@@ -222,17 +223,17 @@ export default function ConverterScreen() {
                   <View style={styles.resultDivider} />
                   <Text style={styles.resultLabel}>Resultado</Text>
                   <View style={styles.resultContent}>
-                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => h.handleCopy(formatCurrency(h.result.amount), 'result-source')}>
+                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.amount), 'result-source'); }}>
                       <Text style={styles.resultItemLabel}>{h.copiedType === 'result-source' ? '¡Copiado!' : (h.mode === 'usd-to-bs' ? 'USD' : 'Bs.')}</Text>
                       <Text style={[styles.resultItemValue, h.copiedType === 'result-source' && { color: C.success }]}>{formatCurrency(h.result.amount)}</Text>
                     </TouchableOpacity>
                     <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.textMuted} /></View>
-                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => h.handleCopy(formatCurrency(h.result.converted), 'result-target')}>
+                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.converted), 'result-target'); }}>
                       <Text style={styles.resultItemLabel}>{h.copiedType === 'result-target' ? '¡Copiado!' : (h.mode === 'usd-to-bs' ? 'Bs.' : 'USD')}</Text>
                       <Text style={[styles.resultItemValue, { color: h.copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrency(h.result.converted)}</Text>
                     </TouchableOpacity>
                   </View>
-                  <TouchableOpacity activeOpacity={0.7} onPress={() => h.handleCopy(formatCurrency(h.result.rate), 'rate')}>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.rate), 'rate'); }}>
                     <Text style={styles.resultMeta}>Tasa: {getRateLabel()} — <Text style={{ fontWeight: '700' }}>{h.copiedType === 'rate' ? '¡Copiado!' : `Bs. ${formatCurrency(h.result.rate)}`}</Text></Text>
                   </TouchableOpacity>
                 </View>
@@ -247,7 +248,7 @@ export default function ConverterScreen() {
                 const rateVal = h.rates[rt.key];
                 return (
                   <TouchableOpacity key={rt.key} style={[styles.rateOption, isActive && { backgroundColor: rt.color + '12', borderColor: rt.color }]}
-                    activeOpacity={0.7} onPress={() => { h.setSelectedRate(rt.key); h.setResult(null); }}>
+                    activeOpacity={0.7} onPress={() => { hapticSelection(); h.setSelectedRate(rt.key); h.setResult(null); }}>
                     {isActive && <View style={[styles.rateActiveBar, { backgroundColor: rt.color }]} />}
                     <View style={[styles.rateDot, { backgroundColor: isActive ? rt.color : 'rgba(255,255,255,0.15)' }]} />
                     <View style={styles.rateOptionText}>
@@ -282,7 +283,7 @@ export default function ConverterScreen() {
                 {h.gasLitrosNum > 0 && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Text style={{ fontSize: 14, color: C.textSecondary }}>{h.gasLitros}L</Text>
-                    <TouchableOpacity onPress={() => h.handleCopy((h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'gasolina')} activeOpacity={0.7}>
+                    <TouchableOpacity onPress={() => { hapticSuccess(); h.handleCopy((h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), 'gasolina'); }} activeOpacity={0.7}>
                       <Text style={{ fontSize: 18, fontWeight: '800', color: h.copiedType === 'gasolina' ? C.success : C.warning, fontVariant: ['tabular-nums'] }}>
                         {h.copiedType === 'gasolina' ? 'Copiado!' : `Bs. ${(h.gasLitrosNum * 0.50 * h.rates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       </Text>

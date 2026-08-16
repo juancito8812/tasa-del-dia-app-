@@ -107,6 +107,12 @@ jobs:
 
       - name: Actualizar versión en app.config.js
         run: |
+          # Si el trigger fue un tag (detached HEAD), posicionarse en main
+          # para que el commit del bump llegue a la rama y no falle el push.
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            git fetch origin main
+            git checkout -b ci-release origin/main
+          fi
           sed -i "s/version: \"[0-9.]\+\"/version: \"${{ steps.version.outputs.version }}\"/" app.config.js
           echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
 
@@ -177,13 +183,12 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           TAG="v$VERSION"
 
-          # Eliminar release "latest" anterior
-          gh release delete latest --yes 2>/dev/null || true
-
-          # Crear release versionado (NO marcado como latest — ese rol es para el tag "latest")
+          # Crear release versionado marcado como latest (el rol de "latest"
+          # lo toma la release más reciente; no hay que borrar ninguna).
           gh release create "$TAG" \
             --title "v$VERSION" \
-            --notes "${{ steps.changelog.outputs.changelog }}"
+            --notes "${{ steps.changelog.outputs.changelog }}" \
+            --latest
 
           # Subir APK al release versionado
           gh release upload "$TAG" TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber

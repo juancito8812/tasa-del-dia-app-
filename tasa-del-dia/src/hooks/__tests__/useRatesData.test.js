@@ -188,9 +188,8 @@ describe('useRatesData - Hook', () => {
   });
 
   it('should auto-save historical rates when data loads', async () => {
-    let hook;
     await act(async () => {
-      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+      TestRenderer.create(<TestComp onReady={() => {}} />);
     });
     await act(async () => {});
     expect(saveHistoricalRate).toHaveBeenCalled();

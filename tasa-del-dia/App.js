@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Text, View, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
+import { Animated, Text, View, StyleSheet, TouchableOpacity, BackHandler, InteractionManager } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -21,6 +21,10 @@ function AnimatedAppContent() {
   const prevTheme = useRef(theme);
   const pagerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  // Lazy-mount: solo se montan las pestañas que el usuario visitó.
+  // Evita el fetch de historial (945+ registros) y el montaje del conversor
+  // al arrancar — solo se cargan cuando realmente se abren.
+  const [visitedTabs, setVisitedTabs] = useState([0]);
   const [updateInfo, setUpdateInfo] = useState(null);
   const [showUpdate, setShowUpdate] = useState(false);
 
@@ -46,18 +50,23 @@ function AnimatedAppContent() {
     setActiveIndex(index);
   }, []);
 
+  const handleCloseUpdate = useCallback(() => setShowUpdate(false), []);
+
   const onPageScroll = useCallback((e) => {
     const { position, offset } = e.nativeEvent;
     scrollOffset.setValue(position + offset);
   }, [scrollOffset]);
 
   const onPageSelected = useCallback((e) => {
-    setActiveIndex(e.nativeEvent.position);
+    const pos = e.nativeEvent.position;
+    setActiveIndex(pos);
+    setVisitedTabs((prev) => (prev.includes(pos) ? prev : [...prev, pos]));
   }, []);
 
   // Auto-update: check on mount, delay so it doesn't interrupt first render
   useEffect(() => {
     let showTimer = null;
+    let interactionTask = null;
     const check = async () => {
       try {
         const release = await checkLatestRelease();
@@ -72,8 +81,13 @@ function AnimatedAppContent() {
         if (__DEV__) console.warn('[AutoUpdate] Check failed:', err);
       }
     };
-    check();
-    return () => { if (showTimer) clearTimeout(showTimer); };
+    // Diferir el check hasta que terminen las interacciones iniciales,
+    // para no competir con el primer render y el fetch de tasas.
+    interactionTask = InteractionManager.runAfterInteractions(() => { check(); });
+    return () => {
+      interactionTask?.cancel();
+      if (showTimer) clearTimeout(showTimer);
+    };
   }, []);
 
   // Android: el botón "atrás" vuelve a la pestaña anterior en vez de cerrar la app
@@ -109,13 +123,13 @@ function AnimatedAppContent() {
               overScrollMode="never"
             >
               <View style={styles.page} key="tasas">
-                <RatesScreen />
+                {visitedTabs.includes(0) ? <RatesScreen /> : null}
               </View>
               <View style={styles.page} key="conversor">
-                <ConverterScreen />
+                {visitedTabs.includes(1) ? <ConverterScreen /> : null}
               </View>
               <View style={styles.page} key="historial">
-                <HistoryScreen />
+                {visitedTabs.includes(2) ? <HistoryScreen /> : null}
               </View>
             </PagerView>
             <CustomTabBar
@@ -131,7 +145,7 @@ function AnimatedAppContent() {
       {updateInfo && (
         <UpdateModal
           visible={showUpdate}
-          onClose={() => setShowUpdate(false)}
+          onClose={handleCloseUpdate}
           currentVersion={getCurrentVersion()}
           latestVersion={updateInfo.version}
           apkUrl={updateInfo.apkUrl}

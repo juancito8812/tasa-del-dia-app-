@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
-export default function HistoryChart({ chartInfo, C, ratesCount }) {
+function HistoryChartBase({ chartInfo, C, ratesCount }) {
   if (!chartInfo) return null;
 
   const { data, labels } = chartInfo;
@@ -75,6 +75,12 @@ export default function HistoryChart({ chartInfo, C, ratesCount }) {
     </View>
   );
 }
+
+// Memoizado: solo se re-renderiza si cambia chartInfo (que ya está memoizado
+// en el hook) o el tema. Evita re-renders al copiar campos, cambiar selección, etc.
+const HistoryChart = React.memo(HistoryChartBase);
+
+export default HistoryChart;
 
 const styles = StyleSheet.create({
   container: {},

@@ -196,4 +196,46 @@ describe('RateCard', () => {
     // Component should render without crashing when onEdit is provided
     expect(renderer.toJSON()).toBeTruthy();
   });
+
+  it('shows EN VIVO chip on the BCV hero card', () => {
+    let renderer;
+    TestRenderer.act(() => {
+      renderer = TestRenderer.create(
+        <RateCard
+          title="BCV (Oficial)"
+          subtitle="Banco Central de Venezuela"
+          rate={60.5}
+          icon="bank"
+          color="#00b894"
+          loading={false}
+          size="large"
+          type="bcv"
+          updatedAt="2026-07-03T00:00:00Z"
+        />
+      );
+    });
+    const root = renderer.root;
+    const texts = root.findAllByType('Text');
+    const liveText = texts.find(t => t.props.children === 'EN VIVO');
+    expect(liveText).toBeTruthy();
+  });
+
+  it('does not show EN VIVO chip on non-BCV cards', () => {
+    let renderer;
+    TestRenderer.act(() => {
+      renderer = TestRenderer.create(
+        <RateCard
+          title="Euro (BCV)"
+          rate={60.5}
+          icon="globe"
+          color="#00b4d8"
+          loading={false}
+        />
+      );
+    });
+    const root = renderer.root;
+    const texts = root.findAllByType('Text');
+    const liveText = texts.find(t => t.props.children === 'EN VIVO');
+    expect(liveText).toBeFalsy();
+  });
 });

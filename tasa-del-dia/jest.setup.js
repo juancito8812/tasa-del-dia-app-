@@ -1,5 +1,36 @@
 import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/async-storage-mock';
 
+// Reanimated 4: usar el mock oficial en tests (los animadores reales no corren bajo jest)
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
+// AccessibilityInfo: listener inerte para que useReduceMotion no deje handles abiertos
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
+  __esModule: true,
+  default: {
+    isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
+    addEventListener: jest.fn().mockReturnValue({ remove: jest.fn() }),
+  },
+}));
+
+// Mock expo-haptics
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn().mockResolvedValue(undefined),
+  notificationAsync: jest.fn().mockResolvedValue(undefined),
+  selectionAsync: jest.fn().mockResolvedValue(undefined),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
+    Soft: 'soft',
+    Rigid: 'rigid',
+  },
+  NotificationFeedbackType: {
+    Success: 'success',
+    Warning: 'warning',
+    Error: 'error',
+  },
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
 // Mock expo-constants for API_CONFIG
@@ -32,6 +63,16 @@ const MockIonicons = (props) => {
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: MockIonicons,
 }));
+
+// Mock expo-linear-gradient (evita timers/handles del módulo nativo en tests)
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    LinearGradient: ({ children, style, colors, ...props }) =>
+      React.createElement(View, { style, ...props }, children),
+  };
+});
 
 // Mock expo-notifications
 jest.mock('expo-notifications', () => ({

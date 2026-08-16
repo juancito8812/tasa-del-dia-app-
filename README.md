@@ -96,7 +96,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (156) + lint |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (162) + lint + typecheck |
 | **Build APK** | Push a `main` + manual | APK + Release con tag semver automático |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog |
 
@@ -105,8 +105,9 @@ Cuando no hay conexión:
 ## 🛠️ Stack Tecnológico
 
 - React Native 0.81 + Expo SDK 54
-- React Navigation 7 (Bottom Tabs)
+- Navegación por pestañas con `react-native-pager-view` + `CustomTabBar` (sin react-navigation)
 - AsyncStorage + expo-notifications + expo-background-fetch
+- Typecheck real con `checkJs` (`npm run typecheck` / `npx tsc --noEmit`)
 - DolarApi.com + Binance P2P directo
 
 ---

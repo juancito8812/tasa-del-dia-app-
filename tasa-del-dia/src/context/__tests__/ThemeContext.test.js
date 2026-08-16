@@ -160,9 +160,8 @@ describe('ThemeContext', () => {
       return <invalid-state pref={themePref} />;
     }
 
-    let renderer;
     await TestRenderer.act(async () => {
-      renderer = TestRenderer.create(
+      TestRenderer.create(
         <ThemeProvider>
           <InvalidConsumer />
         </ThemeProvider>
