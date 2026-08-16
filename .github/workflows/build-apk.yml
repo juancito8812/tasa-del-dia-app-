@@ -135,7 +135,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: Subir APK como artefacto de Release (solo en push a main)
+      - name: Subir APK como artefacto de Release (solo a release existente)
         if: github.ref_name == 'main' || github.ref_name == 'master'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -148,17 +148,13 @@ jobs:
             exit 1
           fi
 
-          # Verificar si el tag ya existe como release
-          if gh release view "$TAG" --json tagName --jq .tagName 2>/dev/null; then
-            # Ya existe: solo subir/actualizar el APK
+          # NUNCA crear releases aquí: colisiona con release-automatic.yml
+          # (dos workflows creando el mismo tag = uno falla). Solo se sube la
+          # APK si la release ya existe (la crea release-automatic.yml).
+          if gh release view "$TAG" --json tagName --jq .tagName >/dev/null 2>&1; then
             gh release upload "$TAG" TasaDelDia.apk --clobber
-            echo "✅ APK actualizada en release existente $TAG"
+            echo "✅ APK subida a la release existente $TAG"
           else
-            # No existe: crear nuevo release con el APK
-            gh release create "$TAG" \
-              --title "$TAG" \
-              --notes "Build automático del ${{ github.ref_name }} — $(date -u '+%Y-%m-%d %H:%M UTC')" \
-              --latest
-            gh release upload "$TAG" TasaDelDia.apk --clobber
-            echo "✅ Release $TAG creado con APK"
+            echo "🟡 Release $TAG no existe aún — APK queda solo como artefacto"
+            echo "ℹ️  La release la crea release-automatic.yml (workflow_dispatch o tag v*)"
           fi
