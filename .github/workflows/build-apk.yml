@@ -1,11 +1,8 @@
 name: Build APK (React Native)
 
 on:
-  push:
-    branches: [main, master]
-    paths:
-      - 'tasa-del-dia/**'
-      - '.github/workflows/build-apk.yml'
+  # TEMPORAL (release 1.4.0): push trigger desactivado para que el bump de
+  # version no colisione con release-automatic. Se restaura al terminar.
   workflow_dispatch:
 
 permissions:
