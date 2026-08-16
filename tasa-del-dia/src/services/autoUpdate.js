@@ -1,8 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// IMPORTANTE: desde expo-file-system v19 (SDK 54) la API legacy solo está
-// disponible vía el subpath '/legacy'. El import por defecto exporta la nueva
-// API (File/Directory) y wrappers que lanzan error en runtime.
-import * as FileSystem from 'expo-file-system/legacy';
+import { File, Paths } from 'expo-file-system';
 import * as Linking from 'expo-linking';
 import * as IntentLauncher from 'expo-intent-launcher';
 import Constants from 'expo-constants';
@@ -12,6 +9,10 @@ import { API_CONFIG } from '../constants';
 const GITHUB_REPO = 'juancito8812/tasa-del-dia-app-';
 const STORAGE_KEY_SKIP = '@tasa_del_dia/skip_version';
 const STORAGE_KEY_UPDATE_CACHE = '@tasa_del_dia/update_cache';
+// Watchdog anti-cuelgue de la descarga: si el archivo no crece en este
+// tiempo, abandonamos y caemos al navegador (DownloadManager del sistema).
+const STALL_POLL_MS = 5000;
+const STALL_TIMEOUT_MS = 45000;
 
 /**
  * Compara dos versiones semver (ej: "1.0.1" vs "1.0.2").
@@ -117,30 +118,65 @@ export function getCurrentVersion() {
 
 /**
  * Descarga la APK y la abre con el instalador de Android.
- * Fallback: abre la URL en el navegador si falla la descarga directa.
+ *
+ * Usa la API moderna `File.downloadFileAsync` (la legacy createDownloadResumable
+ * se colgaba en Android 16). Un watchdog monitorea el crecimiento del archivo:
+ * si no avanza en STALL_TIMEOUT_MS, abandona la descarga y cae al navegador
+ * (el DownloadManager del sistema) para que NUNCA quede colgado el modal.
+ *
+ * @param {string} apkUrl URL directa del APK.
+ * @param {(bytes:number)=>void} [onProgress] Callback con bytes descargados.
  */
-export async function downloadAndInstall(apkUrl) {
+export async function downloadAndInstall(apkUrl, onProgress) {
   if (!apkUrl || Platform.OS !== 'android') return false;
   try {
-    const fileUri = FileSystem.cacheDirectory + 'TasaDelDia-update.apk';
-    const download = FileSystem.createDownloadResumable(apkUrl, fileUri);
-    const result = await download.downloadAsync();
-    if (result?.uri) {
-      // En Android 7+ no se puede abrir file:// directamente
-      // (FileUriExposedException): hay que pedir un content:// URI.
-      const contentUri = await FileSystem.getContentUriAsync(result.uri);
-      // FLAG_GRANT_READ_URI_PERMISSION (0x1): sin este flag el PackageInstaller
-      // crashea con SecurityException "UID does not have permission" (bug 1.4.0;
-      // Linking.openURL de RN no lo agrega). ACTION_INSTALL_PACKAGE abre el
-      // instalador directo (sin chooser "Abrir con") — más determinista.
-      await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-        data: contentUri,
-        type: 'application/vnd.android.package-archive',
-        flags: 1,
-      });
+    const file = new File(Paths.cache, 'TasaDelDia-update.apk');
+    const download = File.downloadFileAsync(apkUrl, file, { idempotent: true });
+
+    // Watchdog: pollea file.size; si se queda sin crecimiento, resuelve 'stalled'.
+    const stallSignal = new Promise(resolve => {
+      let lastSize = file.size;
+      let lastChangeAt = Date.now();
+      const timer = setInterval(() => {
+        const size = file.size;
+        if (size !== lastSize) {
+          lastSize = size;
+          lastChangeAt = Date.now();
+          onProgress?.(size);
+        } else if (Date.now() - lastChangeAt >= STALL_TIMEOUT_MS) {
+          clearInterval(timer);
+          resolve('stalled');
+        }
+      }, STALL_POLL_MS);
+      // Consumir ambos estados sin crear una rejección no manejada
+      download.then(() => clearInterval(timer), () => clearInterval(timer));
+    });
+
+    const outcome = await Promise.race([
+      download.then(f => ['ok', f]),
+      stallSignal,
+    ]);
+
+    if (outcome === 'stalled') {
+      // Descarga colgada: el navegador baja la APK con su propio gestor.
+      await Linking.openURL(apkUrl);
       return true;
     }
-    return false;
+
+    const [, result] = outcome;
+    if (!result?.exists) return false;
+
+    // FLAG_GRANT_READ_URI_PERMISSION (0x1): sin este flag el PackageInstaller
+    // crashea con SecurityException "UID does not have permission" (bug 1.4.0;
+    // Linking.openURL de RN no lo agrega). ACTION_INSTALL_PACKAGE abre el
+    // instalador directo (sin chooser "Abrir con") — más determinista.
+    // result.contentUri ya viene como content:// (FileProvider) en Android.
+    await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+      data: result.contentUri,
+      type: 'application/vnd.android.package-archive',
+      flags: 1,
+    });
+    return true;
   } catch {
     // Fallback: abrir la URL en el navegador
     try {

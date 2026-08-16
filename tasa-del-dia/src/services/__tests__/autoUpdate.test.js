@@ -88,17 +88,24 @@ describe('autoUpdate - Pure Functions', () => {
 describe('downloadAndInstall', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    const { File } = require('expo-file-system');
+    File.downloadFileAsync.mockResolvedValue(new File('/mock/cache/app.apk'));
+    File.sizeFn = () => 0; // por defecto la descarga no avanza
   });
 
-  it('abre el instalador con FLAG_GRANT_READ_URI_PERMISSION (flags: 1)', async () => {
+  it('abre el instalador con FLAG_GRANT_READ_URI_PERMISSION (flags: 1) usando la API moderna', async () => {
     jest.replaceProperty(Platform, 'OS', 'android');
     const { startActivityAsync } = require('expo-intent-launcher');
-    const { getContentUriAsync } = require('expo-file-system/legacy');
+    const { File } = require('expo-file-system');
 
     const ok = await downloadAndInstall('https://example.com/app.apk');
 
     expect(ok).toBe(true);
-    expect(getContentUriAsync).toHaveBeenCalledWith('/mock/cache/app.apk');
+    expect(File.downloadFileAsync).toHaveBeenCalledWith(
+      'https://example.com/app.apk',
+      expect.any(File),
+      { idempotent: true },
+    );
     expect(startActivityAsync).toHaveBeenCalledWith(
       'android.intent.action.INSTALL_PACKAGE',
       {
@@ -107,6 +114,58 @@ describe('downloadAndInstall', () => {
         flags: 1,
       },
     );
+  });
+
+  it('reporta progreso por callback cuando la descarga avanza', async () => {
+    jest.useFakeTimers();
+    try {
+      jest.replaceProperty(Platform, 'OS', 'android');
+      const { File } = require('expo-file-system');
+      const onProgress = jest.fn();
+      File.downloadFileAsync.mockReturnValue(new Promise(() => {}));
+      let bytes = 0;
+      File.sizeFn = () => (bytes += 1024 * 1024); // crece 1 MB por poll
+
+      const promise = downloadAndInstall('https://example.com/app.apk', onProgress);
+      await jest.advanceTimersByTimeAsync(10000);
+
+      expect(onProgress.mock.calls.length).toBeGreaterThanOrEqual(1);
+      expect(onProgress).toHaveBeenLastCalledWith(expect.any(Number));
+      expect(promise).toBeInstanceOf(Promise);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('cae al navegador si la descarga falla (reject)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const { File } = require('expo-file-system');
+    const { openURL } = require('expo-linking');
+    File.downloadFileAsync.mockRejectedValue(new Error('network error'));
+
+    const ok = await downloadAndInstall('https://example.com/app.apk');
+
+    expect(ok).toBe(true);
+    expect(openURL).toHaveBeenCalledWith('https://example.com/app.apk');
+  });
+
+  it('cae al navegador si la descarga se cuelga (watchdog anti-stall)', async () => {
+    jest.useFakeTimers();
+    try {
+      jest.replaceProperty(Platform, 'OS', 'android');
+      const { File } = require('expo-file-system');
+      const { openURL } = require('expo-linking');
+      // La descarga nunca resuelve ni avanza: debe disparar el watchdog (45s)
+      File.downloadFileAsync.mockReturnValue(new Promise(() => {}));
+
+      const promise = downloadAndInstall('https://example.com/app.apk');
+      await jest.advanceTimersByTimeAsync(50000);
+
+      await expect(promise).resolves.toBe(true);
+      expect(openURL).toHaveBeenCalledWith('https://example.com/app.apk');
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('devuelve false sin abrir nada si no hay URL', async () => {

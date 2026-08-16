@@ -9,12 +9,14 @@ function UpdateModal({
   visible, onClose, currentVersion, latestVersion, apkUrl, notes, C,
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');
 
   const handleDownload = async () => {
     setDownloading(true);
     setError('');
-    const ok = await downloadAndInstall(apkUrl);
+    setProgress(0);
+    const ok = await downloadAndInstall(apkUrl, setProgress);
     if (ok) {
       setDownloading(false);
       onClose();
@@ -75,7 +77,14 @@ function UpdateModal({
               disabled={downloading}
             >
               {downloading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <View style={styles.downloadingRow}>
+                  <ActivityIndicator color="#fff" size="small" />
+                  {progress > 0 ? (
+                    <Text style={[styles.buttonText, { color: '#fff', fontWeight: '700' }]}>
+                      {` ${Math.round(progress / 1024 / 1024)} MB`}
+                    </Text>
+                  ) : null}
+                </View>
               ) : (
                 <Text style={[styles.buttonText, { color: '#fff', fontWeight: '700' }]}>Descargar APK</Text>
               )}
@@ -163,6 +172,11 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  downloadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   laterLink: {
     alignItems: 'center',
