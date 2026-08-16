@@ -176,22 +176,31 @@ jobs:
             exit 1
           fi
 
-      - name: Crear/Actualizar GitHub Release
+      - name: Crear/Actualizar GitHub Release (upsert)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           TAG="v$VERSION"
+          APK_NAME="TasaDelDia-${{ steps.version.outputs.tag }}.apk"
 
-          # Crear release versionado marcado como latest (el rol de "latest"
-          # lo toma la release más reciente; no hay que borrar ninguna).
-          gh release create "$TAG" \
-            --title "v$VERSION" \
-            --notes "${{ steps.changelog.outputs.changelog }}" \
-            --latest
+          # Upsert: si la release ya existe (la creó build-apk o un reintento),
+          # se actualiza en vez de fallar con "release already exists".
+          if gh release view "$TAG" --json tagName --jq .tagName >/dev/null 2>&1; then
+            echo "🟡 Release $TAG ya existe — actualizando notas y APK"
+            gh release edit "$TAG" \
+              --title "v$VERSION" \
+              --notes "${{ steps.changelog.outputs.changelog }}"
+          else
+            echo "✅ Creando release $TAG"
+            gh release create "$TAG" \
+              --title "v$VERSION" \
+              --notes "${{ steps.changelog.outputs.changelog }}" \
+              --latest
+          fi
 
-          # Subir APK al release versionado
-          gh release upload "$TAG" TasaDelDia-${{ steps.version.outputs.tag }}.apk --clobber
+          # Subir/actualizar APK del release versionado
+          gh release upload "$TAG" "$APK_NAME" --clobber
 
-          echo "✅ Release v$VERSION creado en GitHub"
+          echo "✅ Release v$VERSION lista"
           echo "📎 https://github.com/${{ github.repository }}/releases/tag/$TAG"
