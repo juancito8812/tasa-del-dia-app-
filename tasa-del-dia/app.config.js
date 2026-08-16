@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "Tasa del Día",
     slug: "tasa-del-dia",
-    version: "1.4.1",
+    version: "1.4.2",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "automatic",
