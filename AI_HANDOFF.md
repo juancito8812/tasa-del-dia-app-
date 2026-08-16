@@ -9,7 +9,7 @@
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
 | `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android, releases) |
-| `feature/ui-2026` | **Rama de trabajo actual** — rediseño glass 2.0 + optimizaciones de performance | feature branch | 🚧 En desarrollo (sin commits, ver sesión 16-Ago) |
+| `feature/ui-2026` | **Rama de trabajo actual** — rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Trabajo commiteado en `8178189` (16-Ago) — performance + docs + CI |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
 **Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery → frontend-ui-engineering → ponytail → systematic-debugging → verification-before-completion → subagent-driven-development
@@ -207,9 +207,9 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 
 ## ⏭️ Próximos Pasos Posibles
 1. **🔴 Verificar release 1.3.1** — confirmar que el run 31066486879 termine (build APK) y que la release v1.3.1 + APK se publiquen
-2. **🔴 Commitear archivos sin trackear** — `tsconfig.json` y `eslint.config.js` (el CI typecheck usa el tsconfig real ahora)
+2. ~~Commitear archivos sin trackear~~ — ✅ **HECHO (16-Ago)**: `tsconfig.json` ya estaba trackeado y `eslint.config.js` quedó commiteado en `8178189`
 3. **🔴 Revisar `ios/` sin trackear** — la carpeta iOS completa nunca se commiteó; necesaria para publicar en App Store
-4. **Commitear cambios pendientes** (modificados antes de la sesión 06-Ago, no tocados): `README.md`, `AI_HANDOFF.md`, `.github/workflows/*`, `AnimatedNumber.js`, `RatesHeader.js`, `ScreenContainer.js`, `useHistoryData.js`, `HistoryScreen.js`, `RatesScreen.js`, `backgroundTasks.js` y tests varios
+4. ~~Commitear cambios pendientes~~ — ✅ **HECHO (16-Ago)**: `README.md`, `AI_HANDOFF.md`, `.github/workflows/*`, componentes/hooks/screens/services/tests quedaron commiteados en `8178189`
 5. **Probar en dispositivo** — auto-update (descarga + instalación real de APK) y recordatorio semanal recurrente (WEEKLY)
 6. Opcional: limpiar los 53 warnings de lint (`react-hooks/refs`) para dejar el CI 100% limpio
 7. Ajustes finos al glassmorphism / UI
@@ -328,7 +328,7 @@ Auditoría completa aplicando la skill `performance` (adaptada de web → React 
 - ⚠️ Hooks (`useMemo`) **nunca después de early returns** (rules-of-hooks) — `numberStyle` en `RateCard` va antes del `if (loading)`.
 - ⚠️ Para que `React.memo` sirva, los handlers pasados como props deben ser `useCallback` (deps desestructuradas, no el objeto del hook, para evitar warnings `exhaustive-deps`).
 - `ThemeContext` ya memoiza todo (`colors`/`value` estables) — condición necesaria para el memo de hijos, ya cumplida.
-- **Sin commits en esta sesión** (rama `feature/ui-2026`, cambios sin commitear junto a los del rediseño — no pisar).
+- **Commit de cierre (16-Ago): `8178189`** — todo el trabajo de performance, documentación y hardening de CI quedó commiteado en `feature/ui-2026` (30 archivos, +579/−155). Working tree limpio salvo `tasa-del-dia/ios/` (decisión pendiente, Próximos Pasos #3).
 
 ### 📱 Verificación en dispositivo (16-Ago-2026, Samsung Galaxy A12 / Android 12)
 
