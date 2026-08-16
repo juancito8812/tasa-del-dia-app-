@@ -136,8 +136,35 @@ jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
-// Mock expo-file-system (y su subpath /legacy, usado por autoUpdate.js)
+// Mock expo-file-system: autoUpdate.js usa la API moderna (File/Paths) desde 1.4.3
+class MockFile {
+  // Los tests pueden simular una descarga que avanza cambiando sizeFn
+  static sizeFn = () => 0;
+
+  constructor(...parts) {
+    this.uri = parts.join('/').replace(/\/+/g, '/');
+    this.contentUri = 'content://mock/app.apk';
+  }
+
+  get exists() {
+    return true;
+  }
+
+  get size() {
+    return MockFile.sizeFn();
+  }
+}
+MockFile.downloadFileAsync = jest
+  .fn()
+  .mockResolvedValue(new MockFile('/mock/cache/app.apk'));
+
 const mockExpoFileSystem = {
+  File: MockFile,
+  Paths: { cache: '/mock/cache/', document: '/mock/docs/' },
+};
+
+// Mock expo-file-system/legacy (sin uso desde 1.4.3, se mantiene por compat)
+const mockExpoFileSystemLegacy = {
   cacheDirectory: '/mock/cache/',
   documentDirectory: '/mock/docs/',
   createDownloadResumable: jest.fn().mockReturnValue({
@@ -154,7 +181,7 @@ const mockExpoFileSystem = {
 };
 
 jest.mock('expo-file-system', () => mockExpoFileSystem);
-jest.mock('expo-file-system/legacy', () => mockExpoFileSystem);
+jest.mock('expo-file-system/legacy', () => mockExpoFileSystemLegacy);
 
 // Mock react-native-safe-area-context
 jest.mock('react-native-safe-area-context', () => {
