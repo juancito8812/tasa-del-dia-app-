@@ -1,4 +1,10 @@
-import { compareVersions, isUpdateAvailable, getCurrentVersion } from '../autoUpdate';
+import { Platform } from 'react-native';
+import {
+  compareVersions,
+  isUpdateAvailable,
+  getCurrentVersion,
+  downloadAndInstall,
+} from '../autoUpdate';
 
 describe('autoUpdate - Pure Functions', () => {
   describe('compareVersions', () => {
@@ -76,5 +82,46 @@ describe('autoUpdate - Pure Functions', () => {
       const version = getCurrentVersion();
       expect(version).toMatch(/^\d+\.\d+\.\d+$/);
     });
+  });
+});
+
+describe('downloadAndInstall', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('abre el instalador con FLAG_GRANT_READ_URI_PERMISSION (flags: 1)', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const { startActivityAsync } = require('expo-intent-launcher');
+    const { getContentUriAsync } = require('expo-file-system/legacy');
+
+    const ok = await downloadAndInstall('https://example.com/app.apk');
+
+    expect(ok).toBe(true);
+    expect(getContentUriAsync).toHaveBeenCalledWith('/mock/cache/app.apk');
+    expect(startActivityAsync).toHaveBeenCalledWith('android.intent.action.VIEW', {
+      data: 'content://mock/app.apk',
+      flags: 1,
+    });
+  });
+
+  it('devuelve false sin abrir nada si no hay URL', async () => {
+    jest.replaceProperty(Platform, 'OS', 'android');
+    const { startActivityAsync } = require('expo-intent-launcher');
+
+    const ok = await downloadAndInstall(null);
+
+    expect(ok).toBe(false);
+    expect(startActivityAsync).not.toHaveBeenCalled();
+  });
+
+  it('devuelve false en plataformas que no son Android', async () => {
+    jest.replaceProperty(Platform, 'OS', 'ios');
+    const { startActivityAsync } = require('expo-intent-launcher');
+
+    const ok = await downloadAndInstall('https://example.com/app.apk');
+
+    expect(ok).toBe(false);
+    expect(startActivityAsync).not.toHaveBeenCalled();
   });
 });

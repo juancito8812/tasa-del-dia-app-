@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // API (File/Directory) y wrappers que lanzan error en runtime.
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Linking from 'expo-linking';
+import * as IntentLauncher from 'expo-intent-launcher';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { API_CONFIG } from '../constants';
@@ -128,7 +129,12 @@ export async function downloadAndInstall(apkUrl) {
       // En Android 7+ no se puede abrir file:// directamente
       // (FileUriExposedException): hay que pedir un content:// URI.
       const contentUri = await FileSystem.getContentUriAsync(result.uri);
-      await Linking.openURL(contentUri);
+      // FLAG_GRANT_READ_URI_PERMISSION (0x1): sin este flag el PackageInstaller
+      // crashea con SecurityException "UID does not have permission" (bug 1.4.0).
+      await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+        data: contentUri,
+        flags: 1,
+      });
       return true;
     }
     return false;
