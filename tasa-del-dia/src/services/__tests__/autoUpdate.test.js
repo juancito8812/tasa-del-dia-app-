@@ -99,10 +99,14 @@ describe('downloadAndInstall', () => {
 
     expect(ok).toBe(true);
     expect(getContentUriAsync).toHaveBeenCalledWith('/mock/cache/app.apk');
-    expect(startActivityAsync).toHaveBeenCalledWith('android.intent.action.VIEW', {
-      data: 'content://mock/app.apk',
-      flags: 1,
-    });
+    expect(startActivityAsync).toHaveBeenCalledWith(
+      'android.intent.action.INSTALL_PACKAGE',
+      {
+        data: 'content://mock/app.apk',
+        type: 'application/vnd.android.package-archive',
+        flags: 1,
+      },
+    );
   });
 
   it('devuelve false sin abrir nada si no hay URL', async () => {

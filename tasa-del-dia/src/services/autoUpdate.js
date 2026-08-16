@@ -130,9 +130,12 @@ export async function downloadAndInstall(apkUrl) {
       // (FileUriExposedException): hay que pedir un content:// URI.
       const contentUri = await FileSystem.getContentUriAsync(result.uri);
       // FLAG_GRANT_READ_URI_PERMISSION (0x1): sin este flag el PackageInstaller
-      // crashea con SecurityException "UID does not have permission" (bug 1.4.0).
-      await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+      // crashea con SecurityException "UID does not have permission" (bug 1.4.0;
+      // Linking.openURL de RN no lo agrega). ACTION_INSTALL_PACKAGE abre el
+      // instalador directo (sin chooser "Abrir con") — más determinista.
+      await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
         data: contentUri,
+        type: 'application/vnd.android.package-archive',
         flags: 1,
       });
       return true;
