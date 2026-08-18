@@ -153,11 +153,11 @@ export async function downloadAndInstall(apkUrl, onProgress) {
     });
 
     const outcome = await Promise.race([
-      download.then(f => ['ok', f]),
+      download.then(f => ['ok', f], () => 'failed'),
       stallSignal,
     ]);
 
-    if (outcome === 'stalled') {
+    if (outcome === 'stalled' || outcome === 'failed') {
       // Descarga colgada: el navegador baja la APK con su propio gestor.
       await Linking.openURL(apkUrl);
       return true;
