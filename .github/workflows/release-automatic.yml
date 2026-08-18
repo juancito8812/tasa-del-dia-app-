@@ -129,7 +129,7 @@ jobs:
             echo "🟢 Sin cambios en app.config.js"
           else
             git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
-            git push
+            git push origin HEAD:main
             echo "✅ Version bump committeada a main"
           fi
 
