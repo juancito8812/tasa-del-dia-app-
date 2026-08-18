@@ -1,7 +1,10 @@
 {
   "cli": {
     "version": ">= 20.1.0",
-    "appVersionSource": "remote"
+    // appVersionSource "remote" hacía que EAS ignorara el android.versionCode
+    // de app.config.js y generara el mismo código (3) para todas las releases.
+    // "local" (default) respeta el versionCode derivado de la versión semver.
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
