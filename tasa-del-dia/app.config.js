@@ -1,6 +1,6 @@
 // Versión semver única. El release workflow (release-automatic.yml) la bumpa
 // vía sed sobre esta línea (formato: const VERSION = 'x.y.z').
-const VERSION = '1.4.4';
+const VERSION = '1.4.5';
 
 // versionCode Android derivado de la versión: 1.4.2 → 10402.
 // Debe CRECER en cada release para poder publicar en Play Store.
