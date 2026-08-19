@@ -120,6 +120,26 @@ jobs:
             exit 1
           fi
 
+      - name: Verificar firma APK (signing key check)
+        run: |
+          # SHA-256 del keystore EAS que firma todas las release builds.
+          # Si cambia, la app no podrá actualizarse por encima de versiones
+          # anteriores (Android requiere la misma firma para upgrades).
+          EXPECTED_SHA256="299073e3f85f9fc471298bc9d3e61f3c207a5dd0b406ec1d1ffc3ede37e528eb"
+          ACTUAL_SHA256=$(
+            "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs \
+              TasaDelDia.apk 2>&1 \
+            | grep "SHA-256 digest" | awk '{print $NF}'
+          )
+          echo "🔐 Firma APK:      $ACTUAL_SHA256"
+          echo "🔑 Firma esperada:  $EXPECTED_SHA256"
+          if [ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]; then
+            echo "❌ Firma mismatch — la APK NO podrá actualizarse sobre versiones anteriores"
+            echo "💡 Verifica que EXPO_TOKEN esté configurado y eas build --local lo use"
+            exit 1
+          fi
+          echo "✅ Firma correcta — upgrade compatible con versiones anteriores"
+
       - name: Obtener versión de la app
         id: app_version
         run: |
