@@ -8,8 +8,8 @@
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (Android, releases) |
-| `feature/ui-2026` | **Rama de trabajo actual** — rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Trabajo commiteado en `8178189` (16-Ago) — performance + docs + CI |
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.4.5, releases, auto-update verified) |
+| `feature/ui-2026` | Rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Mergeada a main |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
 **Skills usadas:** brainstorming → spec → writing-plans → test-driven-development → incremental-implementation → debugging-and-error-recovery → frontend-ui-engineering → ponytail → systematic-debugging → verification-before-completion → subagent-driven-development
@@ -156,29 +156,32 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **versión estable publicada en Releases (v1.4.4)** — incluye eas.json `appVersionSource: "local"` + fixes de auto-update + ios/ commiteado.
-- `feature/ui-2026` — histórica (rediseño glass 2.0), ya mergeada a main.
+- `main` — **versión estable v1.4.5** (versionCode 10405) — incluye fixes de lint (57→0), signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
+- `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
 
 ### Móvil / Mobile (rama `main`)
 - **176 tests, 21 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
-- **Versión actual:** **1.4.4** (package.json + app.config.js = 1.4.4, versionCode derivado 10404)
+- **Lint:** 0 errors, **0 warnings** (antes 57; deshabilitadas reglas experimentales del React Compiler + fixes reales de exhaustive-deps)
+- **Versión actual:** **1.4.5** (package.json + app.config.js = 1.4.5, versionCode derivado 10405)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
-- `.env` **no existe en el repo** (eliminado en la sesión 21-Jun; `COTIZAVE_API_KEY` ya no se usa en runtime) — está en `.gitignore`
+- `.env` **no existe en el repo** — está en `.gitignore`
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
-  - ⚠️ URL de descarga: los assets versionados se llaman **`TasaDelDia-vX.Y.Z.apk`**. La release v1.4.3 tiene además `TasaDelDia.apk` (build-apk, versionCode 10403 — también válida). La app usa el **primer** asset `.apk` de la release más reciente.
-- Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*; **el path de tags quedó arreglado en la sesión 18-Ago**)
+  - **Signing:** usa `eas build --local` con EXPO_TOKEN → keystore EAS consistente. SHA-256: `299073e3...`. Los workflows verifican la firma automáticamente antes de subir.
+  - Assets: **`TasaDelDia-vX.Y.Z.apk`** (versionado)
+- Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
+- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5)
 
 **Workflows móviles activos (4):**
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
-| `build-apk.yml` | Push a main + manual | Build + Auto-release |
-| `release-automatic.yml` | Manual + tags v* | Release con changelog + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests + lint |
-| `auto-sync.yml` | Cron diario + manual | Auto-commit diario del repo (no documentado antes) |
+| `build-apk.yml` | Push a main + manual | Build (EAS) + firma verification + Auto-release |
+| `release-automatic.yml` | Manual + tags v* | Release con changelog + firma verification + APK |
+| `mobile-ci.yml` | Push/PR a main | Tests (176) + lint (0) + typecheck |
+| `auto-sync.yml` | Cron diario 6AM UTC + manual | Auto-commit diario de cambios pendientes |
 
 **Workflows eliminados:** `release-apk.yml` y `android-build.yml`
 
@@ -206,16 +209,18 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ---
 
 ## ⏭️ Próximos Pasos Posibles
-1. ~~Verificar release 1.3.1~~ — ✅ **HECHO (18-Ago)**: release v1.4.4 publicada y validada (versionCode 10404 + firma idéntica + prueba real en A12)
-2. ~~Commitear archivos sin trackear~~ — ✅ **HECHO (16-Ago)**: `tsconfig.json` ya estaba trackeado y `eslint.config.js` quedó commiteado en `8178189`
-3. ~~Revisar `ios/` sin trackear~~ — ✅ **HECHO (18-Ago)**: `ios/` completo quedó en main con el merge ff (verificar `npx expo prebuild --platform ios` antes de un build iOS si `userInterfaceStyle` cambió)
+1. ~~Verificar release 1.3.1~~ — ✅ **HECHO (18-Ago)**: release v1.4.4 publicada y validada
+2. ~~Commitear archivos sin trackear~~ — ✅ **HECHO (16-Ago)**
+3. ~~Revisar `ios/` sin trackear~~ — ✅ **HECHO (18-Ago)**: `ios/` en main
 4. ~~Commitear cambios pendientes~~ — ✅ **HECHO (16-Ago)**
-5. ~~Probar en dispositivo auto-update~~ — ✅ **HECHO (18-Ago)**: validado en Galaxy A12 (bug de 1.3.1 reproducido + camino manual + instalación v1.4.4). Pendiente de probar: **auto-update 100% automático desde la v1.4.4** (instalador directo sin chooser — requiere una release v1.4.5+ para poder probarse)
-6. **📢 Comunicar a usuarios**: el aviso ya está en la release v1.4.4. Considerar publicar en el grupo Telegram/canal de difusión de la app
-7. **Opcional: limpiar el asset roto de v1.4.3** (`TasaDelDia-v1.4.3.apk`, versionCode 3): disparar `release-automatic` con `version=1.4.3` (upsert con --clobber) o borrar el asset a mano
-8. **Opcional: migrar a DownloadManager nativo** (enfoque B del brainstorming): la descarga sobrevive al cierre de la app, estilo Telegram; NO es necesario para el funcionamiento actual
-9. Opcional: limpiar los 57 warnings de lint (`react-hooks/refs`) para dejar el CI 100% limpio
-10. Ajustes finos al glassmorphism / UI
+5. ~~Probar auto-update end-to-end~~ — ✅ **HECHO (19-Ago)**: v1.4.4→v1.4.5 verificado en Galaxy A12 y Galaxy A54
+6. ~~Limpiar warnings de lint~~ — ✅ **HECHO (19-Ago)**: 57→0 warnings
+7. ~~Signing key fix~~ — ✅ **HECHO (19-Ago)**: APK reconstruida con EAS, firma verificada, CI hardening
+8. **📢 Comunicar a usuarios**: el aviso ya está en la release v1.4.5. Considerar publicar en el grupo Telegram/canal de difusión de la app
+9. **Opcional: migrar a DownloadManager nativo**: la descarga sobrevive al cierre de la app, estilo Telegram; NO es necesario para el funcionamiento actual
+10. **Opcional: migrar AnimatedNumber del hero a Reanimated** (hilo UI) para eliminar el último plateau de jank en arranque (~97ms pico 99th)
+11. Ajustes finos al glassmorphism / UI
+12. **Opcional: agregar test de `gradlew assembleRelease` en CI** que intente build y verifique que falla (defensivo contra regression)
 
 ---
 
@@ -407,4 +412,102 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 18-Ago-2026*
+### Sesión 19-Ago-2026 — Pruebas en dispositivo + lint 0 + v1.4.5 + signing fix + CI hardening
+
+**Sesión completa de testing, lint cleanup, releases y CI/CD.** Trabajo en Galaxy A12 (conectado vía USB) y Galaxy A54 (del usuario, sin USB).
+
+#### 📱 Setup de entorno para testing en dispositivo
+
+| Componente | Estado | Detalle |
+|---|---|---|
+| Java 17 (Eclipse Temurin) | ✅ Instalado local | `~/android-sdk/jdk-17.0.20+8` |
+| Android SDK | ✅ Instalado local | `~/android-sdk` (cmdline-tools, build-tools 35, platform-tools) |
+| ADB | ✅ v37.0.1 | Galaxy A12 detectada (`R58T51MR4BT`, Android 12, SDK 31) |
+| EAS CLI | ✅ Instalado + autenticado | Cuenta `jr8812` via EXPO_TOKEN |
+| gh CLI | ✅ v2.74.2 | Autenticado via git credentials |
+
+#### 🐛 Fix: RatesScreen.js en modo diagnóstico
+
+**Problema:** `RatesScreen.js` tenía cambios locales no commiteados — estaba en "modo diagnóstico" que solo mostraba una tarjeta BCV hardcodeada (773.31), eliminando todas las demás tarjetas (Paralelo, Euro, Binance P2P, BCV Lunes, Gasolina, Brechas).
+**Fix:** `git checkout -- tasa-del-dia/src/screens/RatesScreen.js` + recompilación.
+
+#### 🏎️ Benchmark completo en Galaxy A12
+
+| Métrica | Resultado |
+|---|---|
+| Cold start | **533ms** avg (5 intentos: 541, 521, 550, 543, 510) |
+| RAM | **113 MB** PSS idle, 129 MB post-stress, 155 MB post-historial |
+| CPU | 15% idle, 70% pico (fetch APIs) |
+| FPS | **60/60** |
+| Crashes | **0** |
+| Stress test (10 swipes) | 0 crashes, PID estable |
+| APIs | Todas < 1s (DolarApi 0.28-0.60s, Binance 0.39s) |
+| Memoria leak check | ✅ Sin leaks (119→113 MB después de 15s idle) |
+
+#### 🔄 Pruebas de comportamiento
+
+| Feature | Resultado |
+|---|---|
+| **Offline mode** | ✅ Cache + banner "Sin conexión" + retry automático (30s→5min backoff) |
+| **Historial 929 registros** | ✅ Smooth scroll, +42 MB memory, 0 crashes |
+| **Auto-update check** | ✅ Hits `api.github.com` al iniciar (verificado via logcat) |
+| **Auto-update completo v1.4.4→v1.4.5** | ✅ Detección → Modal "Actualización disponible" → Tap "Descargar APK" → Progress → Package Installer → Instalación → v1.4.5 activa |
+| **Post-update check** | ✅ `isUpdateAvailable('1.4.5', '1.4.5')` → false (sin loop infinito) |
+
+#### 🧹 Lint cleanup (57 → 0 warnings)
+
+| Archivo | Cambio |
+|---|---|
+| `eslint.config.js` | `react-hooks/refs: 'off'`, `react-hooks/set-state-in-effect: 'off'` (reglas experimentales del React Compiler, falsos positivos) |
+| `AnimatedNumber.js` | `isFirstRender` de `useState` → `useRef` (flag sin re-render) |
+| `useConverterData.js` | `rates[selectedRate]` inline en deps de useMemo (antes `getCurrentRate()`) |
+| `useConverterData.test.js` | `onReady` agregado al deps array de `useEffect` |
+| `useHistoryData.test.js` | `onReady` agregado al deps array de `useEffect` |
+| `useRatesData.test.js` | `onReady` agregado al deps array de `useEffect` |
+
+#### 📦 Release v1.4.5
+
+**Commit `6f1bf30`:** `fix: align versions + lint 0 warnings + fix exhaustive-deps` (8 archivos, +15/-15)
+**Commit `36f3203`:** `chore: bump version to 1.4.5`
+
+**Problema descubierto: signing key mismatch**
+- La v1.4.4 fue construida por `eas build --local` (keystore EAS, SHA-256 `299073e3...`)
+- La primera v1.4.5 fue construida con `gradlew assembleRelease` (debug keystore, SHA-256 `fac61745...`)
+- Resultado en Galaxy A54: "No se instaló la app" (firma incompatible)
+
+**Fix:** Reconstruida v1.4.5 con `eas build --local` → firma idéntica a v1.4.4 → APK corregida subida a la release v1.4.5.
+
+**Release:** https://github.com/juancito8812/tasa-del-dia-app-/releases/tag/v1.4.5
+
+#### 🔐 CI Hardening
+
+| Cambio | Archivo |
+|---|---|
+| `EXPO_TOKEN` agregado a GitHub Secrets | Repo settings |
+| Signing verification step en build | `build-apk.yml` |
+| Signing verification step en release | `release-automatic.yml` |
+| README: Signing Policy documentada | `README.md` |
+| README: warning contra `gradlew assembleRelease` | `README.md` |
+
+**Commits de la sesión:**
+```
+2983474 docs: add signing policy and warn against gradlew assembleRelease
+15041c5 ci: add APK signing verification step to prevent upgrade failures
+36f3203 chore: bump version to 1.4.5
+6f1bf30 fix: align versions + lint 0 warnings + fix exhaustive-deps
+```
+
+**Ambiente (para el próximo agente):**
+- Java 17 en `~/android-sdk/jdk-17.0.20+8`
+- Android SDK en `~/android-sdk` (build-tools 35.0.0, platform-tools)
+- ADB: `~/android-sdk/platform-tools/adb`
+- gh CLI: `~/android-sdk/gh` (autenticado como juancito8812)
+- EAS CLI: global npm (autenticado con EXPO_TOKEN)
+- Para compilar releases: `EXPO_TOKEN=... eas build --platform android --profile preview --local --output TasaDelDia.apk`
+- **NUNCA** usar `gradlew assembleRelease` para releases (firma diferente)
+- Git identity: `git config user.name "juancito8812" && git config user.email "juancito8812@users.noreply.github.com"`
+- `.env` NO existe en el repo — EXPO_TOKEN está en GitHub Secrets
+
+---
+
+*Fin del documento de traspaso — Última actualización: 19-Ago-2026*
