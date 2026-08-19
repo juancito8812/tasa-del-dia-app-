@@ -8,7 +8,7 @@
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.4.5, releases, auto-update verified) |
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.4.6, releases, auto-update verified) |
 | `feature/ui-2026` | Rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Mergeada a main |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
@@ -156,7 +156,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **versión estable v1.4.5** (versionCode 10405) — incluye fixes de lint (57→0), signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
+- `main` — **versión estable v1.4.6** (versionCode 10406) — incluye fixes de lint (57→0), signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end, fix de APK signing mismatch en auto-update.
 - `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
@@ -164,7 +164,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ### Móvil / Mobile (rama `main`)
 - **176 tests, 21 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
 - **Lint:** 0 errors, **0 warnings** (antes 57; deshabilitadas reglas experimentales del React Compiler + fixes reales de exhaustive-deps)
-- **Versión actual:** **1.4.5** (package.json + app.config.js = 1.4.5, versionCode derivado 10405)
+- **Versión actual:** **1.4.6** (package.json + app.config.js = 1.4.6, versionCode derivado 10406)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env` **no existe en el repo** — está en `.gitignore`
@@ -173,7 +173,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
   - **Signing:** usa `eas build --local` con EXPO_TOKEN → keystore EAS consistente. SHA-256: `299073e3...`. Los workflows verifican la firma automáticamente antes de subir.
   - Assets: **`TasaDelDia-vX.Y.Z.apk`** (versionado)
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
-- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5)
+- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5 → v1.4.6). v1.4.6 fix: auto-update ahora busca APKs `TasaDelDia*` (firma EAS) en vez de cualquier `.apk` (que incluía `app-release.apk` con firma debug)
 
 **Workflows móviles activos (4):**
 | Workflow | Trigger | Propósito |
@@ -188,7 +188,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ### ✨ Auto-Update desde GitHub
 | Componente | Archivo | Detalle |
 |------------|---------|---------|
-| Auto-update service | `src/services/autoUpdate.js` | Consulta releases versionadas, compara semver, cache 30 min, skip version, descarga APK (API moderna `File.downloadFileAsync` + watchdog anti-stall; instalación con `ACTION_INSTALL_PACKAGE` + flag 1, sin chooser) |
+| Auto-update service | `src/services/autoUpdate.js` | Consulta releases versionadas, compara semver, cache 30 min, skip version, descarga APK (**prefiere assets `TasaDelDia*` con firma EAS**; API moderna `File.downloadFileAsync` + watchdog anti-stall; instalación con `ACTION_INSTALL_PACKAGE` + flag 1, sin chooser) |
 | Update Modal | `src/components/UpdateModal.js` | Modal con botones Descargar / Saltar / Más tarde |
 | Integración | `App.js` | Check automático al montar (diferido con `InteractionManager`) |
 | Tests | `src/services/__tests__/autoUpdate.test.js` | 18 tests |
@@ -216,7 +216,8 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 5. ~~Probar auto-update end-to-end~~ — ✅ **HECHO (19-Ago)**: v1.4.4→v1.4.5 verificado en Galaxy A12 y Galaxy A54
 6. ~~Limpiar warnings de lint~~ — ✅ **HECHO (19-Ago)**: 57→0 warnings
 7. ~~Signing key fix~~ — ✅ **HECHO (19-Ago)**: APK reconstruida con EAS, firma verificada, CI hardening
-8. **📢 Comunicar a usuarios**: el aviso ya está en la release v1.4.5. Considerar publicar en el grupo Telegram/canal de difusión de la app
+8. ~~**📢 Comunicar a usuarios**~~ — ✅ **HECHO (19-Ago)**: release v1.4.6 publicada con fix de signing. Usuarios de v1.4.4 pueden actualizar directo.
+9. **Revisar auto-update en Galaxy A54 con v1.4.6**: usuario confirmó que funciona
 9. **Opcional: migrar a DownloadManager nativo**: la descarga sobrevive al cierre de la app, estilo Telegram; NO es necesario para el funcionamiento actual
 10. **Opcional: migrar AnimatedNumber del hero a Reanimated** (hilo UI) para eliminar el último plateau de jank en arranque (~97ms pico 99th)
 11. Ajustes finos al glassmorphism / UI
@@ -507,6 +508,32 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 - **NUNCA** usar `gradlew assembleRelease` para releases (firma diferente)
 - Git identity: `git config user.name "juancito8812" && git config user.email "juancito8812@users.noreply.github.com"`
 - `.env` NO existe en el repo — EXPO_TOKEN está en GitHub Secrets
+
+---
+
+### Sesión 19-Ago-2026 (cont.) — Fix auto-update signing mismatch + v1.4.6
+
+**Problema reportado:** Galaxy A54 muestra "No se instaló la app" al intentar auto-update de v1.4.4 a v1.4.5.
+
+**Root cause:** `autoUpdate.js` usaba `release.assets.find(a => a.name?.endsWith('.apk'))` que elegía el **primer** asset `.apk`. El primero era `app-release.apk` (firma debug, SHA-256 `fac61745...`) en vez de `TasaDelDia-v1.4.5-eas.apk` (firma EAS, SHA-256 `299073e3...`). Android rechaza upgrades con firma diferente.
+
+**Fixes aplicados:**
+
+| # | Fix | Archivo |
+|---|-----|---------|
+| 1 | `autoUpdate.js` ahora busca assets que empiecen con `TasaDelDia` antes de caer a cualquier `.apk` | `src/services/autoUpdate.js` |
+| 2 | APKs con firma incorrecta eliminadas de la release v1.4.5 | GitHub Release |
+| 3 | Nueva release v1.4.6 con APK EAS firmada | GitHub Release |
+| 4 | Bump version 1.4.5 → 1.4.6 | `app.config.js`, `package.json` |
+
+**Release v1.4.6:** https://github.com/juancito8812/tasa-del-dia-app-/releases/tag/v1.4.6
+**Verificación:** Galaxy A54 auto-update v1.4.4 → v1.4.6 funciona correctamente (usuario confirmado).
+
+**Commits de la sesión 19-Ago (continuación):**
+```
+98037b6 chore: bump version to 1.4.6
+3a50f0c fix: prefer TasaDelDia EAS-signed APKs over debug-signed app-release.apk
+```
 
 ---
 

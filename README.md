@@ -19,7 +19,7 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.4.5** (versionCode 10405) |
+| Versión actual | **1.4.6** (versionCode 10406) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
 | Tests | 176/176 passing · 21 suites |
@@ -68,7 +68,9 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 
 **Comportamiento:** Al abrir la app, detecta automáticamente si hay una versión más nueva. Si la hay, muestra un modal con botones: *Descargar APK* (descarga + abre instalador Android), *Saltar esta versión* (no vuelve a preguntar), *Más tarde* (cierra el modal).
 
-**Verificado end-to-end:** v1.4.4 detecta v1.4.5 → modal → descarga → instalación nativa → v1.4.5 activa. Sin crashes, sin loops infinitos.
+**Verificado end-to-end:** v1.4.4 detecta v1.4.6 → modal → descarga → instalación nativa → v1.4.6 activa. Sin crashes, sin loops infinitos.
+
+**v1.4.6 Fix:** El auto-update ahora busca APKs que empiecen con `TasaDelDia*` (firma EAS correcta) en vez de cualquier `.apk`. Esto previene que se descargue una APK con firma de debug que causaba "No se instaló la app".
 
 ### 🔐 Signing Policy (importante)
 
