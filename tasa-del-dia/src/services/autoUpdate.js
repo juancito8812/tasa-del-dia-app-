@@ -81,7 +81,12 @@ export async function checkLatestRelease() {
     // aunque la release más nueva no tenga asset (evita perder updates).
     for (let i = releases.length - 1; i >= 0; i--) {
       const release = releases[i];
-      const apkAsset = release.assets.find(a => a.name?.endsWith('.apk'));
+      // Preferir APKs que empiecen con 'TasaDelDia' (EAS-signed) sobre
+      // 'app-release.apk' (debug keystore, firma incorrecta).
+      const apkAssets = release.assets.filter(a => a.name?.endsWith('.apk'));
+      const apkAsset =
+        apkAssets.find(a => a.name?.startsWith('TasaDelDia')) ||
+        apkAssets[0];
       if (!apkAsset) continue;
 
       const info = {
