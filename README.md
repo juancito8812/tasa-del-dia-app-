@@ -43,27 +43,42 @@ npx expo start
 # Escanea el QR con Expo Go en tu celular
 ```
 
-**Opción 3 — Compilar APK local**
+**Opción 3 — Compilar APK local (⚠️ solo para desarrollo/debug)**
 
 ```bash
-git checkout redesign
 cd tasa-del-dia
 npm install --legacy-peer-deps
 npx expo prebuild --clean --non-interactive
 cd android
-./gradlew.bat assembleDebug
+./gradlew assembleDebug
 # APK: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**Requisitos:** Node.js 22+, Java 17, `ANDROID_HOME` configurado
+> ⚠️ **NUNCA uses `gradlew assembleRelease` para builds que se subirán a GitHub Releases.** La APK de release firmada con el keystore local (`CN=Android Debug`) tiene una firma DIFERENTE a la del keystore EAS. Esto causa `"No se instaló la app"` cuando los usuarios intentan auto-update desde una versión firmada con EAS. Para releases, usá **siempre** `eas build --local` (ver abajo).
 
-> Si `cd android && ./gradlew.bat assembleDebug` falla por `ANDROID_HOME`, creá o editá `android/local.properties` con tu ruta SDK, por ejemplo: `sdk.dir=C:\\Users\\<usuario>\\AppData\\Local\\Android\\Sdk`
+**Requisitos:** Node.js 22+, Java 17, `ANDROID_HOME` configurado
 
 ### 🔄 Auto-Update
 
 Cada build exitoso puede generar una Release con tag semver. La app verifica al iniciar si hay una versión más nueva consultando las releases versionadas de GitHub y muestra un modal para descargar la APK. Incluye cache de 30 min y opción "Saltar versión".
 
 **Comportamiento:** Al abrir la app, detecta automáticamente si hay una versión más nueva. Si la hay, muestra un modal con botones: *Descargar APK* (descarga + abre instalador Android), *Saltar esta versión* (no vuelve a preguntar), *Más tarde* (cierra el modal).
+
+### 🔐 Signing Policy (importante)
+
+**Todas las APKs de release DEBEN** ser construidas con `eas build --local` para que usen el mismo keystore EAS y los usuarios puedan hacer upgrade sobre versiones anteriores.
+
+```bash
+# ✅ CORRECTO — usa el keystore EAS (mismo firma que CI)
+EXPO_TOKEN=<tu-token> eas build --platform android --profile preview --local --output TasaDelDia.apk
+
+# ❌ INCORRECTO — usa el debug keystore local (firma diferente)
+cd android && ./gradlew assembleRelease
+```
+
+**SHA-256 del keystore EAS:** `299073e3f85f9fc471298bc9d3e61f3c207a5dd0b406ec1d1ffc3ede37e528eb`
+
+> Los workflows de CI (`build-apk.yml`, `release-automatic.yml`) verifican automáticamente la firma antes de subir la APK. Si la firma no coincide, el build falla.
 
 ---
 
