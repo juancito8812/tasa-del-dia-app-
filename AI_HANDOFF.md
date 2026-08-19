@@ -403,12 +403,12 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 **Ambiente (para el próximo agente):**
 - El merge ff a main incluyó `tasa-del-dia/ios/` completo (18 archivos, `expo prebuild`) — **el pendiente #3 de Próximos Pasos quedó resuelto**: ios/ ya está en main (ojo: `userInterfaceStyle` puede requerir regenerar con `npx expo prebuild --platform ios` antes de un build iOS).
-- adb disponible en **`~/android-build/sdk/platform-tools/adb`** (dispositivo Galaxy A12 SM-A125M: `R58T51MR4BT`). `uiautomator dump` + `input tap` para automatizar UI sin ver pantalla.
-- **`gh` CLI** (2.97.0) instalado en `/tmp/opencode/gh_2.97.0_linux_amd64/bin/gh` (NO persistente — re-instalar si se necesita; auth OK con la cuenta juancito8812 vía device flow).
-- SSH autenticado (llave ED25519 del usuario registrada en GitHub durante esta sesión).
-- Git sin identidad: `git -c user.name="juancito8812" -c user.email="juanraudel170@gmail.com"`.
+- adb en **`~/android-sdk/platform-tools/adb`** (dispositivo Galaxy A12 SM-A125M: `R58T51MR4BT`). `uiautomator dump` + `input tap` para automatizar UI sin ver pantalla.
+- **`gh` CLI** (2.74.2) en `~/android-sdk/gh` (auth vía git credentials, persistente).
+- Git config: `git config user.name "juancito8812" && git config user.email "juancito8812@users.noreply.github.com"`.
 - Scripts de parseo AXML/Sig Block (Python) usados para verificar versionCode/firma — reutilizables, no commiteados.
 - **Los usuarios de 1.3.1 del mundo NO pueden auto-instalar** (bug de 1.3.1); el aviso de la release v1.4.4 los guía al camino manual. La v1.4.4 ya instala directo (`ACTION_INSTALL_PACKAGE` + flag 1).
+- **⚠️ Environment note:** el `gh` CLI, Java 17 y Android SDK están en `~/android-sdk/` (instalados en sesión 19-Ago). Para comandos Gradle exportar: `export JAVA_HOME=~/android-sdk/jdk-17.0.20+8 && export ANDROID_HOME=~/android-sdk`.
 
 ---
 
