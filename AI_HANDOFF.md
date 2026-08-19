@@ -156,21 +156,21 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — versión estable publicada en Releases (v1.3.1).
-- `feature/ui-2026` — **rama de trabajo actual**: rediseño glass 2.0 + auditoría de performance (sesión 16-Ago).
-- `redesign` — histórica, reemplazada por `feature/ui-2026`.
+- `main` — **versión estable publicada en Releases (v1.4.4)** — incluye eas.json `appVersionSource: "local"` + fixes de auto-update + ios/ commiteado.
+- `feature/ui-2026` — histórica (rediseño glass 2.0), ya mergeada a main.
+- `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
+- `redesign` — histórica, reemplazada.
 
-### Móvil / Mobile (rama `feature/ui-2026`)
-- **170 tests, 21 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
-- **Versión actual:** 1.3.0 en código (package.json + app.config.js). La v1.3.1 es la release de `main`, NO está en esta rama.
+### Móvil / Mobile (rama `main`)
+- **176 tests, 21 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
+- **Versión actual:** **1.4.4** (package.json + app.config.js = 1.4.4, versionCode derivado 10404)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env` **no existe en el repo** (eliminado en la sesión 21-Jun; `COTIZAVE_API_KEY` ya no se usa en runtime) — está en `.gitignore`
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
-  - Cada build puede crear automáticamente un Release en GitHub con la APK
-  - ⚠️ URL de descarga: los assets se llaman **`TasaDelDia-v1.3.1.apk`** (con versión), NO `TasaDelDia.apk` — la URL del handoff anterior daba "Not Found". Ej: `https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1.3.1/TasaDelDia-v1.3.1.apk`
-- Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
+  - ⚠️ URL de descarga: los assets versionados se llaman **`TasaDelDia-vX.Y.Z.apk`**. La release v1.4.3 tiene además `TasaDelDia.apk` (build-apk, versionCode 10403 — también válida). La app usa el **primer** asset `.apk` de la release más reciente.
+- Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*; **el path de tags quedó arreglado en la sesión 18-Ago**)
 
 **Workflows móviles activos (4):**
 | Workflow | Trigger | Propósito |
@@ -185,10 +185,10 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ### ✨ Auto-Update desde GitHub
 | Componente | Archivo | Detalle |
 |------------|---------|---------|
-| Auto-update service | `src/services/autoUpdate.js` | Consulta releases versionadas, compara semver, cache 30 min, skip version, descarga APK |
+| Auto-update service | `src/services/autoUpdate.js` | Consulta releases versionadas, compara semver, cache 30 min, skip version, descarga APK (API moderna `File.downloadFileAsync` + watchdog anti-stall; instalación con `ACTION_INSTALL_PACKAGE` + flag 1, sin chooser) |
 | Update Modal | `src/components/UpdateModal.js` | Modal con botones Descargar / Saltar / Más tarde |
-| Integración | `App.js` | Check automático al montar, delay 2s |
-| Tests | `src/services/__tests__/autoUpdate.test.js` | 12 tests |
+| Integración | `App.js` | Check automático al montar (diferido con `InteractionManager`) |
+| Tests | `src/services/__tests__/autoUpdate.test.js` | 18 tests |
 
 - ⚠️ `skills/` **no existe en el repo de la app** — la referencia (~40 skills) es del workspace/repo externo `mi-repo-de-skills`, no de este repositorio
 - ⚠️ `~/.config/opencode/opencode.json` y `~/agents/` son del entorno del agente anterior (opencode) — no aplican a este entorno
@@ -206,13 +206,16 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ---
 
 ## ⏭️ Próximos Pasos Posibles
-1. **🔴 Verificar release 1.3.1** — confirmar que el run 31066486879 termine (build APK) y que la release v1.3.1 + APK se publiquen
+1. ~~Verificar release 1.3.1~~ — ✅ **HECHO (18-Ago)**: release v1.4.4 publicada y validada (versionCode 10404 + firma idéntica + prueba real en A12)
 2. ~~Commitear archivos sin trackear~~ — ✅ **HECHO (16-Ago)**: `tsconfig.json` ya estaba trackeado y `eslint.config.js` quedó commiteado en `8178189`
-3. **🔴 Revisar `ios/` sin trackear** — la carpeta iOS completa nunca se commiteó; necesaria para publicar en App Store
-4. ~~Commitear cambios pendientes~~ — ✅ **HECHO (16-Ago)**: `README.md`, `AI_HANDOFF.md`, `.github/workflows/*`, componentes/hooks/screens/services/tests quedaron commiteados en `8178189`
-5. **Probar en dispositivo** — auto-update (descarga + instalación real de APK) y recordatorio semanal recurrente (WEEKLY)
-6. Opcional: limpiar los 53 warnings de lint (`react-hooks/refs`) para dejar el CI 100% limpio
-7. Ajustes finos al glassmorphism / UI
+3. ~~Revisar `ios/` sin trackear~~ — ✅ **HECHO (18-Ago)**: `ios/` completo quedó en main con el merge ff (verificar `npx expo prebuild --platform ios` antes de un build iOS si `userInterfaceStyle` cambió)
+4. ~~Commitear cambios pendientes~~ — ✅ **HECHO (16-Ago)**
+5. ~~Probar en dispositivo auto-update~~ — ✅ **HECHO (18-Ago)**: validado en Galaxy A12 (bug de 1.3.1 reproducido + camino manual + instalación v1.4.4). Pendiente de probar: **auto-update 100% automático desde la v1.4.4** (instalador directo sin chooser — requiere una release v1.4.5+ para poder probarse)
+6. **📢 Comunicar a usuarios**: el aviso ya está en la release v1.4.4. Considerar publicar en el grupo Telegram/canal de difusión de la app
+7. **Opcional: limpiar el asset roto de v1.4.3** (`TasaDelDia-v1.4.3.apk`, versionCode 3): disparar `release-automatic` con `version=1.4.3` (upsert con --clobber) o borrar el asset a mano
+8. **Opcional: migrar a DownloadManager nativo** (enfoque B del brainstorming): la descarga sobrevive al cierre de la app, estilo Telegram; NO es necesario para el funcionamiento actual
+9. Opcional: limpiar los 57 warnings de lint (`react-hooks/refs`) para dejar el CI 100% limpio
+10. Ajustes finos al glassmorphism / UI
 
 ---
 
@@ -363,4 +366,45 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 16-Ago-2026*
+### Sesión 18-Ago-2026 — 🐛 Fix raíz: usuarios de 1.3.1 no podían actualizar (versionCode + instalador roto) — RELEASE 1.4.4
+
+**Reporte del usuario:** los que tienen la v1.3.1 instalada no pueden actualizar a la nueva versión. Pedía "actualizar como Telegram" (APK fuera de Play Store con auto-update propio).
+
+**Diagnóstico (systematic-debugging, evidencia de primera mano):**
+
+| Evidencia | Resultado |
+|---|---|
+| `eas.json` en main: `appVersionSource: "remote"` | EAS **ignora** el `android.versionCode` de `app.config.js` y genera el **mismo código (3) para TODAS las releases** |
+| Manifest binario de `v1.3.1.apk` (parseo AXML) | versionCode=**3**, versionName="1.3.1" |
+| Manifest binario de `v1.4.3.apk` (descargada de Releases) | versionCode=**3** → instalar sobre 1.3.1 es rechazado (código no creciente) |
+| Firma (cert X.509 del APK Signing Block v2) | **idéntica** en v1.3.1/v1.4.3/v1.4.4: SHA-256 `d33bf0118ff2add2b177c45d47ad2f38038a261431a9af700bb7e6b93c925055` (keystore EAS del proyecto, estable) |
+
+**Segundo bug (descubierto en la prueba real en dispositivo):** la **v1.3.1 no puede auto-instalar** — `FileSystem.getContentUriAsync` + `Linking.openURL(contentUri)` (sin `FLAG_GRANT_READ_URI_PERMISSION`). El chooser "Abrir con" aparece, y al elegir el instalador **crash** con `SecurityException: UID does not have permission to content://com.tasadeldia.app.FileSystemFileProvider/...` (el bug que se creía de 1.4.0 también está en 1.3.1). Reproducido 3 veces (2 manuales + 1 automatizada) en Galaxy A12. La app no recibe la excepción (crashea el PackageInstaller, no la app) → el modal se queda sin respuesta.
+
+**Fixes aplicados (commiteados y pusheados a `main`):**
+
+| Commit | Qué |
+|---|---|
+| `d9f3002` | `eas.json`: `appVersionSource: "local"` → EAS respeta el versionCode derivado (1.4.4 → 10404) |
+| `f0fbc39` | `autoUpdate.js`: consumir el rechazo de la descarga (`download.then(f => ['ok', f], () => 'failed')` → trata `failed` como stall → navegador). Fix del unhandled rejection detectado en code review |
+| `d494c72` | **Fix CI `release-automatic.yml`**: el path de tags nunca había funcionado — `git push` sin upstream fallaba ("fatal: no upstream"). Ahora `git push origin HEAD:main` |
+| `85f4b4d` | Bump `app.config.js` → **1.4.4** (versionCode 10404), committeado por el release-bot |
+
+**Release publicada:** **v1.4.4** (tag `v1.4.4`, APK `TasaDelDia-v1.4.4.apk` 72 MB, versionCode **10404** verificado por parseo binario, firma idéntica). Nota de la release editada con **aviso para usuarios de 1.3.1** + guía de 4 pasos del camino manual (gh release edit).
+
+**Prueba end-to-end en dispositivo (Galaxy A12, Android 12, por USB):** desinstalar → instalar v1.3.1 → abrir → modal detectó v1.4.4 → tap "Descargar APK" (descarga 72 MB OK) → instalador de la 1.3.1 crash (SecurityException, logcat) → **camino manual validado**: navegador → notificación de descarga → chooser → "Instalador del paquete" → pantalla "¿Deseas actualizar esta app?" → "Actualizar" → **v1.4.4 instalada encima de 1.3.1 sin desinstalar (datos conservados)** ✓
+
+**Validación:** tests **176/176 (21 suites)** · typecheck 0 errores · lint 0 errores / 57 warnings (preexistentes).
+
+**Ambiente (para el próximo agente):**
+- El merge ff a main incluyó `tasa-del-dia/ios/` completo (18 archivos, `expo prebuild`) — **el pendiente #3 de Próximos Pasos quedó resuelto**: ios/ ya está en main (ojo: `userInterfaceStyle` puede requerir regenerar con `npx expo prebuild --platform ios` antes de un build iOS).
+- adb disponible en **`~/android-build/sdk/platform-tools/adb`** (dispositivo Galaxy A12 SM-A125M: `R58T51MR4BT`). `uiautomator dump` + `input tap` para automatizar UI sin ver pantalla.
+- **`gh` CLI** (2.97.0) instalado en `/tmp/opencode/gh_2.97.0_linux_amd64/bin/gh` (NO persistente — re-instalar si se necesita; auth OK con la cuenta juancito8812 vía device flow).
+- SSH autenticado (llave ED25519 del usuario registrada en GitHub durante esta sesión).
+- Git sin identidad: `git -c user.name="juancito8812" -c user.email="juanraudel170@gmail.com"`.
+- Scripts de parseo AXML/Sig Block (Python) usados para verificar versionCode/firma — reutilizables, no commiteados.
+- **Los usuarios de 1.3.1 del mundo NO pueden auto-instalar** (bug de 1.3.1); el aviso de la release v1.4.4 los guía al camino manual. La v1.4.4 ya instala directo (`ACTION_INSTALL_PACKAGE` + flag 1).
+
+---
+
+*Fin del documento de traspaso — Última actualización: 18-Ago-2026*
