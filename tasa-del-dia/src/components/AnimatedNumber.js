@@ -22,7 +22,7 @@ function AnimatedNumber({
   prefix = '',
   animate = true,
 }) {
-  const [isFirstRender, setIsFirstRender] = useState(true);
+  const isFirstRenderRef = useRef(true);
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [displayText, setDisplayText] = useState('—');
   const lastTarget = useRef(0);
@@ -51,14 +51,14 @@ function AnimatedNumber({
       return;
     }
 
-    if (value === lastTarget.current && !isFirstRender) return;
+    if (value === lastTarget.current && !isFirstRenderRef.current) return;
 
-    if (isFirstRender) {
+    if (isFirstRenderRef.current) {
       lastTarget.current = value;
       animatedValue.setValue(value);
       const formatted = formatRef.current ? formatRef.current(value) : value.toFixed(2);
       setDisplayText(prefix + formatted);
-      setIsFirstRender(false);
+      isFirstRenderRef.current = false;
       return;
     }
 

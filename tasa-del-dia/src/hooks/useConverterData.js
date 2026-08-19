@@ -193,7 +193,7 @@ export default function useConverterData() {
   })();
 
   const quickAmounts = useMemo(() => {
-    const rate = getCurrentRate() || 1;
+    const rate = rates[selectedRate] || 1;
     return mode === 'usd-to-bs'
       ? QUICK_USD
       : QUICK_BS.map((bs) => Math.round(bs / rate));

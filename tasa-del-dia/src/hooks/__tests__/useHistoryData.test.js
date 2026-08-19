@@ -12,7 +12,7 @@ jest.mock('../../services/api', () => ({
 
 function TestComp({ onReady }) {
   const h = useHistoryData();
-  useEffect(() => { onReady?.(h); }, [h]);
+  useEffect(() => { onReady?.(h); }, [h, onReady]);
   return null;
 }
 

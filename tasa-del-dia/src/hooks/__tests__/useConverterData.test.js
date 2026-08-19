@@ -17,7 +17,7 @@ const mockRates = {
 
 function TestComp({ onReady }) {
   const h = useConverterData();
-  useEffect(() => { onReady?.(h); }, [h]);
+  useEffect(() => { onReady?.(h); }, [h, onReady]);
   return null;
 }
 

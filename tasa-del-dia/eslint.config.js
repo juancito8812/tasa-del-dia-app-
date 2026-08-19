@@ -31,11 +31,11 @@ module.exports = defineConfig([
     },
   },
   {
-    // Reglas experimentales del react-compiler: producen falsos positivos
-    // con patrones estándar de React Native (p.ej. useRef(...).current en render).
     rules: {
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
+      // React Compiler experimental rules: falsos positivos con patrones RN estándar
+      // (useRef().current en render, setState en useEffect, etc.)
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       // Falso positivo: expo-file-system es CJS y el resolver no lo resuelve.
       'import/namespace': 'off',
     },
