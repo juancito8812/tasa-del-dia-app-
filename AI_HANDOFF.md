@@ -559,7 +559,21 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 **Tests:** 186 en total (176 → 186: +4 useConverterData, +3 useRatesData, +3 formatCurrencySmart). `npx jest` ✅ · `npx expo lint` ✅ · `npx tsc --noEmit` ✅.
 
-**Pendiente:** verificar fixes en dispositivo (reinstalar build) — el A12 quedó con v1.4.6 y tasa de prueba 780,50 guardada. No se commiteó nada aún.
+**Verificación en dispositivo (misma sesión, build EAS v1.4.7 local, firma `299073e3…` verificada):**
+1. Instalada sobre v1.4.6 en el A12 (`adb install -r`, sin pérdida de datos — 780,50 persistió).
+2. **Fix 1** ✅: guardé 800 en Tasas → el Conversor mostró "BCV (Lunes), Bs. 800,00" al instante, sin reiniciar; conversión 15 Bs ÷ 800 correcta.
+3. **Fix 2** ✅: Convertir con monto vacío → "Ingresa un monto válido" inline bajo el botón, sin Alert.
+4. **Fix 3** ✅: 15,00 Bs → **0,01875 USD** (decimales para < 1).
+5. **Fix 4** ✅: con teclado abierto los botones del modal quedan visibles (y≈955); Guardar funcionó al primer toque (antes el tap caía en el teclado).
+6. **Fix 5** ✅: prefill del modal "780,50".
+7. **Fix 6** ✅: el "?" del hero ya no es clickable (`clickable="false"` en uiautomator).
+8. Tasa de prueba restaurada a 780,50.
+
+**Publicación v1.4.7 (mismo día):**
+- Commit `277bc9f` en main: fixes + tests + bump 1.4.7 + `dogfood-output/` (report.md + screenshot QA).
+- **Nota:** el build EAS local en esta máquina requiere `export JAVA_HOME=~/android-sdk/jdk-17.0.20+8` y `ANDROID_HOME=~/android-sdk` (sin JAVA_HOME falla silenciosamente al final con "build command failed"; el log completo solo muestra warnings de expo doctor: eslint-config-expo 57.0.1 vs ~10.0.0 — inofensivo).
+- Tag/release **v1.4.7** vía workflow `release-automatic.yml` (corre tests, build EAS local en CI con EXPO_TOKEN del secreto, verifica firma `299073e3…`, upsert de release). Changelog automático salió vacío ("0 cambios") porque el tag ya apuntaba al commit; las notas se editaron manualmente con `gh release edit`.
+- **OJO para próximas sesiones:** si se crea el tag manualmente antes del workflow, el changelog generado queda vacío — alternativa: usar `workflow_dispatch` (bump_type) que commitea el bump ANTES de crear el tag, o editar notas después.
 
 ---
 
