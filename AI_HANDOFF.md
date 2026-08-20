@@ -577,4 +577,30 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 ---
 
+### QA full de la release oficial v1.4.7 (20-Ago-2026, segunda pasada)
+
+APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299073e3…` + versionCode 10407 verificados con apksigner antes de instalar; `adb install -r` sobre el build local, sin borrar datos). Prueba exhaustiva en el A12:
+
+| Área | Resultado |
+|---|---|
+| Tasas en vivo | BCV 777,42 · Paralelo 905,36 · Euro 906,83 · Binance 918,96 ✓ |
+| BCV (Lunes) | dato persistido tras reinstalar; brechas correctas (BCV 16,5%, Lunes 13,2%) ✓ |
+| Gasolina | 1L–30L correctos ✓ |
+| Conversor USD→Bs | 100 USD × 777,42 = 77.741,61 Bs ✓ |
+| Cambio de tasa | Paralelo → 100 USD = 90.535,84 Bs ✓ |
+| Fix 3 | 1,5 Bs → 0,001657 USD ✓ |
+| Fix 2 | validación inline sin Alert ✓ |
+| Fix 1 | guardar 810 en Tasas → "BCV (Lunes) 810,00" al instante en el Conversor ✓ |
+| Fix 5 | prefill "800,00" es-VE ✓ |
+| Fix 4 | con teclado abierto Guardar/Cancelar visibles (y≈955), Guardar al primer toque ✓ |
+| Historial | 932 registros, chips 10 días, detalle 19/08 ✓ |
+| Offline | banner "Sin conexión — Mostrando últimas tasas (5:57 p. m.)" + conversión con caché (50 Bs → 0,055227 USD) ✓ |
+| Reconexión | banner desaparece ✓ |
+| BackHandler | Conversor → Tasas ✓ |
+| Estabilidad | 0 FATAL, 0 errores JS, RAM 154 MB ✓ |
+
+**Estado final del dispositivo:** app v1.4.7 (release oficial), tasa BCV (Lunes) restaurada a 780,50, red activa. Única limitación del QA: el toggle de tema se presionó pero el modelo no puede verificar el cambio visualmente (sin visión).
+
+---
+
 *Fin del documento de traspaso — Última actualización: 20-Ago-2026*

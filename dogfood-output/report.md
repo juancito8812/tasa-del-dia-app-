@@ -140,3 +140,30 @@
 **Post-prueba:** tasa restaurada a 780,50 en el dispositivo.
 
 **Publicación:** commit `277bc9f` → main; tag/release **v1.4.7** vía `release-automatic.yml` (build EAS en CI, verificación de firma, APK `TasaDelDia-v1.4.7.apk` subido). Changelog automático vacío (tag pre-existente) → notas editadas con `gh release edit`.
+
+---
+
+## QA full — release oficial v1.4.7 (20-Ago-2026, segunda pasada)
+
+**Build probada:** APK oficial de la release de GitHub (`TasaDelDia-v1.4.7.apk`, 75,8 MB) — firma EAS `299073e3…` y versionCode 10407 verificados con apksigner/aapt **antes** de instalar. Instalada sobre el build local v1.4.7 con `adb install -r` (sin borrar datos).
+
+| Área | Resultado |
+|---|---|
+| Tasas en vivo | BCV 777,42 · Paralelo 905,36 · Euro 906,83 · Binance P2P 918,96 ✓ |
+| BCV (Lunes) | 800,00 persistió tras reinstalar; brechas correctas (BCV 16,5% · Lunes 13,2% = 905,36/800−1) ✓ |
+| Gasolina (BCV) | 1L 388,71 → 30L 11.661,24 consistentes ✓ |
+| Conversor USD→Bs | 100 USD × 777,42 = **77.741,61 Bs** ✓ |
+| Cambio de tasa | Paralelo 905,36 → 100 USD = **90.535,84 Bs** ✓ |
+| ISSUE 3 en release | 1,5 Bs → **0,001657 USD** (6 decimales) ✓ |
+| ISSUE 2 en release | monto vacío → "Ingresa un monto válido" inline, sin Alert ✓ |
+| ISSUE 1 en release | guardar 810 en Tasas → "BCV (Lunes), Bs. 810,00" en el Conversor al instante ✓ |
+| ISSUE 5 en release | modal con prefill "800,00" es-VE ✓ |
+| ISSUE 4 en release | teclado abierto (mInputShown=true): Guardar/Cancelar en y≈955; Guardar al primer toque ✓ |
+| Historial | 932 registros, chips 10 días, detalle 19/08 (BCV 775,34 · Paralelo 906,81 + Copiar) ✓ |
+| Offline | banner "Sin conexión — Mostrando últimas tasas (5:57 p. m.)" + conversor con caché (50 Bs → 0,055227 USD) ✓ |
+| Reconexión | banner desaparece tras re-activar red ✓ |
+| BackHandler | Conversor → Tasas ✓ |
+| Estabilidad | 0 FATAL, 0 errores JS en logcat; RAM 154 MB PSS ✓ |
+
+**Estado final del dispositivo:** v1.4.7 (release oficial), tasa BCV (Lunes) restaurada a 780,50, red activa.
+**Limitación:** toggle de tema presionado pero no verificable visualmente (modelo sin visión).
