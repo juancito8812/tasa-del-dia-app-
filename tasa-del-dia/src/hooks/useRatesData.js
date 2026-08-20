@@ -6,6 +6,7 @@ import {
   loadCacheRates,
   getStoredBCVLunes,
   setStoredBCVLunes,
+  emitBcvLunesChanged,
   getReminderEnabled,
   setReminderEnabled as persistReminderEnabled,
   saveHistoricalRate,
@@ -179,10 +180,14 @@ export default function useRatesData() {
       setBcvLunesUpdatedAt(now);
       setStoredBCVLunes(parsed);
       saveHistoricalRate(getTodayKey(), { bcv: parsed });
+      // Avisar a otros hooks montados (ej. el Conversor) para que
+      // actualicen su tasa del lunes sin esperar un re-montaje.
+      emitBcvLunesChanged(parsed);
     } else {
       setTasaBCVLunes(null);
       setBcvLunesUpdatedAt(null);
       setStoredBCVLunes(null);
+      emitBcvLunesChanged(null);
     }
   }, []);
 

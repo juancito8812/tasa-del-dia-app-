@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Keyboard, Alert } from 'react-native';
+import { Keyboard } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import { fetchWithOfflineFallback, loadCacheRates, getStoredBCVLunes } from '../services/api';
+import { fetchWithOfflineFallback, loadCacheRates, getStoredBCVLunes, subscribeBcvLunes } from '../services/api';
 import { extractRawDigits, formatRawDisplay, QUICK_USD, QUICK_BS } from '../utils/formatting';
 
 export default function useConverterData() {
@@ -20,6 +20,10 @@ export default function useConverterData() {
   const [offlineMode, setOfflineMode] = useState(false);
   const [offlineCachedAt, setOfflineCachedAt] = useState(null);
   const [gasLitros, setGasLitros] = useState('');
+  // Validación inline (sustituye los Alert nativos, inconsistentes con la UI glass)
+  const [validationError, setValidationError] = useState(null);
+  // Error de carga inline (sin caché disponible y sin red)
+  const [loadError, setLoadError] = useState(null);
 
   const gasLitrosNum = useMemo(() => parseFloat(gasLitros) || 0, [gasLitros]);
   const inputRef = useRef(null);
@@ -61,6 +65,7 @@ export default function useConverterData() {
         });
         setOfflineMode(true);
         setOfflineCachedAt(cacheInfo?.cachedAt || null);
+        setLoadError(null);
       } else if (apiData) {
         setRates({
           bcv: apiData.tasaBCV, paralelo: apiData.tasaParalelo,
@@ -69,14 +74,15 @@ export default function useConverterData() {
         });
         setOfflineMode(false);
         setOfflineCachedAt(null);
+        setLoadError(null);
       }
 
       if (fetchError && !fromCache) {
-        Alert.alert('Error', 'No se pudieron cargar las tasas. Verifica tu conexión.');
+        setLoadError('No se pudieron cargar las tasas. Verifica tu conexión.');
       }
     } catch (err) {
       if (__DEV__) console.warn('[Converter] loadRates error:', err);
-      Alert.alert('Error', 'No se pudieron cargar las tasas. Verifica tu conexión.');
+      setLoadError('No se pudieron cargar las tasas. Verifica tu conexión.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,7 +92,14 @@ export default function useConverterData() {
   useEffect(() => {
     mountedRef.current = true;
     loadRates();
-    return () => { mountedRef.current = false; };
+    // BCV Lunes puede cambiar desde la pestaña Tasas mientras el
+    // Conversor ya está montado (lazy-mount). Suscribirse para
+    // actualizar la tasa al instante, sin re-montar ni re-fetchear.
+    const unsubscribe = subscribeBcvLunes((value) => {
+      if (!mountedRef.current) return;
+      setRates((prev) => ({ ...prev, bcv_lunes: value }));
+    });
+    return () => { mountedRef.current = false; unsubscribe(); };
   }, [loadRates]);
 
   // Keyboard listeners
@@ -105,14 +118,15 @@ export default function useConverterData() {
     Keyboard.dismiss();
     const numericAmount = parseAmount(rawAmount);
     if (isNaN(numericAmount) || numericAmount <= 0) {
-      Alert.alert('Error', 'Ingresa un monto válido');
+      setValidationError('Ingresa un monto válido');
       return;
     }
     const rate = getCurrentRate();
     if (!rate) {
-      Alert.alert('Error', 'La tasa seleccionada no está disponible');
+      setValidationError('La tasa seleccionada no está disponible');
       return;
     }
+    setValidationError(null);
     setResult({
       amount: numericAmount,
       rate,
@@ -154,10 +168,14 @@ export default function useConverterData() {
   const handleSwapMode = () => {
     setMode((p) => (p === 'usd-to-bs' ? 'bs-to-usd' : 'usd-to-bs'));
     setResult(null);
+    setValidationError(null);
     // Conservar el monto escrito por el usuario al cambiar de modo (fix: no borrarlo)
   };
 
-  const handleChangeText = (text) => setRawAmount(extractRawDigits(text));
+  const handleChangeText = (text) => {
+    setRawAmount(extractRawDigits(text));
+    setValidationError(null);
+  };
   const displayAmount = rawAmount ? formatRawDisplay(rawAmount) : '';
   const numericAmount = rawAmount ? parseFloat(rawAmount.replace(',', '.')) || 0 : 0;
 
@@ -210,5 +228,6 @@ export default function useConverterData() {
     handleCopy, handleSwapMode, handleChangeText,
     displayAmount, numericAmount,
     spreadBcv, spreadLunes,
+    validationError, loadError,
   };
 }

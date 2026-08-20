@@ -537,4 +537,30 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 19-Ago-2026*
+### Sesión 20-Ago-2026 — QA funcional en Galaxy A12 + fixes de los 5 hallazgos
+
+**QA realizado:** sesión completa (~1h) en Galaxy A12 (SM-A125M, Android 12) con la v1.4.6 EAS, vía adb/uiautomator/logcat (QA funcional, sin inspección visual). Reporte: `dogfood-output/report.md`. Resultado: 0 crashes, 0 errores JS, matemática correcta. 5 hallazgos (1 medio, 4 bajos) + 3 observaciones INFO.
+
+**Fixes aplicados (todos con tests):**
+
+| # | Fix | Archivos |
+|---|-----|----------|
+| 1 | **[MEDIO]** BCV (Lunes) guardado en Tasas no llegaba al Conversor hasta reiniciar — pub/sub `subscribeBcvLunes`/`emitBcvLunesChanged`; `useRatesData` emite al guardar/limpiar, `useConverterData` se suscribe y actualiza `rates.bcv_lunes` al instante | `src/services/api.js`, `src/hooks/useRatesData.js`, `src/hooks/useConverterData.js` |
+| 2 | Alert nativo de validación → inline (estado `validationError` + mensaje rojo bajo el botón Convertir; `loadError` inline en header sin Alert) | `src/hooks/useConverterData.js`, `src/screens/ConverterScreen.js` |
+| 3 | Montos Bs→USD pequeños redondeados a 0,00 → `formatCurrencySmart` (hasta 6 decimales cuando < 1) | `src/utils/formatting.js`, `src/screens/ConverterScreen.js` |
+| 4 | Teclado tapaba Guardar/Cancelar en BCVModal (Modal de RN no responde a adjustResize) → `KeyboardAvoidingView behavior="height"` en Android | `src/components/BCVModal.js` |
+| 5 | Prefill del modal "780.5" → `formatCurrency` es-VE ("780,50") | `src/screens/RatesScreen.js` |
+| 6 | Hero y tarjetas sin acción parecían clickeables (PressableScale sin onPress) → solo se envuelven con `onEdit` | `src/components/RateCard.js` |
+
+**Observaciones INFO resueltas:**
+- Hora del Euro "12:00 a.m.": **dato correcto del API** — DolarApi `euros/oficial` entrega `fechaActualizacion: 2026-08-20T00:00:00-04:00` (medianoche Caracas, publicado una vez al día). No es bug.
+- Scroll: falsa alarma del QA (contenido que cabe en pantalla). No es bug.
+- El "?" del hero: no existe icono "?" en el código — era la tarjeta hero con press feedback sin acción (fix #6).
+
+**Tests:** 186 en total (176 → 186: +4 useConverterData, +3 useRatesData, +3 formatCurrencySmart). `npx jest` ✅ · `npx expo lint` ✅ · `npx tsc --noEmit` ✅.
+
+**Pendiente:** verificar fixes en dispositivo (reinstalar build) — el A12 quedó con v1.4.6 y tasa de prueba 780,50 guardada. No se commiteó nada aún.
+
+---
+
+*Fin del documento de traspaso — Última actualización: 20-Ago-2026*

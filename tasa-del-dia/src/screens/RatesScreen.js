@@ -14,6 +14,7 @@ import useRatesData from '../hooks/useRatesData';
 import RateCard from '../components/RateCard';
 import RatesHeader from '../components/RatesHeader';
 import BCVModal from '../components/BCVModal';
+import { formatCurrency } from '../utils/formatting';
 
 function createStyles(C) {
   return StyleSheet.create({
@@ -104,7 +105,8 @@ export default function RatesScreen() {
 
   // Handlers estables: se pasan a RateCard/BCVModal (memoizados)
   const handleEditBCVLunes = useCallback(() => {
-    setEditValue(tasaBCVLunes ? String(tasaBCVLunes) : '');
+    // Prefill en formato local es-VE (780,50) en vez del raw float (780.5)
+    setEditValue(tasaBCVLunes ? formatCurrency(tasaBCVLunes) : '');
     setModalVisible(true);
   }, [tasaBCVLunes]);
 

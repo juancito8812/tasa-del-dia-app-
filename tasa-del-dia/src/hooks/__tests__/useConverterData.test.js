@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import useConverterData from '../useConverterData';
-import { extractRawDigits, formatRawDisplay, QUICK_USD, formatCurrency } from '../../utils/formatting';
-import { fetchWithOfflineFallback, getStoredBCVLunes } from '../../services/api';
+import { extractRawDigits, formatRawDisplay, QUICK_USD, formatCurrency, formatCurrencySmart } from '../../utils/formatting';
+import { fetchWithOfflineFallback, getStoredBCVLunes, emitBcvLunesChanged } from '../../services/api';
 
 jest.mock('../../services/api', () => ({
   ...jest.requireActual('../../services/api'),
@@ -87,6 +87,24 @@ describe('useConverterData - Pure Functions', () => {
     it('should format with locale es-VE', () => {
       const result = formatCurrency(80);
       expect(typeof result).toBe('string');
+    });
+  });
+
+  describe('formatCurrencySmart', () => {
+    it('should keep 2 decimals for amounts >= 1', () => {
+      expect(formatCurrencySmart(877.35)).toBe('877,35');
+      expect(formatCurrencySmart(77.741)).toBe('77,74');
+    });
+
+    it('should show more decimals for small amounts (< 1)', () => {
+      // 1,5 Bs ÷ 877,35 = 0,0017 USD — no debe mostrar "0,00"
+      expect(formatCurrencySmart(0.0017)).toBe('0,0017');
+      expect(formatCurrencySmart(0.0077)).toBe('0,0077');
+    });
+
+    it('should handle zero and null', () => {
+      expect(formatCurrencySmart(0)).toBe('0,00');
+      expect(formatCurrencySmart(null)).toBe('—');
     });
   });
 });
@@ -216,5 +234,86 @@ describe('useConverterData - Hook', () => {
     });
     await act(async () => {});
     expect(hook.spreadBcv).toBeNull();
+  });
+
+  it('should update bcv_lunes when event emitted from Tasas tab', async () => {
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    expect(hook.rates.bcv_lunes).toBe(78);
+    // Simular que el usuario guardó el lunes desde la pestaña Tasas
+    act(() => { emitBcvLunesChanged(780.5); });
+    expect(hook.rates.bcv_lunes).toBe(780.5);
+    // La brecha del lunes se recalcula sola
+    expect(hook.spreadLunes).not.toBeNull();
+  });
+
+  it('should clear bcv_lunes when event emits null', async () => {
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    act(() => { emitBcvLunesChanged(null); });
+    expect(hook.rates.bcv_lunes).toBeNull();
+    expect(hook.spreadLunes).toBeNull();
+  });
+
+  it('should set validationError instead of Alert for invalid amount', async () => {
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    act(() => { hook.setRawAmount(''); });
+    act(() => { hook.handleConvert(); });
+    expect(hook.validationError).toBe('Ingresa un monto válido');
+    expect(hook.result).toBeNull();
+  });
+
+  it('should clear validationError on valid convert and new input', async () => {
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    act(() => { hook.setRawAmount('0'); });
+    act(() => { hook.handleConvert(); });
+    expect(hook.validationError).toBe('Ingresa un monto válido');
+    act(() => { hook.handleChangeText('100'); });
+    expect(hook.validationError).toBeNull();
+    act(() => { hook.handleConvert(); });
+    expect(hook.result).not.toBeNull();
+    expect(hook.validationError).toBeNull();
+  });
+
+  it('should set validationError when selected rate is unavailable', async () => {
+    fetchWithOfflineFallback.mockResolvedValue({
+      ...mockRates,
+      data: { tasaBCV: null, tasaParalelo: null, tasaEuro: null, tasaBinanceP2P: null },
+    });
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    act(() => { hook.setRawAmount('100'); });
+    act(() => { hook.handleConvert(); });
+    expect(hook.validationError).toBe('La tasa seleccionada no está disponible');
+  });
+
+  it('should set loadError when fetch fails without cache', async () => {
+    fetchWithOfflineFallback.mockResolvedValue({
+      data: null, fromCache: false,
+      error: 'Network request failed', cacheInfo: null,
+    });
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    expect(hook.loadError).toBe('No se pudieron cargar las tasas. Verifica tu conexión.');
   });
 });

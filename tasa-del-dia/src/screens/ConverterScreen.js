@@ -7,7 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggleMini from '../components/ThemeToggleMini';
 import useConverterData from '../hooks/useConverterData';
-import { getRateTypes, formatCurrency } from '../utils/formatting';
+import { getRateTypes, formatCurrency, formatCurrencySmart } from '../utils/formatting';
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../utils/haptics';
 
 const TAB_BAR_HEIGHT = 60;
@@ -54,6 +54,7 @@ function createStyles(C) {
     quickChipText: { fontSize: 12, fontWeight: '600', color: C.textSecondary, fontVariant: ['tabular-nums'] },
     convertButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 14, gap: 8 },
     convertButtonText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.5 },
+    validationError: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginTop: 8 },
     inlineResult: { marginTop: 0 },
     resultDivider: { height: 1, backgroundColor: C.cardBorder, marginVertical: 14 },
     resultLabel: { fontSize: 10, fontWeight: '700', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' },
@@ -157,6 +158,12 @@ export default function ConverterScreen() {
                   </Text>
                 </View>
               )}
+              {h.loadError && !h.offlineMode && (
+                <View style={[styles.offlineBanner, { backgroundColor: C.flagRed }]}>
+                  <Ionicons name="alert-circle-outline" size={12} color="#fff" />
+                  <Text style={styles.offlineBannerText}>{h.loadError}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.converterCard}>
@@ -217,6 +224,13 @@ export default function ConverterScreen() {
                 <Text style={styles.convertButtonText}>Convertir</Text>
               </TouchableOpacity>
 
+              {/* Validación inline (sin Alert nativo) */}
+              {h.validationError && (
+                <Text style={[styles.validationError, { color: C.flagRed }]}>
+                  {h.validationError}
+                </Text>
+              )}
+
               {/* Result */}
               {h.result && (
                 <View style={styles.inlineResult}>
@@ -228,9 +242,9 @@ export default function ConverterScreen() {
                       <Text style={[styles.resultItemValue, h.copiedType === 'result-source' && { color: C.success }]}>{formatCurrency(h.result.amount)}</Text>
                     </TouchableOpacity>
                     <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.textMuted} /></View>
-                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.converted), 'result-target'); }}>
+                    <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrencySmart(h.result.converted), 'result-target'); }}>
                       <Text style={styles.resultItemLabel}>{h.copiedType === 'result-target' ? '¡Copiado!' : (h.mode === 'usd-to-bs' ? 'Bs.' : 'USD')}</Text>
-                      <Text style={[styles.resultItemValue, { color: h.copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrency(h.result.converted)}</Text>
+                      <Text style={[styles.resultItemValue, { color: h.copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrencySmart(h.result.converted)}</Text>
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.rate), 'rate'); }}>

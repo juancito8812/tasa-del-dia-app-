@@ -56,7 +56,10 @@ function BCVModal({
     <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Android: el Modal de RN no se redimensiona con windowSoftInputMode
+        // (adjustResize no aplica a ventanas de Modal); "height" recorta el
+        // overlay por la altura del teclado para que la hoja quede encima.
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         pointerEvents="box-none"
       >
         {/* Backdrop — tocar fuera cierra (activo tras el slide-in) */}

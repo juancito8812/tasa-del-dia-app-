@@ -8,6 +8,7 @@ import {
   getReminderEnabled,
   setReminderEnabled as persistReminderEnabled,
   saveHistoricalRate,
+  subscribeBcvLunes,
 } from '../../services/api';
 import {
   scheduleFridayReminder,
@@ -121,6 +122,20 @@ describe('useRatesData - Hook', () => {
     expect(hook.tasaBCVLunes).toBe(82.5);
     expect(setStoredBCVLunes).toHaveBeenCalledWith(82.5);
     expect(saveHistoricalRate).toHaveBeenCalled();
+  });
+
+  it('should emit BcvLunes change so other tabs update instantly', async () => {
+    const received = [];
+    const unsubscribe = subscribeBcvLunes((value) => received.push(value));
+    let hook;
+    await act(async () => {
+      TestRenderer.create(<TestComp onReady={(h) => { hook = h; }} />);
+    });
+    await act(async () => {});
+    act(() => { hook.handleSaveBCVLunes('82,50'); });
+    act(() => { hook.handleSaveBCVLunes('0'); });
+    expect(received).toEqual([82.5, null]);
+    unsubscribe();
   });
 
   it('should clear BCV Lunes when invalid input', async () => {

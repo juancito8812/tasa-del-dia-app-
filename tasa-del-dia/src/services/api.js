@@ -90,6 +90,23 @@ export async function setStoredBCVLunes(value) {
   } catch {}
 }
 
+// ─── Suscripción a cambios de BCV Lunes ────────────────────────────
+// Permite que hooks ya montados (ej. useConverterData, cuyas pestañas
+// son lazy-mount) se enteren al instante cuando se guarda la tasa del
+// lunes desde Tasas, sin tener que re-montar ni re-fetchear.
+const bcvLunesListeners = new Set();
+
+export function subscribeBcvLunes(fn) {
+  bcvLunesListeners.add(fn);
+  return () => { bcvLunesListeners.delete(fn); };
+}
+
+export function emitBcvLunesChanged(value) {
+  bcvLunesListeners.forEach((fn) => {
+    try { fn(value); } catch {}
+  });
+}
+
 /**
  * Obtiene si el recordatorio de los viernes está activado.
  */

@@ -39,6 +39,20 @@ export function formatCurrency(v) {
   return Number(v).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/**
+ * Formato adaptativo: 2 decimales para montos ≥ 1, y hasta 6 decimales
+ * para montos < 1 (ej. 1,5 Bs → 0,0017 USD) para no engañar al usuario
+ * con un "0,00" cuando la conversión es válida pero pequeña.
+ */
+export function formatCurrencySmart(v) {
+  if (v == null) return '—';
+  const n = Number(v);
+  if (n !== 0 && Math.abs(n) < 1) {
+    return n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+  }
+  return n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export function getRateTypes(C) {
   return [
     { key: 'bcv', label: 'BCV (Oficial)', color: C.success },
