@@ -19,10 +19,10 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.4.6** (versionCode 10406) |
+| Versión actual | **1.4.7** (versionCode 10407) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 176/176 passing · 21 suites |
+| Tests | 186/186 passing · 21 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
 
@@ -71,6 +71,8 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 **Verificado end-to-end:** v1.4.4 detecta v1.4.6 → modal → descarga → instalación nativa → v1.4.6 activa. Sin crashes, sin loops infinitos.
 
 **v1.4.6 Fix:** El auto-update ahora busca APKs que empiecen con `TasaDelDia*` (firma EAS correcta) en vez de cualquier `.apk`. Esto previene que se descargue una APK con firma de debug que causaba "No se instaló la app".
+
+**v1.4.7 Fixes (QA en Galaxy A12, 20-ago-2026):** BCV (Lunes) se refleja al instante en el Conversor sin reiniciar (pub/sub), validación inline en vez de Alert nativo, decimales para montos < 1 (1,5 Bs → 0,0019 USD), teclado ya no tapa los botones del modal, prefill con formato es-VE ("780,50"), y tarjetas sin acción ya no parecen botones.
 
 ### 🔐 Signing Policy (importante)
 
@@ -128,7 +130,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (176) + lint (0 warnings) + typecheck |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (186) + lint (0 warnings) + typecheck |
 | **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
 | **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |

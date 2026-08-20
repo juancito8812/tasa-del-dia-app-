@@ -121,4 +121,22 @@
 | Obs 3 scroll | ✅ Verificado — no es bug | contenido que cabe en pantalla, comportamiento correcto |
 
 **Verificación:** 186 tests ✅ · `expo lint` 0 warnings ✅ · `tsc --noEmit` ✅ (20-Ago-2026).
-**Pendiente:** reinstalar build corregido en el A12 para verificación en dispositivo.
+
+---
+
+## Verificación en dispositivo — v1.4.7 (20-Ago-2026)
+
+**Build:** `TasaDelDia-v1.4.7.apk` (EAS local, firma `299073e3…` verificada con apksigner, versionCode 10407). Instalada sobre la v1.4.6 con `adb install -r` (sin borrar datos — la tasa 780,50 persistió).
+
+| Fix | Verificación en el A12 | Resultado |
+|---|---|---|
+| ISSUE 1 (pub/sub BCV Lunes) | Guardé 800 en Tasas → abrí Conversor → "BCV (Lunes), Bs. 800,00" al instante, sin reiniciar; conversión 15 Bs ÷ 800 = 0,01875 correcta | ✅ |
+| ISSUE 2 (validación inline) | Convertir con monto vacío → "Ingresa un monto válido" inline bajo el botón; sin diálogo nativo | ✅ |
+| ISSUE 3 (decimales < 1) | 15,00 Bs → **0,01875 USD** (antes 0,02) | ✅ |
+| ISSUE 4 (teclado tapa botones) | Con teclado abierto: Guardar/Cancelar visibles (y≈955); Guardar funcionó al primer toque | ✅ |
+| ISSUE 5 (prefill es-VE) | Modal reabierto → "780,50" (antes "780.5") | ✅ |
+| Obs 1 (hero clickeable) | "?" del hero ahora `clickable="false"` en la jerarquía uiautomator | ✅ |
+
+**Post-prueba:** tasa restaurada a 780,50 en el dispositivo.
+
+**Publicación:** commit `277bc9f` → main; tag/release **v1.4.7** vía `release-automatic.yml` (build EAS en CI, verificación de firma, APK `TasaDelDia-v1.4.7.apk` subido). Changelog automático vacío (tag pre-existente) → notas editadas con `gh release edit`.
