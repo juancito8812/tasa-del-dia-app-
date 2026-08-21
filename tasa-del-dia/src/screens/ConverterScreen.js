@@ -53,7 +53,7 @@ function createStyles(C) {
     quickChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.cardBorder },
     quickChipText: { fontSize: 12, fontWeight: '600', color: C.textSecondary, fontVariant: ['tabular-nums'] },
     convertButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 14, gap: 8 },
-    convertButtonText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.5 },
+    convertButtonText: { fontSize: 16, fontWeight: '700', color: C.onAccent, letterSpacing: 0.5 },
     validationError: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginTop: 8 },
     inlineResult: { marginTop: 0 },
     resultDivider: { height: 1, backgroundColor: C.cardBorder, marginVertical: 14 },
@@ -81,7 +81,7 @@ function createStyles(C) {
     spreadStats: { gap: 4 },
     spreadStat: { fontSize: 11, color: C.textMuted, letterSpacing: 0.2 },
     offlineBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.warning, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 },
-    offlineBannerText: { color: '#fff', fontSize: 11, flex: 1 },
+    offlineBannerText: { color: C.onAccent, fontSize: 11, flex: 1 },
     pasteBtn: { paddingLeft: 8, paddingVertical: 4 },
     pasteInner: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3 },
     pasteText: { fontSize: 11, fontWeight: '700' },
@@ -152,7 +152,7 @@ export default function ConverterScreen() {
               </View>
               {h.offlineMode && (
                 <View style={styles.offlineBanner}>
-                  <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
+                  <Ionicons name="cloud-offline-outline" size={12} color={C.onAccent} />
                   <Text style={styles.offlineBannerText}>
                     Sin conexión — Mostrando últimas tasas{h.offlineCachedAt ? ` (${new Date(h.offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
                   </Text>
@@ -160,7 +160,7 @@ export default function ConverterScreen() {
               )}
               {h.loadError && !h.offlineMode && (
                 <View style={[styles.offlineBanner, { backgroundColor: C.flagRed }]}>
-                  <Ionicons name="alert-circle-outline" size={12} color="#fff" />
+                  <Ionicons name="alert-circle-outline" size={12} color={C.onAccent} />
                   <Text style={styles.offlineBannerText}>{h.loadError}</Text>
                 </View>
               )}
@@ -220,7 +220,7 @@ export default function ConverterScreen() {
 
               {/* Convert button */}
               <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={() => { hapticMedium(); h.handleConvert(); }} activeOpacity={0.8}>
-                <Ionicons name="calculator" size={18} color="#fff" />
+                <Ionicons name="calculator" size={18} color={C.onAccent} />
                 <Text style={styles.convertButtonText}>Convertir</Text>
               </TouchableOpacity>
 

@@ -603,4 +603,27 @@ APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299
 
 ---
 
+### Rama experimental: tema monocromo 2 colores (`feature/ui-monocromo`, 20-Ago-2026)
+
+**Objetivo:** interfaz de solo 2 colores (negro + blanco) donde la distinción de tasas se hace por icono + etiqueta (no por color).
+
+**Archivos modificados:**
+- `src/constants/themes.js` — paleta monocroma completa: dark (`#000`/`#fff`) + light (`#fff`/`#000`). Todos los semánticos (`success/highlight/info/warning/bcvLunes/glows`) apuntan al acento monocromo. Nueva clave `onAccent` (texto sobre acento: negro en dark, blanco en light).
+- `src/components/ScreenContainer.js` — gradientes hardcodeados (`#0b0b16`→`#000000` dark, `#f5f0eb`→`#ffffff` light).
+- `src/screens/ConverterScreen.js` — `#fff` → `C.onAccent` en botón Convertir, banner offline, iconos.
+- `src/components/UpdateModal.js` — `#fff` → `C.onAccent` en botón Descargar APK + spinner.
+- `src/components/BCVModal.js` — `#fff` → `C.onAccent` en botón Guardar.
+- `src/components/DateDetailCard.js` — `#fff` → `C.onAccent` inline (icono + texto copiar todo).
+- `src/screens/HistoryScreen.js` — `#fff` → `C.onAccent` en botón Ver + icono.
+
+**Verificación en A12 (misma sesión):**
+- Dark mode: fondo negro `#000`, glass cards con opacidad blanca sutil, texto blanco/gris, botón Convertir blanco con texto negro, tarjetas de tasa sin distinción de color (solo icono + etiqueta), toggle tema funciona ✓
+- Light mode: fondo blanco, acento negro, glass cards sutiles ✓
+- Historial: chart monocromo, chips días, 932 registros ✓
+- 0 FATAL, 0 errores JS, RAM 134 MB
+
+**Estado:** rama `feature/ui-monocromo` sin merge a main (experimental). No se creó release ni tag. Pendiente de decisión del usuario sobre si adoptar el tema monocromo como default.
+
+---
+
 *Fin del documento de traspaso — Última actualización: 20-Ago-2026*

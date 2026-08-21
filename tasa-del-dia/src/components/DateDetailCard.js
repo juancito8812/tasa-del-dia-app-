@@ -71,8 +71,8 @@ function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAl
         onPress={() => handleCopyAll(selectedData)}
         activeOpacity={0.8}
       >
-        <Ionicons name={copiedField === 'all' ? 'checkmark-circle' : 'copy'} size={16} color="#fff" />
-        <Text style={styles.copyAllText}>
+        <Ionicons name={copiedField === 'all' ? 'checkmark-circle' : 'copy'} size={16} color={C.onAccent} />
+        <Text style={[styles.copyAllText, { color: C.onAccent }]}>
           {copiedField === 'all' ? '¡Copiado al portapapeles!' : 'Copiar todo'}
         </Text>
       </TouchableOpacity>

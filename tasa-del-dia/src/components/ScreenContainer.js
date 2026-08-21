@@ -8,7 +8,7 @@ export default function ScreenContainer({ children }) {
   if (isDark) {
     return (
       <LinearGradient
-        colors={['#0b0b16', '#10102a', '#151540']}
+        colors={['#000000', '#0d0d0d', '#1a1a1a']}
         locations={[0, 0.5, 1]}
         style={styles.container}
       >
@@ -18,7 +18,7 @@ export default function ScreenContainer({ children }) {
   }
   return (
     <LinearGradient
-      colors={['#f5f0eb', '#faf6f2']}
+      colors={['#ffffff', '#f2f2f2']}
       locations={[0, 1]}
       style={styles.container}
     >

@@ -1,110 +1,108 @@
-// 🎨 Tasa del Día — Paleta Venezuela 2026
-// Inspirada en los colores patrios + fintech moderno
-// Dark: noche venezolana con acentos vibrantes
-// Light: amanecer caribeño, cálido y pulcro
+// 🎨 Tasa del Día — Tema Monocromo (rama experimental feature/ui-monocromo)
+// Solo 2 colores: negro y blanco (grises derivados de opacidad).
+// Todas las claves semánticas apuntan al acento monocromo; la distinción
+// entre tasas la dan el icono + la etiqueta de cada tarjeta.
 
 export const darkTheme = {
   // Backgrounds
-  primary: '#0b0b16',
-  secondary: '#12122a',
-  accent: '#1a1a40',
+  primary: '#000000',
+  secondary: '#101010',
+  accent: '#1a1a1a',
 
   // Glass
   cardBg: 'rgba(255, 255, 255, 0.05)',
-  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  cardBorder: 'rgba(255, 255, 255, 0.12)',
 
   glassCard: 'rgba(255, 255, 255, 0.06)',
-  glassTabBar: 'rgba(16, 16, 40, 0.85)',
+  glassTabBar: 'rgba(0, 0, 0, 0.9)',
   glassOverlay: 'rgba(255, 255, 255, 0.03)',
 
-  // 🟢 BCV Oficial — esmeralda
-  success: '#00e676',
-  glowBcv: 'rgba(0, 230, 118, 0.2)',
+  // Acento único (blanco) — antes: BCV esmeralda, Paralelo ámbar, Euro azul...
+  success: '#ffffff',
+  glowBcv: 'rgba(255, 255, 255, 0.18)',
 
-  // 🟡🔴 Paralelo — ámbar/rojo (varía según brecha)
-  highlight: '#ff6b35',
-  glowParalelo: 'rgba(255, 107, 53, 0.2)',
+  highlight: '#ffffff',
+  glowParalelo: 'rgba(255, 255, 255, 0.18)',
 
-  // 🔵 Euro — azul océano
-  info: '#00b4d8',
-  glowEuro: 'rgba(0, 180, 216, 0.2)',
+  info: '#ffffff',
+  glowEuro: 'rgba(255, 255, 255, 0.18)',
 
-  // 🟠 Binance P2P — dorado
-  warning: '#ffd60a',
-  glowGasolina: 'rgba(255, 214, 10, 0.2)',
+  warning: '#ffffff',
+  glowGasolina: 'rgba(255, 255, 255, 0.18)',
 
-  // 🟣 BCV Lunes — púrpura
-  bcvLunes: '#b388ff',
-  glowBcvLunes: 'rgba(179, 136, 255, 0.2)',
+  bcvLunes: '#ffffff',
+  glowBcvLunes: 'rgba(255, 255, 255, 0.18)',
 
   // Textos
   textPrimary: '#ffffff',
-  textSecondary: '#a8b2d1',
-  textMuted: '#6b7294',
+  textSecondary: '#a0a0a0',
+  textMuted: '#6b6b6b',
+
+  // Texto sobre acento (botones/iconos blancos)
+  onAccent: '#000000',
 
   // Inputs
-  inputBg: 'rgba(255, 255, 255, 0.04)',
-  inputBorder: 'rgba(255, 255, 255, 0.1)',
+  inputBg: 'rgba(255, 255, 255, 0.06)',
+  inputBorder: 'rgba(255, 255, 255, 0.18)',
 
   // Tab bar
-  tabBar: '#0b0b16',
-  tabBarBorder: 'rgba(255, 255, 255, 0.06)',
+  tabBar: '#000000',
+  tabBarBorder: 'rgba(255, 255, 255, 0.1)',
 
-  // Venezuela flag accent
-  flagYellow: '#ffd60a',
-  flagBlue: '#0033a0',
-  flagRed: '#cf142b',
+  // Venezuela flag accent (monocromo)
+  flagYellow: '#e0e0e0',
+  flagBlue: '#8a8a8a',
+  flagRed: '#b0b0b0',
 };
 
 export const lightTheme = {
-  // Backgrounds — cálido, caribeño
-  primary: '#f5f0eb',
-  secondary: '#ffffff',
-  accent: '#e8e0d9',
+  // Backgrounds
+  primary: '#ffffff',
+  secondary: '#f5f5f5',
+  accent: '#e8e8e8',
 
   // Glass
   cardBg: '#ffffff',
-  cardBorder: 'rgba(0, 0, 0, 0.06)',
+  cardBorder: 'rgba(0, 0, 0, 0.12)',
 
-  glassCard: 'rgba(255, 255, 255, 0.85)',
-  glassTabBar: 'rgba(255, 255, 255, 0.92)',
+  glassCard: 'rgba(255, 255, 255, 0.9)',
+  glassTabBar: 'rgba(255, 255, 255, 0.95)',
   glassOverlay: 'rgba(0, 0, 0, 0.02)',
 
-  // 🟢 BCV Oficial
-  success: '#00a86b',
-  glowBcv: 'rgba(0, 168, 107, 0.1)',
+  // Acento único (negro)
+  success: '#000000',
+  glowBcv: 'rgba(0, 0, 0, 0.1)',
 
-  // 🟡🔴 Paralelo
-  highlight: '#e05a2a',
-  glowParalelo: 'rgba(224, 90, 42, 0.1)',
+  highlight: '#000000',
+  glowParalelo: 'rgba(0, 0, 0, 0.1)',
 
-  // 🔵 Euro
-  info: '#0096c7',
-  glowEuro: 'rgba(0, 150, 199, 0.1)',
+  info: '#000000',
+  glowEuro: 'rgba(0, 0, 0, 0.1)',
 
-  // 🟠 Binance P2P
-  warning: '#d4a800',
-  glowGasolina: 'rgba(212, 168, 0, 0.1)',
+  warning: '#000000',
+  glowGasolina: 'rgba(0, 0, 0, 0.1)',
 
-  // 🟣 BCV Lunes
-  bcvLunes: '#7c3aed',
-  glowBcvLunes: 'rgba(124, 58, 237, 0.1)',
+  bcvLunes: '#000000',
+  glowBcvLunes: 'rgba(0, 0, 0, 0.1)',
 
   // Textos
-  textPrimary: '#1a1a2e',
-  textSecondary: '#5a6478',
-  textMuted: '#94a3b8',
+  textPrimary: '#000000',
+  textSecondary: '#555555',
+  textMuted: '#999999',
+
+  // Texto sobre acento (botones/iconos negros)
+  onAccent: '#ffffff',
 
   // Inputs
-  inputBg: '#f0ece7',
-  inputBorder: 'rgba(0, 0, 0, 0.08)',
+  inputBg: '#f0f0f0',
+  inputBorder: 'rgba(0, 0, 0, 0.15)',
 
   // Tab bar
   tabBar: '#ffffff',
-  tabBarBorder: 'rgba(0, 0, 0, 0.05)',
+  tabBarBorder: 'rgba(0, 0, 0, 0.08)',
 
-  // Venezuela flag accent
-  flagYellow: '#ffd60a',
-  flagBlue: '#0033a0',
-  flagRed: '#cf142b',
+  // Venezuela flag accent (monocromo)
+  flagYellow: '#555555',
+  flagBlue: '#aaaaaa',
+  flagRed: '#888888',
 };

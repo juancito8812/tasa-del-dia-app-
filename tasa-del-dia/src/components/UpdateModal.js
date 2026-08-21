@@ -78,15 +78,15 @@ function UpdateModal({
             >
               {downloading ? (
                 <View style={styles.downloadingRow}>
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={C.onAccent} size="small" />
                   {progress > 0 ? (
-                    <Text style={[styles.buttonText, { color: '#fff', fontWeight: '700' }]}>
+                    <Text style={[styles.buttonText, { color: C.onAccent, fontWeight: '700' }]}>
                       {` ${Math.round(progress / 1024 / 1024)} MB`}
                     </Text>
                   ) : null}
                 </View>
               ) : (
-                <Text style={[styles.buttonText, { color: '#fff', fontWeight: '700' }]}>Descargar APK</Text>
+                <Text style={[styles.buttonText, { color: C.onAccent, fontWeight: '700' }]}>Descargar APK</Text>
               )}
             </TouchableOpacity>
           </View>
