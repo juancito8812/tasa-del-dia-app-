@@ -22,64 +22,81 @@ function createStyles(C) {
     scrollView: { flex: 1 },
     scrollContent: { paddingHorizontal: 12, paddingTop: 2, paddingBottom: 8 },
 
-    // Bento Grid
-    bentoCols: { gap: 8 },
-    bentoRow: { flexDirection: 'row', gap: 8 },
-    bentoHalf: { flex: 1 },
-
-    // Brecha chips row
-    chipsRow: {
+    // Footer terminal: brechas + recordatorio
+    footerBox: {
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      padding: 10,
+      marginTop: 10,
+      gap: 8,
+    },
+    footerRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      marginTop: 2,
-      marginBottom: 4,
-      paddingHorizontal: 2,
     },
-    chipsLeft: {
-      flexDirection: 'row',
-      gap: 6,
-      flexWrap: 'wrap',
-      flex: 1,
+    brechaText: {
+      fontSize: 11,
+      fontWeight: '700',
+      fontFamily: 'monospace',
+      letterSpacing: 0.5,
     },
-    brechaChip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      borderRadius: 20,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderWidth: 1,
-    },
-    brechaText: { fontSize: 11, fontWeight: '700' },
-    updateText: { fontSize: 10 },
-
-    // Reminder inline
-    reminderChip: {
+    reminderRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      borderRadius: 20,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      borderWidth: 1,
     },
-    reminderLabel: { fontSize: 10, fontWeight: '600' },
+    reminderLabel: {
+      fontSize: 10,
+      fontWeight: '600',
+      fontFamily: 'monospace',
+      letterSpacing: 0.5,
+    },
 
-    // Gasolina card
+    // Gasolina
     gasCard: {
-      borderRadius: 18,
       borderWidth: 1,
-      padding: 14,
-      marginTop: 6,
-      overflow: 'hidden',
+      borderStyle: 'dashed',
+      padding: 12,
+      marginTop: 10,
     },
-    gasHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
-    gasTitle: { fontSize: 14, fontWeight: '700' },
-    gasSubtext: { fontSize: 11, marginBottom: 8 },
-    gasItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 3 },
-    gasItemL: { fontSize: 13, fontWeight: '600' },
-    gasItemR: { fontSize: 13, fontWeight: '700', fontVariant: ['tabular-nums'] },
+    gasHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+    gasTitle: {
+      fontSize: 12,
+      fontWeight: '800',
+      letterSpacing: 1,
+      fontFamily: 'monospace',
+      textTransform: 'uppercase',
+    },
+    gasSubtext: {
+      fontSize: 10,
+      marginBottom: 8,
+      fontFamily: 'monospace',
+    },
+    gasItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 3,
+      borderBottomWidth: 1,
+    },
+    gasItemL: {
+      fontSize: 12,
+      fontWeight: '600',
+      fontFamily: 'monospace',
+    },
+    gasItemR: {
+      fontSize: 13,
+      fontWeight: '700',
+      fontFamily: 'monospace',
+      fontVariant: ['tabular-nums'],
+    },
+    updateText: {
+      fontSize: 9,
+      textAlign: 'center',
+      marginTop: 8,
+      fontFamily: 'monospace',
+      letterSpacing: 0.5,
+    },
   });
 }
 
@@ -96,13 +113,6 @@ export default function RatesScreen() {
 
   const bcvLunesColor = C.bcvLunes;
 
-  const brechaColor = hook.brecha !== null
-    ? hook.brecha > 15 ? C.highlight : hook.brecha > 8 ? C.warning : C.success
-    : C.textMuted;
-  const brechaLunesColor = hook.brechaLunes !== null
-    ? hook.brechaLunes > 15 ? C.highlight : hook.brechaLunes > 8 ? C.warning : C.success
-    : C.textMuted;
-
   // Handlers estables: se pasan a RateCard/BCVModal (memoizados)
   const handleEditBCVLunes = useCallback(() => {
     // Prefill en formato local es-VE (780,50) en vez del raw float (780.5)
@@ -114,6 +124,23 @@ export default function RatesScreen() {
     saveBcvLunes(editValue);
     setModalVisible(false);
   }, [saveBcvLunes, editValue]);
+
+  // Barras proporcionales: ratio de cada tasa respecto a la máxima visible
+  const maxRate = useMemo(() => {
+    const rates = [
+      hook.data.tasaBCV,
+      hook.data.tasaParalelo,
+      hook.data.tasaEuro,
+      hook.data.tasaBinanceP2P,
+      hook.tasaBCVLunes,
+    ].filter((r) => typeof r === 'number' && r > 0);
+    return rates.length ? Math.max(...rates) : 1;
+  }, [hook.data, hook.tasaBCVLunes]);
+
+  const ratioOf = useCallback(
+    (rate) => (typeof rate === 'number' && rate > 0 && maxRate > 0 ? rate / maxRate : 0),
+    [maxRate]
+  );
 
   return (
     <View style={styles.container}>
@@ -133,15 +160,13 @@ export default function RatesScreen() {
           <RefreshControl
             refreshing={hook.refreshing}
             onRefresh={hook.onRefresh}
-            tintColor={C.highlight}
-            colors={[C.highlight]}
+            tintColor={C.textPrimary}
+            colors={[C.textPrimary]}
             progressBackgroundColor={C.secondary}
           />
         }
       >
-        {/* === BENTO GRID === */}
-
-        {/* 🥇 BCV — Hero card, full width (2 cols) */}
+        {/* === HERO: BCV (bloque invertido) === */}
         <RateCard
           title="BCV (Oficial)"
           subtitle="Banco Central de Venezuela"
@@ -154,111 +179,110 @@ export default function RatesScreen() {
           type="bcv"
         />
 
-        {/* 🥈 Paralelo + Euro side by side */}
-        <View style={styles.bentoRow}>
-          <View style={styles.bentoHalf}>
-            <RateCard
-              title="Dólar Paralelo"
-              subtitle="Mercado promedio"
-              rate={hook.data.tasaParalelo}
-              icon="trending-up"
-              color={C.highlight}
-              loading={hook.loading}
-              updatedAt={hook.data.usdFetchedAt}
-              size="medium"
-              type="paralelo"
-            />
-          </View>
-          <View style={styles.bentoHalf}>
-            <RateCard
-              title="Euro (BCV)"
-              subtitle="Banco Central"
-              rate={hook.data.tasaEuro}
-              icon="globe"
-              color={C.info}
-              loading={hook.loading}
-              updatedAt={hook.data.eurCapturedAt}
-              size="medium"
-              type="euro"
-            />
-          </View>
-        </View>
+        {/* === FILAS TERMINALES === */}
+        <RateCard
+          title="Dólar Paralelo"
+          subtitle="Mercado promedio"
+          rate={hook.data.tasaParalelo}
+          icon="trending-up"
+          color={C.highlight}
+          loading={hook.loading}
+          updatedAt={hook.data.usdFetchedAt}
+          size="medium"
+          type="paralelo"
+          ratio={ratioOf(hook.data.tasaParalelo)}
+        />
+        <RateCard
+          title="Euro (BCV)"
+          subtitle="Banco Central"
+          rate={hook.data.tasaEuro}
+          icon="globe"
+          color={C.info}
+          loading={hook.loading}
+          updatedAt={hook.data.eurCapturedAt}
+          size="medium"
+          type="euro"
+          ratio={ratioOf(hook.data.tasaEuro)}
+        />
+        <RateCard
+          title="Binance P2P"
+          subtitle="Paralelo crypto"
+          rate={hook.data.tasaBinanceP2P}
+          icon="logo-bitcoin"
+          color={C.warning}
+          loading={hook.loading}
+          updatedAt={hook.data.usdFetchedAt}
+          size="compact"
+          type="gasolina"
+          ratio={ratioOf(hook.data.tasaBinanceP2P)}
+        />
+        <RateCard
+          title="BCV (Lunes)"
+          subtitle="Tasa del lunes"
+          rate={hook.tasaBCVLunes}
+          icon="calendar"
+          color={bcvLunesColor}
+          loading={false}
+          size="compact"
+          type="bcv-lunes"
+          onEdit={handleEditBCVLunes}
+          ratio={ratioOf(hook.tasaBCVLunes)}
+        />
 
-        {/* 🥉 Binance P2P + BCV Lunes side by side */}
-        <View style={styles.bentoRow}>
-          <View style={styles.bentoHalf}>
-            <RateCard
-              title="Binance P2P"
-              subtitle="Paralelo crypto"
-              rate={hook.data.tasaBinanceP2P}
-              icon="logo-bitcoin"
-              color={C.warning}
-              loading={hook.loading}
-              updatedAt={hook.data.usdFetchedAt}
-              size="compact"
-              type="gasolina"
-            />
-          </View>
-          <View style={styles.bentoHalf}>
-            <RateCard
-              title="BCV (Lunes)"
-              subtitle="Tasa del lunes"
-              rate={hook.tasaBCVLunes}
-              icon="calendar"
-              color={bcvLunesColor}
-              loading={false}
-              size="compact"
-              type="bcv-lunes"
-              onEdit={handleEditBCVLunes}
-            />
-          </View>
-        </View>
-
-        {/* === CHIPS ROW: Brechas + Recordatorio + Update time === */}
-        <View style={styles.chipsRow}>
-          <View style={styles.chipsLeft}>
+        {/* === FOOTER: brechas + recordatorio (borde punteado) === */}
+        <View style={[styles.footerBox, { borderColor: C.cardBorder }]}>
+          <View style={styles.footerRow}>
             {hook.brecha !== null && (
-              <View style={[styles.brechaChip, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-                <Ionicons name="git-compare-outline" size={11} color={brechaColor} />
-                <Text style={[styles.brechaText, { color: brechaColor }]}>BCV: {hook.brecha.toFixed(1)}%</Text>
-              </View>
+              <Text style={[styles.brechaText, { color: C.textPrimary }]}>
+                BRECHA BCV↔PAR: +{hook.brecha.toFixed(1)}%
+              </Text>
             )}
             {hook.brechaLunes !== null && (
-              <View style={[styles.brechaChip, { backgroundColor: C.cardBg, borderColor: bcvLunesColor + '30' }]}>
-                <Ionicons name="calendar" size={11} color={bcvLunesColor} />
-                <Text style={[styles.brechaText, { color: brechaLunesColor }]}>Lunes: {hook.brechaLunes.toFixed(1)}%</Text>
-              </View>
+              <Text style={[styles.brechaText, { color: C.dimmed }]}>
+                LUN: +{hook.brechaLunes.toFixed(1)}%
+              </Text>
             )}
           </View>
-
-          {/* Reminder toggle inline */}
-          <View style={[styles.reminderChip, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-            <Ionicons name="alarm-outline" size={12} color={hook.reminderEnabled ? bcvLunesColor : C.textMuted} />
-            <Text style={[styles.reminderLabel, { color: hook.reminderEnabled ? bcvLunesColor : C.textMuted }]}>
-              {hook.reminderEnabled ? 'Vie 6PM' : 'Off'}
-            </Text>
+          <View style={styles.footerRow}>
+            <View style={styles.reminderRow}>
+              <Ionicons
+                name="alarm-outline"
+                size={12}
+                color={hook.reminderEnabled ? C.textPrimary : C.dimmed}
+              />
+              <Text style={[styles.reminderLabel, { color: hook.reminderEnabled ? C.textPrimary : C.dimmed }]}>
+                {hook.reminderEnabled ? 'REC: VIE 6PM ●' : 'REC: OFF ○'}
+              </Text>
+            </View>
             <Switch
               value={hook.reminderEnabled}
               onValueChange={hook.handleToggleReminder}
-              trackColor={{ false: C.inputBg, true: bcvLunesColor + '50' }}
-              thumbColor={hook.reminderEnabled ? bcvLunesColor : C.textMuted}
+              trackColor={{ false: C.barTrack, true: C.dimmed }}
+              thumbColor={hook.reminderEnabled ? C.textPrimary : C.textMuted}
               style={{ transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }] }}
             />
           </View>
         </View>
 
-        {/* ⛽ Gasolina — Full width */}
+        {/* ⛽ GASOLINA */}
         {hook.data.tasaBCV !== null && (
-          <View style={[styles.gasCard, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
+          <View style={[styles.gasCard, { borderColor: C.cardBorder }]}>
             <View style={styles.gasHeader}>
-              <Ionicons name="flame" size={16} color={C.warning} />
-              <Text style={[styles.gasTitle, { color: C.textPrimary }]}>Gasolina (BCV)</Text>
+              <Ionicons name="flame" size={14} color={C.textPrimary} />
+              <Text style={[styles.gasTitle, { color: C.textPrimary }]}>Gasolina</Text>
             </View>
-            <Text style={[styles.gasSubtext, { color: C.textMuted }]}>$0,50 USD/L — Tasa BCV</Text>
-            {[1, 5, 10, 20, 30].map((litros) => {
+            <Text style={[styles.gasSubtext, { color: C.dimmed }]}>$0,50 USD/L — TASA BCV</Text>
+            {[1, 5, 10, 20, 30].map((litros, idx, arr) => {
               const precioBs = litros * 0.50 * hook.data.tasaBCV;
               return (
-                <View key={litros} style={styles.gasItem}>
+                <View
+                  key={litros}
+                  style={[
+                    styles.gasItem,
+                    idx === arr.length - 1 && { borderBottomWidth: 0 },
+                    { borderBottomColor: C.cardBorder },
+                  ]}
+                >
                   <Text style={[styles.gasItemL, { color: C.textSecondary }]}>{litros}L</Text>
                   <Text style={[styles.gasItemR, { color: C.textPrimary }]}>
                     Bs. {precioBs.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -270,8 +294,8 @@ export default function RatesScreen() {
         )}
 
         {/* Update time footer */}
-        <Text style={[styles.updateText, { color: C.textMuted, textAlign: 'center', marginTop: 8 }]}>
-          Última actualización: {hook.data.usdFetchedAt
+        <Text style={[styles.updateText, { color: C.dimmed }]}>
+          ÚLTIMA ACTUALIZACIÓN: {hook.data.usdFetchedAt
             ? new Date(hook.data.usdFetchedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })
             : '—'}
         </Text>

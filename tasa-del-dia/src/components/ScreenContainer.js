@@ -1,29 +1,13 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
 export default function ScreenContainer({ children }) {
-  const { isDark } = useTheme();
-  if (isDark) {
-    return (
-      <LinearGradient
-        colors={['#000000', '#0d0d0d', '#1a1a1a']}
-        locations={[0, 0.5, 1]}
-        style={styles.container}
-      >
-        {children}
-      </LinearGradient>
-    );
-  }
+  const { colors: C, isDark } = useTheme();
   return (
-    <LinearGradient
-      colors={['#ffffff', '#f2f2f2']}
-      locations={[0, 1]}
-      style={styles.container}
-    >
+    <View style={[styles.container, { backgroundColor: C?.primary || (isDark ? '#000000' : '#ffffff') }]}>
       {children}
-    </LinearGradient>
+    </View>
   );
 }
 

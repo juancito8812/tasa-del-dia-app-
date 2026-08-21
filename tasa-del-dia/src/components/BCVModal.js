@@ -70,11 +70,12 @@ function BCVModal({
         {/* Hoja inferior */}
         <Animated.View style={[styles.sheetWrap, sheetStyle]}>
           <View style={[styles.sheet, { backgroundColor: C.secondary, borderColor: C.cardBorder }]}>
-            {/* Handle */}
-            <View style={[styles.handle, { backgroundColor: C.textMuted + '40' }]} />
-            <Text style={[styles.title, { color: C.textPrimary }]}>BCV (Lunes)</Text>
-            <Text style={[styles.subtitle, { color: C.textMuted }]}>
-              Ingresa la tasa publicada por el BCV para el lunes
+            <View style={styles.titleRow}>
+              <Text style={[styles.titlePrompt, { color: C.dimmed }]}>{'>'}</Text>
+              <Text style={[styles.title, { color: C.textPrimary }]}>BCV (Lunes)</Text>
+            </View>
+            <Text style={[styles.subtitle, { color: C.dimmed }]}>
+              TASA PUBLICADA POR EL BCV PARA EL LUNES:
             </Text>
             <TextInput
               style={[
@@ -86,7 +87,7 @@ function BCVModal({
                 },
               ]}
               placeholder="0,00"
-              placeholderTextColor={C.textMuted}
+              placeholderTextColor={C.dimmed}
               keyboardType="decimal-pad"
               value={editValue}
               onChangeText={onChangeText}
@@ -94,18 +95,18 @@ function BCVModal({
             />
             <View style={styles.buttons}>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: C.inputBg }]}
+                style={[styles.button, { backgroundColor: 'transparent', borderWidth: 1, borderColor: C.cardBorder }]}
                 onPress={onClose}
                 activeOpacity={0.7}
               >
-                <Text style={[styles.buttonText, { color: C.textMuted }]}>Cancelar</Text>
+                <Text style={[styles.buttonText, { color: C.dimmed }]}>Cancelar</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, { backgroundColor: bcvLunesColor }]}
+                style={[styles.button, { backgroundColor: C.textPrimary }]}
                 onPress={handleSave}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.buttonText, { color: C.onAccent, fontWeight: '700' }]}>Guardar</Text>
+                <Text style={[styles.buttonText, { color: C.onAccent, fontWeight: '800' }]}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -134,48 +135,58 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 28 : 16,
   },
   sheet: {
-    borderRadius: 24,
-    padding: 22,
+    borderRadius: 0,
+    padding: 20,
     borderWidth: 1,
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginBottom: 4,
   },
+  titlePrompt: {
+    fontSize: 15,
+    fontWeight: '700',
+    fontFamily: 'monospace',
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '800',
+    letterSpacing: 1,
+    fontFamily: 'monospace',
+    textTransform: 'uppercase',
+  },
   subtitle: {
-    fontSize: 12,
-    marginBottom: 16,
+    fontSize: 10,
+    marginBottom: 14,
+    letterSpacing: 1,
+    fontFamily: 'monospace',
   },
   input: {
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 0,
+    padding: 13,
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: '700',
     textAlign: 'center',
     borderWidth: 1,
     fontVariant: ['tabular-nums'],
+    fontFamily: 'monospace',
   },
   buttons: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 16,
+    marginTop: 14,
   },
   button: {
     flex: 1,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 0,
     alignItems: 'center',
   },
   buttonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'monospace',
   },
 });

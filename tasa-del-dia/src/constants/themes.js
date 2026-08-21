@@ -49,6 +49,10 @@ export const darkTheme = {
   tabBar: '#000000',
   tabBarBorder: 'rgba(255, 255, 255, 0.1)',
 
+  // Terminal
+  barTrack: '#222222',
+  dimmed: '#888888',
+
   // Venezuela flag accent (monocromo)
   flagYellow: '#e0e0e0',
   flagBlue: '#8a8a8a',
@@ -100,6 +104,10 @@ export const lightTheme = {
   // Tab bar
   tabBar: '#ffffff',
   tabBarBorder: 'rgba(0, 0, 0, 0.08)',
+
+  // Terminal
+  barTrack: '#e5e5e5',
+  dimmed: '#777777',
 
   // Venezuela flag accent (monocromo)
   flagYellow: '#555555',

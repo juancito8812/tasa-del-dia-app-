@@ -1,22 +1,18 @@
 import React from 'react';
 import { View, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { BlurView } from 'expo-blur';
-import { useTheme } from '../context/ThemeContext';
 import { hapticLight } from '../utils/haptics';
 
 const TABS = /** @type {const} */ ([
-  { key: 'Tasas', icon: 'pulse' },
-  { key: 'Conversor', icon: 'swap-horizontal' },
-  { key: 'Historial', icon: 'stats-chart' },
+  { key: 'Tasas', tag: 'TAS' },
+  { key: 'Conversor', tag: 'CONV' },
+  { key: 'Historial', tag: 'HIST' },
 ]);
 
 function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
-  const { isDark } = useTheme();
   return (
-    <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint={isDark ? 'dark' : 'light'} style={[
+    <View style={[
       styles.container,
-      { borderTopColor: colors.tabBarBorder }
+      { backgroundColor: colors.tabBar, borderTopColor: colors.tabBarBorder },
     ]}>
       <View style={styles.tabsRow}>
         {TABS.map((tab, i) => {
@@ -28,9 +24,9 @@ function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
             extrapolate: 'clamp',
           });
 
-          const iconColor = activeProgress.interpolate({
+          const labelColor = activeProgress.interpolate({
             inputRange: [0, 1],
-            outputRange: [colors.textMuted, colors.highlight],
+            outputRange: [colors.textMuted, colors.textPrimary],
           });
 
           const indicatorScaleX = activeProgress.interpolate({
@@ -50,23 +46,17 @@ function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
               accessibilityState={{ selected: isActive }}
               activeOpacity={0.7}
             >
-              <View style={styles.iconWrapper}>
-                <Animated.View>
-                  <Ionicons
-                    name={tab.icon}
-                    size={22}
-                    color={iconColor}
-                  />
-                </Animated.View>
-              </View>
-              <Animated.Text style={[styles.label, { color: iconColor }]}>
+              <Animated.Text style={[styles.tag, { color: labelColor }]}>
+                [{tab.tag}]
+              </Animated.Text>
+              <Animated.Text style={[styles.label, { color: labelColor }]}>
                 {tab.key}
               </Animated.Text>
               <Animated.View
                 style={[
                   styles.indicator,
                   {
-                    backgroundColor: colors.highlight,
+                    backgroundColor: colors.textPrimary,
                     transform: [{ scaleX: indicatorScaleX }],
                   },
                 ]}
@@ -75,7 +65,7 @@ function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
           );
         })}
       </View>
-    </BlurView>
+    </View>
   );
 }
 
@@ -84,9 +74,9 @@ export default React.memo(CustomTabBar);
 const styles = StyleSheet.create({
   container: {
     borderTopWidth: 1,
-    paddingTop: 4,
+    paddingTop: 5,
     paddingBottom: Platform.OS === 'ios' ? 20 : 4,
-    height: Platform.OS === 'ios' ? 76 : 60,
+    height: Platform.OS === 'ios' ? 76 : 62,
   },
   tabsRow: {
     flexDirection: 'row',
@@ -98,21 +88,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingTop: 2,
   },
-  iconWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 28,
-    height: 28,
+  tag: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontFamily: 'monospace',
   },
   label: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 1,
+    fontFamily: 'monospace',
   },
   indicator: {
-    width: 20,
-    height: 3,
-    borderRadius: 1.5,
+    width: 22,
+    height: 2,
     marginTop: 3,
   },
 });
