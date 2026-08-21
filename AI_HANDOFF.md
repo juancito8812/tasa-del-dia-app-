@@ -626,4 +626,32 @@ APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299
 
 ---
 
+### Rediseño TERMINAL de las 3 pantallas (`feature/ui-monocromo`, 20-Ago-2026, commits `8f2b9b6` + `4dd3090`)
+
+El usuario aprobó vía mockups (companion visual, dirección **C — Terminal/Bloomberg**) un rediseño completo con el monocromo: más fuerza y contraste. Lenguaje: tipografía monoespaciada, bloques invertidos para datos clave, barras proporcionales, tags entre corchetes, bordes punteados, esquinas rectas, cero glass/blur/glows.
+
+**Cambios por archivo:**
+- `RateCard.js` — reescrito: hero BCV = bloque invertido (bg textPrimary, texto onAccent) con EN VIVO pulsante; resto = filas `[ TÍTULO ]` + barra proporcional (prop `ratio` = rate/maxRate) + valor mono; sin BlurView/LinearGradient/glow/specular
+- `RatesScreen.js` — bento grid → hero + 4 filas full-width; footer punteado con brechas + switch recordatorio ("REC: OFF ○"); gasolina en caja punteada
+- `ConverterScreen.js` — display invertido con cursor ▏, quick chips `[100]`, botón `> CONVERTIR_`, selector radio `(•)/( )` con tags [BCV]/[PAR]/[BNC]/[EUR]/[LUN], spreads en cajas punteadas, validación "✗ ..." inline
+- `HistoryScreen.js` — chips `[20 AGO]` (activo invertido), chart en contenedor punteado, items con barra lateral + valores mono
+- `CustomTabBar.js` — `[TAS] [CONV] [HIST]` mono, indicador cuadrado; sin BlurView
+- `RatesHeader.js` — `> Tasa del Día` + `VENEZUELA // BCV · PARALELO · EURO`, borde inferior punteado; conserva 🇻🇪 y banners error/offline (tests)
+- `ScreenContainer.js` — fondo plano C.primary (sin gradiente); fallback isDark para test mock
+- `DateDetailCard.js` — esquinas rectas, filas con borde inferior, labels uppercase mono, textos exactos preservados ('Copiar'/'Copiado'/'Copiar todo'/'Manual'/día)
+- `BCVModal.js` — cuadrada, título `> BCV (Lunes)` (prompt separado del texto exacto para tests), Guardar invertido
+- `UpdateModal.js` — solo borderRadius 0 (textos de tests intactos)
+- `HistoryChart.js` — colores [textPrimary, dimmed] para distinguir BCV vs Paralelo en monocromo
+- `themes.js` — claves nuevas: `barTrack`, `dimmed`
+
+**Trampas de tests respetadas** (importante para futuros cambios): RateCard exige Text con children EXACTOS del title y 'EN VIVO'; DateDetailCard exige 'Dom'/'Manual'/'Copiar'/'Copiado'/'Copiar todo' como children exactos; BCVModal exige 'BCV (Lunes)'/'Cancelar'/'Guardar'; CustomTabBar exige labels 'Tasas'/'Conversor'/'Historial'. Los corchetes/prompts van como Text nodes SEPARADOS.
+
+**Verificación:** 186 tests ✅ · lint 0 warnings ✅ · tsc 0 ✅ · build EAS local `TasaDelDia-terminal.apk` (firma `299073e3…`) instalado en A12 → las 3 pantallas coinciden con los mockups, 0 FATAL, RAM 140 MB.
+
+**Nota:** los screenshots del A12 salen con tinte sepia — es el perfil de color de la pantalla del teléfono (filtro luz azul), no la app (colores puro negro/blanco).
+
+**Estado:** rama `feature/ui-monocromo` (commits `0cd557f` → `8f2b9b6` → `4dd3090`), sin merge a main, sin release. Mockups persistidos en `.superpowers/brainstorm/` (ignorado en git).
+
+---
+
 *Fin del documento de traspaso — Última actualización: 20-Ago-2026*
