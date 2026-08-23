@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { DistributionProvider } from './src/context/DistributionContext';
 import RatesScreen from './src/screens/RatesScreen';
 import ConverterScreen from './src/screens/ConverterScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
@@ -202,11 +203,13 @@ function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <ErrorBoundary>
-          <AnimatedAppContent />
-        </ErrorBoundary>
-      </ThemeProvider>
+      <DistributionProvider>
+        <ThemeProvider>
+          <ErrorBoundary>
+            <AnimatedAppContent />
+          </ErrorBoundary>
+        </ThemeProvider>
+      </DistributionProvider>
     </SafeAreaProvider>
   );
 }
