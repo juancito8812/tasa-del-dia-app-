@@ -17,11 +17,21 @@
         "buildType": "apk"
       }
     },
+    "galaxy-store": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "DISTRIBUTION": "galaxy-store"
+      }
+    },
     "production": {
       "autoIncrement": true
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "galaxy-store": {}
   }
 }
