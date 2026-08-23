@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
-import { DistributionProvider } from './src/context/DistributionContext';
+import { DistributionProvider, useDistribution } from './src/context/DistributionContext';
 import RatesScreen from './src/screens/RatesScreen';
 import ConverterScreen from './src/screens/ConverterScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
@@ -18,6 +18,7 @@ import { checkLatestRelease, isUpdateAvailable, getCurrentVersion, isVersionSkip
 
 function AnimatedAppContent() {
   const { colors: C, isDark, theme, loaded } = useTheme();
+  const { isGalaxyStore } = useDistribution();
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const prevTheme = useRef(theme);
   const pagerRef = useRef(null);
@@ -66,6 +67,9 @@ function AnimatedAppContent() {
 
   // Auto-update: check on mount, delay so it doesn't interrupt first render
   useEffect(() => {
+    // Galaxy Store manages its own updates — skip our auto-update check
+    if (isGalaxyStore) return;
+
     let showTimer = null;
     let interactionTask = null;
     const check = async () => {
@@ -89,7 +93,7 @@ function AnimatedAppContent() {
       interactionTask?.cancel();
       if (showTimer) clearTimeout(showTimer);
     };
-  }, []);
+  }, [isGalaxyStore]);
 
   // Android: el botón "atrás" vuelve a la pestaña anterior en vez de cerrar la app
   useEffect(() => {
