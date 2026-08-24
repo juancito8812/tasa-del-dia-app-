@@ -28,7 +28,7 @@
 | Versión actual | **1.4.7** (versionCode 10407) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 186/186 passing · 21 suites |
+| Tests | 388/388 passing · 26 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
 
@@ -140,7 +140,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (186) + lint (0 warnings) + typecheck |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (388) + lint (0 warnings) + typecheck |
 | **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
 | **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |

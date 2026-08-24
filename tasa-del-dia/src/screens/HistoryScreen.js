@@ -33,7 +33,7 @@ function createStyles(C) {
       fontSize: 15, fontWeight: '600', color: C.textPrimary, fontVariant: ['tabular-nums'],
     },
     customDateButton: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, backgroundColor: C.info, flexDirection: 'row', alignItems: 'center', gap: 6 },
-    customDateButtonText: { fontSize: 13, fontWeight: '700', color: C.onAccent },
+    customDateButtonText: { fontSize: 13, fontWeight: '700', color: '#fff' },
     chartContainer: {
       backgroundColor: C.cardBg, borderRadius: 16, padding: 14, marginBottom: 20,
       borderWidth: 1, borderColor: C.cardBorder,
@@ -172,7 +172,7 @@ export default function HistoryScreen() {
                       onSubmitEditing={h.handleCustomDate}
                     />
                     <TouchableOpacity style={styles.customDateButton} onPress={h.handleCustomDate} activeOpacity={0.8}>
-                      <Ionicons name="arrow-forward" size={14} color={C.onAccent} />
+                      <Ionicons name="arrow-forward" size={14} color="#fff" />
                       <Text style={styles.customDateButtonText}>Ver</Text>
                     </TouchableOpacity>
                   </View>

@@ -16,7 +16,7 @@ function HistoryChartBase({ chartInfo, C, ratesCount }) {
   const chartHeight = 160;
   const barGroupWidth = (screenWidth - 80) / labels.length;
 
-  const colors = [C.textPrimary, C.textMuted];
+  const colors = [C.success, C.highlight];
 
   return (
     <View style={styles.container}>

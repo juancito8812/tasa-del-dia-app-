@@ -1,6 +1,8 @@
 import React, { useMemo, useCallback, useRef, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedNumber from './AnimatedNumber';
 import ShimmerEffect from './ShimmerEffect';
@@ -19,12 +21,26 @@ function createStyles(C) {
   return StyleSheet.create({
     // === LARGE (hero card, 2 columns) ===
     cardLarge: {
-      borderRadius: 12,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: C.cardBorder,
-      backgroundColor: C.cardBg,
       padding: 20,
-      marginBottom: 16,
+      marginBottom: 8,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 20,
+      elevation: 10,
+      overflow: 'hidden',
+    },
+    glowAccentLarge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      opacity: 0.7,
     },
     headerLarge: {
       flexDirection: 'row',
@@ -34,19 +50,18 @@ function createStyles(C) {
     iconContainerLarge: {
       width: 44,
       height: 44,
-      borderRadius: 10,
+      borderRadius: 14,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 14,
     },
     titleLarge: {
-      fontSize: 16,
-      fontWeight: '500',
+      fontSize: 18,
+      fontWeight: '800',
       letterSpacing: 0.3,
     },
     subtitleLarge: {
       fontSize: 12,
-      fontWeight: '400',
       marginTop: 2,
       letterSpacing: 0.2,
     },
@@ -56,13 +71,13 @@ function createStyles(C) {
       gap: 6,
     },
     ratePrefixLarge: {
-      fontSize: 18,
-      fontWeight: '500',
-      opacity: 0.6,
+      fontSize: 20,
+      fontWeight: '700',
+      opacity: 0.7,
     },
     rateValueLarge: {
-      fontSize: 32,
-      fontWeight: '700',
+      fontSize: 38,
+      fontWeight: '900',
       letterSpacing: 0.5,
       fontVariant: ['tabular-nums'],
     },
@@ -70,19 +85,33 @@ function createStyles(C) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      marginTop: 12,
-      paddingTop: 12,
+      marginTop: 8,
+      paddingTop: 10,
       borderTopWidth: 1,
     },
 
     // === MEDIUM (1 column, standard) ===
     cardMedium: {
-      borderRadius: 12,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: C.cardBorder,
-      backgroundColor: C.cardBg,
-      padding: 20,
-      marginBottom: 16,
+      padding: 14,
+      marginBottom: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 14,
+      elevation: 6,
+      overflow: 'hidden',
+    },
+    glowAccentMedium: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 3,
+      borderTopLeftRadius: 18,
+      borderTopRightRadius: 18,
+      opacity: 0.6,
     },
     headerMedium: {
       flexDirection: 'row',
@@ -92,14 +121,14 @@ function createStyles(C) {
     iconContainerMedium: {
       width: 32,
       height: 32,
-      borderRadius: 8,
+      borderRadius: 10,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 10,
     },
     titleMedium: {
-      fontSize: 16,
-      fontWeight: '500',
+      fontSize: 13,
+      fontWeight: '700',
       letterSpacing: 0.3,
     },
     rateRowMedium: {
@@ -109,12 +138,12 @@ function createStyles(C) {
     },
     ratePrefixMedium: {
       fontSize: 14,
-      fontWeight: '500',
-      opacity: 0.6,
+      fontWeight: '600',
+      opacity: 0.7,
     },
     rateValueMedium: {
-      fontSize: 32,
-      fontWeight: '700',
+      fontSize: 24,
+      fontWeight: '800',
       letterSpacing: 0.3,
       fontVariant: ['tabular-nums'],
     },
@@ -122,19 +151,29 @@ function createStyles(C) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      marginTop: 8,
-      paddingTop: 8,
+      marginTop: 6,
+      paddingTop: 6,
       borderTopWidth: 1,
     },
 
     // === COMPACT (small, inline) ===
     cardCompact: {
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: C.cardBorder,
-      backgroundColor: C.cardBg,
-      padding: 14,
+      padding: 10,
       marginBottom: 0,
+      overflow: 'hidden',
+    },
+    glowAccentCompact: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 2,
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+      opacity: 0.5,
     },
     headerCompact: {
       flexDirection: 'row',
@@ -144,14 +183,14 @@ function createStyles(C) {
     iconContainerCompact: {
       width: 24,
       height: 24,
-      borderRadius: 6,
+      borderRadius: 7,
       justifyContent: 'center',
       alignItems: 'center',
       marginRight: 6,
     },
     titleCompact: {
-      fontSize: 13,
-      fontWeight: '500',
+      fontSize: 11,
+      fontWeight: '600',
     },
     rateRowCompact: {
       flexDirection: 'row',
@@ -160,14 +199,25 @@ function createStyles(C) {
     },
     ratePrefixCompact: {
       fontSize: 12,
-      fontWeight: '500',
-      opacity: 0.6,
+      fontWeight: '600',
+      opacity: 0.7,
     },
     rateValueCompact: {
-      fontSize: 22,
+      fontSize: 18,
       fontWeight: '700',
       letterSpacing: 0.3,
       fontVariant: ['tabular-nums'],
+    },
+
+    // Glass 2.0 — specular edge highlight (brillo superior)
+    specularEdge: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 1.5,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
     },
 
     // Chip EN VIVO
@@ -178,7 +228,7 @@ function createStyles(C) {
       gap: 6,
       paddingHorizontal: 9,
       paddingVertical: 4,
-      borderRadius: 6,
+      borderRadius: 20,
       marginBottom: 10,
       borderWidth: 1,
     },
@@ -189,7 +239,7 @@ function createStyles(C) {
     },
     liveText: {
       fontSize: 10,
-      fontWeight: '700',
+      fontWeight: '800',
       letterSpacing: 1.2,
     },
 
@@ -199,8 +249,7 @@ function createStyles(C) {
       marginLeft: 4,
     },
     metaText: {
-      fontSize: 12,
-      fontWeight: '400',
+      fontSize: 10,
     },
     usdIcon: {
       fontSize: 10,
@@ -236,7 +285,7 @@ function RateCard({
   onEdit,
   type,
 }) {
-  const { colors: C } = useTheme();
+  const { colors: C, isDark } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
 
   const formatRate = useCallback((value) => {
@@ -259,10 +308,23 @@ function RateCard({
     }
   };
 
+  const glowColor = {
+    bcv: C.glowBcv,
+    paralelo: C.glowParalelo,
+    euro: C.glowEuro,
+    'bcv-lunes': C.glowBcvLunes,
+    gasolina: C.glowGasolina,
+  }[type] || 'rgba(255,255,255,0.05)';
+
   const isLarge = size === 'large';
   const isCompact = size === 'compact';
   const isMedium = size === 'medium';
   const reduceMotion = useReduceMotion();
+
+  // BlurView es costoso en Android (render effect por instancia). Solo se usa
+  // en la tarjeta hero (large); el resto usa glassCard (translúcido, ~costo cero).
+  // En iOS el blur es nativo y barato, se mantiene en todas.
+  const useBlur = Platform.OS === 'ios' || isLarge;
 
   // Chip EN VIVO — pulso del punto (solo en el hero BCV)
   const livePulse = useRef(new Animated.Value(1)).current;
@@ -281,13 +343,14 @@ function RateCard({
 
   const valueStyle = isLarge ? styles.rateValueLarge : isMedium ? styles.rateValueMedium : styles.rateValueCompact;
   // Estable entre renders (memo de AnimatedNumber): el color solo cambia con el tema
-  const numberStyle = useMemo(() => [valueStyle, { color: C.textPrimary }], [valueStyle, C.textPrimary]);
+  const numberStyle = useMemo(() => [valueStyle, { color }], [valueStyle, color]);
 
   if (loading) {
-    return <ShimmerEffect style={isCompact ? {} : { marginBottom: 16, borderRadius: 12, height: isLarge ? 140 : 110 }} />;
+    return <ShimmerEffect style={isCompact ? {} : { marginBottom: 8, borderRadius: isLarge ? 20 : isMedium ? 18 : 14, height: isLarge ? 140 : isMedium ? 110 : 80 }} />;
   }
 
   const cardStyle = isLarge ? styles.cardLarge : isMedium ? styles.cardMedium : styles.cardCompact;
+  const glowStyle = isLarge ? styles.glowAccentLarge : isMedium ? styles.glowAccentMedium : styles.glowAccentCompact;
   const headerStyle = isLarge ? styles.headerLarge : isMedium ? styles.headerMedium : styles.headerCompact;
   const iconContainerStyle = isLarge ? styles.iconContainerLarge : isMedium ? styles.iconContainerMedium : styles.iconContainerCompact;
   const iconSize = isLarge ? 22 : isMedium ? 16 : 13;
@@ -296,34 +359,51 @@ function RateCard({
   const prefixStyle = isLarge ? styles.ratePrefixLarge : isMedium ? styles.ratePrefixMedium : styles.ratePrefixCompact;
 
   const cardBody = (
-    <View style={cardStyle}>
+    <View style={[cardStyle, { shadowColor: glowColor }, !useBlur && { backgroundColor: C.glassCard }]}>
+      {useBlur && (
+        <BlurView
+          intensity={Platform.OS === 'android' ? 30 : 40}
+          tint={isDark ? 'dark' : 'light'}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
+      <View style={[glowStyle, { backgroundColor: color }]} />
+      {/* Glass 2.0 — brillo especular superior (más sutil en tema claro) */}
+      <LinearGradient
+        colors={[isDark ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.65)', 'rgba(255,255,255,0)']}
+        start={{ x: 0.2, y: 0 }}
+        end={{ x: 0.8, y: 1 }}
+        style={[styles.specularEdge, { borderRadius: isLarge ? 20 : isMedium ? 18 : 14 }]}
+        pointerEvents="none"
+      />
+
       {isLive && rate != null && (
-        <View style={[styles.liveChip, { backgroundColor: C.cardBg, borderColor: C.cardBorder }]}>
-          <Animated.View style={[styles.liveDot, { backgroundColor: C.textPrimary, opacity: livePulse }]} />
-          <Text style={[styles.liveText, { color: C.textPrimary }]}>EN VIVO</Text>
+        <View style={[styles.liveChip, { backgroundColor: color + '12', borderColor: color + '30' }]}>
+          <Animated.View style={[styles.liveDot, { backgroundColor: color, opacity: livePulse }]} />
+          <Text style={[styles.liveText, { color }]}>EN VIVO</Text>
         </View>
       )}
 
       <View style={headerStyle}>
-        <View style={[iconContainerStyle, { backgroundColor: C.secondary }]}>
-          <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={iconSize} color={C.textPrimary} />
+        <View style={[iconContainerStyle, { backgroundColor: color.startsWith('#') ? color + '18' : color }]}>
+          <Ionicons name={ICON_NAMES[icon] || 'ellipse'} size={iconSize} color={color} />
         </View>
         <View style={styles.titleBlock}>
           <Text style={[titleStyle, { color: C.textPrimary }]} numberOfLines={1}>{title}</Text>
           {subtitle && !isCompact && (
-            <Text style={isLarge ? styles.subtitleLarge : { fontSize: 12, fontWeight: '400', color: C.textMuted, marginTop: 1 }}>
+            <Text style={isLarge ? styles.subtitleLarge : { fontSize: 10, color: C.textMuted, marginTop: 1 }}>
               {subtitle}
             </Text>
           )}
         </View>
         {onEdit && (
           <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="pencil" size={isLarge ? 16 : 12} color={C.textSecondary} />
+            <Ionicons name="pencil" size={isLarge ? 16 : 12} color={color} />
           </TouchableOpacity>
         )}
       </View>
       <View style={rateRowStyle}>
-        <Text style={[prefixStyle, { color: C.textSecondary }]}>Bs.</Text>
+        <Text style={[prefixStyle, { color }]}>Bs.</Text>
         <AnimatedNumber
           value={rate}
           style={numberStyle}

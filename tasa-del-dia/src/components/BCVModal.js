@@ -105,7 +105,7 @@ function BCVModal({
                 onPress={handleSave}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.buttonText, { color: C.onAccent, fontWeight: '700' }]}>Guardar</Text>
+                <Text style={[styles.buttonText, { color: '#fff', fontWeight: '700' }]}>Guardar</Text>
               </TouchableOpacity>
             </View>
           </View>

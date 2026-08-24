@@ -2,6 +2,7 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
+import { hapticSelection } from '../utils/haptics';
 
 const SIZE = 32;
 const ICON_SIZE = 16;
@@ -21,7 +22,10 @@ function UiStyleToggle() {
   return (
     <TouchableOpacity
       style={[styles.toggle, { backgroundColor: C.cardBg, borderColor: C.cardBorder, borderRadius: current.radius }]}
-      onPress={() => setUiStyle(next.id)}
+      onPress={() => {
+        hapticSelection();
+        setUiStyle(next.id);
+      }}
       activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`Diseño actual: ${current.label}. Toca para cambiar a ${next.label}`}
