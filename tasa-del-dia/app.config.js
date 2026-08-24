@@ -1,6 +1,6 @@
 // Versión semver única. El release workflow (release-automatic.yml) la bumpa
 // vía sed sobre esta línea (formato: const VERSION = 'x.y.z').
-const VERSION = '1.4.7';
+const VERSION = '1.5.0';
 
 // Detect if building for Galaxy Store via env var
 const IS_GALAXY_STORE = process.env.DISTRIBUTION === 'galaxy-store';
