@@ -182,4 +182,86 @@ describe('ThemeContext', () => {
     expect(consumer.props.loaded).toBe('true');
     expect(consumer.props.themePref).toBe('system');
   });
+
+  describe('uiStyle', () => {
+    function UiStyleCapture({ onReady }) {
+      const { uiStyle, setUiStyle, colors } = useTheme();
+      onReady({ uiStyle, setUiStyle, textPrimary: colors.textPrimary });
+      return null;
+    }
+
+    function renderWithCapture() {
+      let state;
+      TestRenderer.act(() => {
+        TestRenderer.create(
+          <ThemeProvider>
+            <UiStyleCapture onReady={(s) => { state = s; }} />
+          </ThemeProvider>
+        );
+      });
+      return state;
+    }
+
+    it('usa "original" por defecto', () => {
+      const state = renderWithCapture();
+      expect(state.uiStyle).toBe('original');
+    });
+
+    it('persiste el estilo elegido en AsyncStorage', () => {
+      let captured;
+      function Capture() {
+        const { setUiStyle } = useTheme();
+        captured = setUiStyle;
+        return null;
+      }
+      TestRenderer.act(() => {
+        TestRenderer.create(<ThemeProvider><Capture /></ThemeProvider>);
+      });
+      TestRenderer.act(() => { captured('terminal'); });
+      expect(AsyncStorage.setItem).toHaveBeenCalledWith('@tasa_del_dia_ui_style', 'terminal');
+    });
+
+    it('carga el estilo guardado al montar', async () => {
+      await AsyncStorage.setItem('@tasa_del_dia_ui_style', 'editorial');
+      let renderer;
+      function Capture() {
+        const { uiStyle } = useTheme();
+        return <test-ui style={uiStyle} />;
+      }
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(<ThemeProvider><Capture /></ThemeProvider>);
+      });
+      await TestRenderer.act(async () => {});
+      expect(renderer.root.findByType('test-ui').props.style).toBe('editorial');
+    });
+
+    it('ignora un valor inválido guardado y cae a "original"', async () => {
+      await AsyncStorage.setItem('@tasa_del_dia_ui_style', 'hackerman');
+      let renderer;
+      function Capture() {
+        const { uiStyle } = useTheme();
+        return <test-ui style={uiStyle} />;
+      }
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(<ThemeProvider><Capture /></ThemeProvider>);
+      });
+      await TestRenderer.act(async () => {});
+      expect(renderer.root.findByType('test-ui').props.style).toBe('original');
+    });
+
+    it('resuelve colores según (estilo, modo): terminal oscuro usa blanco', async () => {
+      await AsyncStorage.setItem('@tasa_del_dia_theme_pref', 'dark');
+      await AsyncStorage.setItem('@tasa_del_dia_ui_style', 'terminal');
+      let renderer;
+      function Capture() {
+        const { colors } = useTheme();
+        return <test-colors value={String(colors.textPrimary)} />;
+      }
+      await TestRenderer.act(async () => {
+        renderer = TestRenderer.create(<ThemeProvider><Capture /></ThemeProvider>);
+      });
+      await TestRenderer.act(async () => {});
+      expect(renderer.root.findByType('test-colors').props.value).toBe('#ffffff');
+    });
+  });
 });
