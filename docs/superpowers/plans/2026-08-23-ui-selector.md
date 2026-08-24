@@ -544,18 +544,19 @@ done
 ```bash
 cd tasa-del-dia/src/ui/terminal
 sed -i -E \
-  -e "s|from '\.\./components/(ShimmerEffect|AnimatedNumber|PressableScale|ThemeToggleMini)'|from '../../components/\1'|g" \
-  -e "s|from '\./(ShimmerEffect|AnimatedNumber|PressableScale|ThemeToggleMini)'|from '../../components/\1'|g" \
-  -e "s|from '\.\./components/|'./|g" \
-  -e "s|from '\.\./screens/|'./|g" \
-  -e "s|from '\.\./context/|'../../context/|g" \
-  -e "s|from '\.\./hooks/|'../../hooks/|g" \
-  -e "s|from '\.\./utils/|'../../utils/|g" \
-  -e "s|from '\.\./constants/|'../../constants/|g" *.js
+  -e "s#from '\.\./components/(ShimmerEffect|AnimatedNumber|PressableScale|ThemeToggleMini)'#from '../../components/\1'#g" \
+  -e "s#from '\./(ShimmerEffect|AnimatedNumber|PressableScale|ThemeToggleMini)'#from '../../components/\1'#g" \
+  -e "s#from '\.\./components/#from './#g" \
+  -e "s#from '\.\./screens/#from './#g" \
+  -e "s#from '\.\./context/#from '../../context/#g" \
+  -e "s#from '\.\./hooks/#from '../../hooks/#g" \
+  -e "s#from '\.\./utils/#from '../../utils/#g" \
+  -e "s#from '\.\./constants/#from '../../constants/#g" \
+  -e "s#from '\.\./services/#from '../../services/#g" *.js
 grep -rn -E "from '\./(ShimmerEffect|AnimatedNumber|PressableScale|ThemeToggleMini)|from '\.\./components/" *.js || echo "OK: sin imports rotos"
 ```
 
-(Las dos primeras reglas redirigen los componentes COMPARTIDOS —que siguen viviendo en `src/components/`— antes de la regla genérica que localiza los del propio diseño.)
+(Las dos primeras reglas redirigen los componentes COMPARTIDOS —que siguen viviendo en `src/components/`— antes de la regla genérica que localiza los del propio diseño. La última cubre servicios como `autoUpdate`.)
 
 Además, anteponer la cabecera a los 11 archivos con:
 
