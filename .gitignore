@@ -60,3 +60,5 @@ tasa-del-dia/android/
 # ─── Desktop debug helpers ───
 tasa-del-dia-desktop/check_tabs.py
 tasa-del-dia-desktop/flet_app/components/fix_all.py
+# Artefactos de sesion brainstorm
+.superpowers/
