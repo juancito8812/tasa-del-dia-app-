@@ -6,21 +6,17 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { DistributionProvider, useDistribution } from './src/context/DistributionContext';
-import RatesScreen from './src/screens/RatesScreen';
-import ConverterScreen from './src/screens/ConverterScreen';
-import HistoryScreen from './src/screens/HistoryScreen';
-import CustomTabBar from './src/components/CustomTabBar';
-import ScreenContainer from './src/components/ScreenContainer';
 import { ensureReminderScheduled } from './src/services/notifications';
 import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
-import UpdateModal from './src/components/UpdateModal';
+import { getUiPackage } from './src/ui';
 import { checkLatestRelease, isUpdateAvailable, getCurrentVersion, isVersionSkipped } from './src/services/autoUpdate';
 
 function AnimatedAppContent() {
-  const { colors: C, isDark, theme, loaded } = useTheme();
+  const { colors: C, isDark, theme, uiStyle, loaded } = useTheme();
   const { isGalaxyStore } = useDistribution();
+  const Pkg = getUiPackage(uiStyle);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const prevTheme = useRef(theme);
+  const prevLookKey = useRef(`${theme}|${uiStyle}`);
   const pagerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   // Lazy-mount: solo se montan las pestañas que el usuario visitó.
@@ -31,8 +27,9 @@ function AnimatedAppContent() {
   const [showUpdate, setShowUpdate] = useState(false);
 
   useEffect(() => {
-    if (prevTheme.current !== theme) {
-      prevTheme.current = theme;
+    const key = `${theme}|${uiStyle}`;
+    if (prevLookKey.current !== key) {
+      prevLookKey.current = key;
       fadeAnim.setValue(1);
       Animated.sequence([
         Animated.timing(fadeAnim, {
@@ -43,7 +40,7 @@ function AnimatedAppContent() {
         }),
       ]).start();
     }
-  }, [theme, fadeAnim]);
+  }, [theme, uiStyle, fadeAnim]);
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
 
@@ -116,7 +113,7 @@ function AnimatedAppContent() {
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
-      <ScreenContainer>
+      <Pkg.ScreenContainer>
         <SafeAreaView style={{ flex: 1 }}>
           <View style={[styles.container, { backgroundColor: 'transparent' }]}>
             <PagerView
@@ -128,16 +125,16 @@ function AnimatedAppContent() {
               overScrollMode="never"
             >
               <View style={styles.page} key="tasas">
-                {visitedTabs.includes(0) ? <RatesScreen /> : null}
+                {visitedTabs.includes(0) ? <Pkg.Screens.rates /> : null}
               </View>
               <View style={styles.page} key="conversor">
-                {visitedTabs.includes(1) ? <ConverterScreen /> : null}
+                {visitedTabs.includes(1) ? <Pkg.Screens.converter /> : null}
               </View>
               <View style={styles.page} key="historial">
-                {visitedTabs.includes(2) ? <HistoryScreen /> : null}
+                {visitedTabs.includes(2) ? <Pkg.Screens.history /> : null}
               </View>
             </PagerView>
-            <CustomTabBar
+            <Pkg.TabBar
               activeIndex={activeIndex}
               scrollOffset={scrollOffset}
               onTabPress={onTabPress}
@@ -145,10 +142,10 @@ function AnimatedAppContent() {
             />
           </View>
         </SafeAreaView>
-      </ScreenContainer>
+      </Pkg.ScreenContainer>
 
       {updateInfo && (
-        <UpdateModal
+        <Pkg.UpdateModal
           visible={showUpdate}
           onClose={handleCloseUpdate}
           currentVersion={getCurrentVersion()}
