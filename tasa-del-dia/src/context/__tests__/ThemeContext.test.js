@@ -249,19 +249,19 @@ describe('ThemeContext', () => {
       expect(renderer.root.findByType('test-ui').props.style).toBe('original');
     });
 
-    it('resuelve colores según (estilo, modo): terminal oscuro usa blanco', async () => {
+    it('resuelve colores según (estilo, modo): terminal oscuro usa su barTrack propio', async () => {
       await AsyncStorage.setItem('@tasa_del_dia_theme_pref', 'dark');
       await AsyncStorage.setItem('@tasa_del_dia_ui_style', 'terminal');
       let renderer;
       function Capture() {
         const { colors } = useTheme();
-        return <test-colors value={String(colors.textPrimary)} />;
+        return <test-colors value={String(colors.barTrack)} />;
       }
       await TestRenderer.act(async () => {
         renderer = TestRenderer.create(<ThemeProvider><Capture /></ThemeProvider>);
       });
       await TestRenderer.act(async () => {});
-      expect(renderer.root.findByType('test-colors').props.value).toBe('#ffffff');
+      expect(renderer.root.findByType('test-colors').props.value).toBe('#222222');
     });
   });
 });
