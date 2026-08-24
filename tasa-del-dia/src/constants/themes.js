@@ -1,114 +1,120 @@
-// 🎨 Tasa del Día — Editorial Financiero (monocromo premium)
-// Blanco y negro con escala de grises. Alto contraste, confiable, minimalista.
+// 🎨 Tasa del Día — Paleta Venezuela 2026
+// Inspirada en los colores patrios + fintech moderno
+// Dark: noche venezolana con acentos vibrantes
+// Light: amanecer caribeño, cálido y pulcro
 
 export const darkTheme = {
   // Backgrounds
-  primary: '#0A0A0A',
-  secondary: '#1A1A1A',
-  accent: '#262626',
+  primary: '#0b0b16',
+  secondary: '#12122a',
+  accent: '#1a1a40',
 
-  // Glass (superficies sólidas, sin transparencias de color)
-  cardBg: '#1A1A1A',
-  cardBorder: '#333333',
+  // Glass
+  cardBg: 'rgba(255, 255, 255, 0.05)',
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
 
-  glassCard: '#1A1A1A',
-  glassTabBar: 'rgba(10, 10, 10, 0.95)',
+  glassCard: 'rgba(255, 255, 255, 0.06)',
+  glassTabBar: 'rgba(16, 16, 40, 0.85)',
   glassOverlay: 'rgba(255, 255, 255, 0.03)',
 
-  // Acento único (texto principal sobre oscuro)
-  success: '#EDEDED',
-  glowBcv: 'rgba(255, 255, 255, 0.05)',
+  // 🟢 BCV Oficial — esmeralda
+  success: '#00e676',
+  glowBcv: 'rgba(0, 230, 118, 0.2)',
 
-  highlight: '#EDEDED',
-  glowParalelo: 'rgba(255, 255, 255, 0.05)',
+  // 🟡🔴 Paralelo — ámbar/rojo (varía según brecha)
+  highlight: '#ff6b35',
+  glowParalelo: 'rgba(255, 107, 53, 0.2)',
 
-  info: '#EDEDED',
-  glowEuro: 'rgba(255, 255, 255, 0.05)',
+  // 🔵 Euro — azul océano
+  info: '#00b4d8',
+  glowEuro: 'rgba(0, 180, 216, 0.2)',
 
-  warning: '#EDEDED',
-  glowGasolina: 'rgba(255, 255, 255, 0.05)',
+  // 🟠 Binance P2P — dorado
+  warning: '#ffd60a',
+  glowGasolina: 'rgba(255, 214, 10, 0.2)',
 
-  bcvLunes: '#EDEDED',
-  glowBcvLunes: 'rgba(255, 255, 255, 0.05)',
+  // 🟣 BCV Lunes — púrpura
+  bcvLunes: '#b388ff',
+  glowBcvLunes: 'rgba(179, 136, 255, 0.2)',
 
   // Textos
-  textPrimary: '#EDEDED',
-  textSecondary: '#AAAAAA',
-  textMuted: '#777777',
-
-  // Texto sobre botón primario (blanco → texto negro)
-  onAccent: '#000000',
+  textPrimary: '#ffffff',
+  textSecondary: '#a8b2d1',
+  textMuted: '#6b7294',
 
   // Inputs
-  inputBg: '#141414',
-  inputBorder: '#333333',
+  inputBg: 'rgba(255, 255, 255, 0.04)',
+  inputBorder: 'rgba(255, 255, 255, 0.1)',
 
   // Tab bar
-  tabBar: '#0A0A0A',
-  tabBarBorder: '#333333',
+  tabBar: '#0b0b16',
+  tabBarBorder: 'rgba(255, 255, 255, 0.06)',
 
-  // Terminal/editorial auxiliares
-  barTrack: '#262626',
-  dimmed: '#777777',
+  // Auxiliares compartidos por los diseños Terminal/Editorial
+  onAccent: '#ffffff',
+  barTrack: 'rgba(255, 255, 255, 0.10)',
+  dimmed: '#6b7294',
 
-  // Venezuela flag accent (escala de grises)
-  flagYellow: '#4D4D4D',
-  flagBlue: '#8C8C8C',
-  flagRed: '#666666',
+  // Venezuela flag accent
+  flagYellow: '#ffd60a',
+  flagBlue: '#0033a0',
+  flagRed: '#cf142b',
 };
 
 export const lightTheme = {
-  // Backgrounds
-  primary: '#FAFAFA',
-  secondary: '#F5F5F5',
-  accent: '#EEEEEE',
+  // Backgrounds — cálido, caribeño
+  primary: '#f5f0eb',
+  secondary: '#ffffff',
+  accent: '#e8e0d9',
 
-  // Glass (superficies sólidas)
-  cardBg: '#F5F5F5',
-  cardBorder: '#E0E0E0',
+  // Glass
+  cardBg: '#ffffff',
+  cardBorder: 'rgba(0, 0, 0, 0.06)',
 
-  glassCard: '#F5F5F5',
-  glassTabBar: 'rgba(250, 250, 250, 0.95)',
+  glassCard: 'rgba(255, 255, 255, 0.85)',
+  glassTabBar: 'rgba(255, 255, 255, 0.92)',
   glassOverlay: 'rgba(0, 0, 0, 0.02)',
 
-  // Acento único (texto principal sobre claro)
-  success: '#1A1A1A',
-  glowBcv: 'rgba(0, 0, 0, 0.04)',
+  // 🟢 BCV Oficial
+  success: '#00a86b',
+  glowBcv: 'rgba(0, 168, 107, 0.1)',
 
-  highlight: '#1A1A1A',
-  glowParalelo: 'rgba(0, 0, 0, 0.04)',
+  // 🟡🔴 Paralelo
+  highlight: '#e05a2a',
+  glowParalelo: 'rgba(224, 90, 42, 0.1)',
 
-  info: '#1A1A1A',
-  glowEuro: 'rgba(0, 0, 0, 0.04)',
+  // 🔵 Euro
+  info: '#0096c7',
+  glowEuro: 'rgba(0, 150, 199, 0.1)',
 
-  warning: '#1A1A1A',
-  glowGasolina: 'rgba(0, 0, 0, 0.04)',
+  // 🟠 Binance P2P
+  warning: '#d4a800',
+  glowGasolina: 'rgba(212, 168, 0, 0.1)',
 
-  bcvLunes: '#1A1A1A',
-  glowBcvLunes: 'rgba(0, 0, 0, 0.04)',
+  // 🟣 BCV Lunes
+  bcvLunes: '#7c3aed',
+  glowBcvLunes: 'rgba(124, 58, 237, 0.1)',
 
   // Textos
-  textPrimary: '#1A1A1A',
-  textSecondary: '#666666',
-  textMuted: '#999999',
-
-  // Texto sobre botón primario (negro → texto blanco)
-  onAccent: '#FFFFFF',
+  textPrimary: '#1a1a2e',
+  textSecondary: '#5a6478',
+  textMuted: '#94a3b8',
 
   // Inputs
-  inputBg: '#FFFFFF',
-  inputBorder: '#E0E0E0',
+  inputBg: '#f0ece7',
+  inputBorder: 'rgba(0, 0, 0, 0.08)',
 
   // Tab bar
-  tabBar: '#FAFAFA',
-  tabBarBorder: '#E0E0E0',
+  tabBar: '#ffffff',
+  tabBarBorder: 'rgba(0, 0, 0, 0.05)',
 
-  // Terminal/editorial auxiliares
-  barTrack: '#EEEEEE',
-  dimmed: '#999999',
+  // Auxiliares compartidos por los diseños Terminal/Editorial
+  onAccent: '#ffffff',
+  barTrack: 'rgba(0, 0, 0, 0.08)',
+  dimmed: '#8a8fa8',
 
-  // Venezuela flag accent (escala de grises)
-  flagYellow: '#D9D9D9',
-  flagBlue: '#8C8C8C',
-  flagRed: '#BFBFBF',
+  // Venezuela flag accent
+  flagYellow: '#ffd60a',
+  flagBlue: '#0033a0',
+  flagRed: '#cf142b',
 };
