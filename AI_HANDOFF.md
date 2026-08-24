@@ -54,6 +54,19 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 
 ## 🚀 Sesiones
 
+### Sesión 23-Ago-2026 — Selector de diseño de UI
+
+- **Spec:** `docs/superpowers/specs/2026-08-23-ui-selector-design.md` (3 estilos conmutables en caliente; plan SDD de 10 tareas en rama `feature/ui-selector`)
+- Limpieza previa: eliminados los rebase/cherry-pick huérfanos del 18-ago antes de empezar
+- Paletas por estilo (Original/Terminal/Editorial) con contrato de 31 tokens (`b2a1796`)
+- Nuevo eje `uiStyle` en ThemeContext, persistido con la clave `@tasa_del_dia_ui_style` (`3571b2c`)
+- Traslados de rediseños a `src/ui/terminal` (`2a82498`) y `src/ui/editorial` (`c01b67d`)
+- Registro de paquetes `getUiPackage(uiStyle)` en `src/ui/index.js` (`7353f33`)
+- Cableado en `App.js`: pantallas/tabbar/modales resueltos según `uiStyle` (`7f712aa`)
+- `UiStyleToggle`: botón cíclico en los 3 headers (`7d575a0`)
+- Smoke tests de componentes terminal y editorial con sus paletas (`1bc4ac3`)
+- **QA:** 26 suites / 388 tests passing · typecheck 0 errores · lint 0 errores
+
 ### Sesión 21-Jun-2026 — Auditoría de seguridad + Skills review
 
 - Auditoría general de código completada (~233 hallazgos en 6 áreas)

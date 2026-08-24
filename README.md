@@ -13,6 +13,12 @@
 
 ---
 
+## ✨ Características
+
+- Selector de diseño: Original / Terminal / Editorial (botón en el header de Tasas, preferencia persistente)
+
+---
+
 ## 📱 App Móvil (APK)
 
 | Detalle | Valor |
@@ -101,6 +107,10 @@ tasa-del-dia-app/
 │   ├── src/
 │   │   ├── screens/               # RatesScreen, ConverterScreen, HistoryScreen
 │   │   ├── components/            # RateCard, UpdateModal, CustomTabBar, etc.
+│   │   ├── ui/                     # Paquetes de diseño alternativos
+│   │   │   ├── index.js            # Registro getUiPackage(uiStyle)
+│   │   │   ├── terminal/           # Rediseño Terminal (monocromo)
+│   │   │   └── editorial/          # Rediseño Editorial (premium)
 │   │   ├── services/              # api.js, autoUpdate.js, notifications.js, etc.
 │   │   ├── hooks/                 # useRatesData, useConverterData, useHistoryData
 │   │   ├── context/               # ThemeContext (dark/light/system)
