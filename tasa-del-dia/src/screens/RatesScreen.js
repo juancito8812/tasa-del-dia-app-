@@ -23,8 +23,8 @@ function createStyles(C) {
     scrollContent: { paddingHorizontal: 12, paddingTop: 2, paddingBottom: 8 },
 
     // Bento Grid
-    bentoCols: { gap: 8 },
-    bentoRow: { flexDirection: 'row', gap: 8 },
+    bentoCols: { gap: 16 },
+    bentoRow: { flexDirection: 'row', gap: 16 },
     bentoHalf: { flex: 1 },
 
     // Brecha chips row
@@ -46,7 +46,7 @@ function createStyles(C) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 4,
-      borderRadius: 20,
+      borderRadius: 8,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderWidth: 1,
@@ -59,7 +59,7 @@ function createStyles(C) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
-      borderRadius: 20,
+      borderRadius: 8,
       paddingHorizontal: 10,
       paddingVertical: 5,
       borderWidth: 1,
@@ -68,10 +68,10 @@ function createStyles(C) {
 
     // Gasolina card
     gasCard: {
-      borderRadius: 18,
+      borderRadius: 12,
       borderWidth: 1,
-      padding: 14,
-      marginTop: 6,
+      padding: 20,
+      marginTop: 16,
       overflow: 'hidden',
     },
     gasHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },

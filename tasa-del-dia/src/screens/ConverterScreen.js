@@ -23,68 +23,71 @@ function createStyles(C) {
     headerTitle: { fontSize: 18, fontWeight: '800', color: C.textPrimary, letterSpacing: 0.5 },
     sectionLabel: { fontSize: 11, fontWeight: '700', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 },
     converterCard: {
-      backgroundColor: C.cardBg, borderRadius: 20, borderWidth: 1, borderColor: C.cardBorder,
-      padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2, shadowRadius: 12, elevation: 8, overflow: 'hidden', marginBottom: 12,
+      backgroundColor: C.cardBg, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder,
+      padding: 20, overflow: 'hidden', marginBottom: 16,
     },
-    cardGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 20, borderTopRightRadius: 20, opacity: 0.5 },
     modeToggle: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-      marginBottom: 14, backgroundColor: C.inputBg, borderRadius: 12, padding: 4,
+      marginBottom: 14, backgroundColor: 'transparent', borderRadius: 8, padding: 0,
     },
-    modeSide: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 18, borderRadius: 9, borderWidth: 1.5, borderColor: 'transparent' },
-    modeText: { fontSize: 13, fontWeight: '600', color: C.textMuted },
+    modeSide: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingVertical: 7, paddingHorizontal: 18, borderRadius: 8, borderWidth: 1, borderColor: C.cardBorder },
+    modeSideActive: { backgroundColor: C.textPrimary, borderColor: C.textPrimary },
+    modeText: { fontSize: 13, fontWeight: '500', color: C.textSecondary },
     swapCircle: {
-      width: 24, height: 24, borderRadius: 12, backgroundColor: C.cardBg,
-      justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: C.cardBorder,
+      width: 24, height: 24, borderRadius: 12, backgroundColor: 'transparent',
+      justifyContent: 'center', alignItems: 'center', borderWidth: 0,
     },
     displayContainer: { alignItems: 'center', paddingVertical: 8, marginBottom: 8 },
-    displayLabel: { fontSize: 10, fontWeight: '600', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
-    displayValue: { fontSize: 38, fontWeight: '800', letterSpacing: 1, fontVariant: ['tabular-nums'] },
-    displaySubtext: { fontSize: 12, color: C.textMuted, marginTop: 2, letterSpacing: 0.5 },
+    displayLabel: { fontSize: 12, fontWeight: '400', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+    displayValue: { fontSize: 32, fontWeight: '700', letterSpacing: 1, fontVariant: ['tabular-nums'] },
+    displaySubtext: { fontSize: 12, fontWeight: '400', color: C.textMuted, marginTop: 2, letterSpacing: 0.5 },
     copiedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
-    copiedBadgeText: { fontSize: 11, color: C.success, fontWeight: '600' },
-    inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.inputBg, borderRadius: 14, borderWidth: 1, borderColor: C.inputBorder, paddingHorizontal: 14, marginBottom: 10 },
-    inputContainerFocused: { borderColor: C.highlight + '50', backgroundColor: C.secondary },
+    copiedBadgeText: { fontSize: 11, color: C.textSecondary, fontWeight: '500' },
+    inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.inputBg, borderRadius: 8, borderWidth: 1, borderColor: C.textPrimary, paddingHorizontal: 14, marginBottom: 16 },
+    inputContainerFocused: { borderColor: C.textPrimary, borderWidth: 1.5, backgroundColor: C.inputBg },
     inputIcon: { marginRight: 8 },
     input: { flex: 1, paddingVertical: 12, fontSize: 18, fontWeight: '600', color: C.textPrimary, textAlign: 'left', fontVariant: ['tabular-nums'] },
-    quickRow: { marginBottom: 12 },
-    quickContent: { gap: 6, paddingRight: 4 },
-    quickChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: C.inputBg, borderWidth: 1, borderColor: C.cardBorder },
-    quickChipText: { fontSize: 12, fontWeight: '600', color: C.textSecondary, fontVariant: ['tabular-nums'] },
-    convertButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 14, paddingVertical: 14, gap: 8 },
-    convertButtonText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.5 },
-    validationError: { fontSize: 12, fontWeight: '600', textAlign: 'center', marginTop: 8 },
-    inlineResult: { marginTop: 0 },
-    resultDivider: { height: 1, backgroundColor: C.cardBorder, marginVertical: 14 },
-    resultLabel: { fontSize: 10, fontWeight: '700', color: C.textMuted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center' },
+    quickRow: { marginBottom: 16 },
+    quickContent: { gap: 8, paddingRight: 4 },
+    quickChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: 'transparent', borderWidth: 1, borderColor: C.textPrimary },
+    quickChipActive: { backgroundColor: C.textPrimary },
+    quickChipText: { fontSize: 12, fontWeight: '500', color: C.textPrimary, fontVariant: ['tabular-nums'] },
+    quickChipTextActive: { color: C.onAccent, fontWeight: '700' },
+    convertButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 8, paddingVertical: 14, gap: 8, backgroundColor: C.textPrimary },
+    convertButtonText: { fontSize: 15, fontWeight: '700', color: C.onAccent, letterSpacing: 1 },
+    validationError: { fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 8, color: C.textPrimary },
+    inlineResult: {
+      marginTop: 14, backgroundColor: C.textPrimary, borderRadius: 8, padding: 20,
+    },
+    resultDivider: { height: 0 },
+    resultLabel: { fontSize: 12, fontWeight: '400', color: C.onAccent, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10, textAlign: 'center', opacity: 0.7 },
     resultContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 },
     resultItem: { alignItems: 'center', flex: 1 },
-    resultItemLabel: { fontSize: 10, fontWeight: '600', color: C.textMuted, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.8 },
-    resultItemValue: { fontSize: 22, fontWeight: '800', color: C.textPrimary, fontVariant: ['tabular-nums'] },
-    resultArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: C.inputBg, justifyContent: 'center', alignItems: 'center' },
-    resultMeta: { fontSize: 10, color: C.textMuted, textAlign: 'center', letterSpacing: 0.2 },
-    rateSelector: { marginBottom: 12, gap: 6 },
-    rateOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardBg, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder, padding: 12, gap: 10, overflow: 'hidden' },
-    rateActiveBar: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, borderTopLeftRadius: 14, borderBottomLeftRadius: 14 },
+    resultItemLabel: { fontSize: 12, fontWeight: '400', color: C.onAccent, marginBottom: 3, textTransform: 'uppercase', letterSpacing: 0.8, opacity: 0.7 },
+    resultItemValue: { fontSize: 22, fontWeight: '700', color: C.onAccent, fontVariant: ['tabular-nums'] },
+    resultArrow: { width: 28, height: 28, borderRadius: 14, backgroundColor: 'transparent', justifyContent: 'center', alignItems: 'center' },
+    resultMeta: { fontSize: 12, fontWeight: '400', color: C.onAccent, textAlign: 'center', letterSpacing: 0.2, opacity: 0.8 },
+    rateSelector: { marginBottom: 16, gap: 8 },
+    rateOption: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardBg, borderRadius: 8, borderWidth: 1, borderColor: C.cardBorder, padding: 14, gap: 10, overflow: 'hidden' },
+    rateOptionActive: { borderColor: C.textPrimary, borderWidth: 1.5 },
     rateDot: { width: 8, height: 8, borderRadius: 4 },
     rateOptionText: { flex: 1 },
-    rateOptionLabel: { fontSize: 13, color: C.textSecondary, letterSpacing: 0.2 },
-    rateOptionValue: { fontSize: 11, color: C.textMuted, marginTop: 1 },
-    spreadCard: { backgroundColor: C.cardBg, borderRadius: 14, borderWidth: 1, borderColor: C.cardBorder, padding: 12 },
+    rateOptionLabel: { fontSize: 16, fontWeight: '500', color: C.textSecondary, letterSpacing: 0.2 },
+    rateOptionValue: { fontSize: 12, fontWeight: '400', color: C.textMuted, marginTop: 1 },
+    spreadCard: { backgroundColor: C.cardBg, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder, padding: 20 },
     spreadHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
     spreadTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    spreadTitle: { fontSize: 11, fontWeight: '600', color: C.textMuted, letterSpacing: 0.3 },
-    spreadPercent: { fontSize: 16, fontWeight: '800' },
-    spreadBarBg: { height: 4, backgroundColor: C.inputBg, borderRadius: 2, overflow: 'hidden', marginBottom: 10 },
-    spreadBarFill: { height: '100%', borderRadius: 2 },
+    spreadTitle: { fontSize: 12, fontWeight: '400', color: C.textMuted, letterSpacing: 0.3 },
+    spreadPercent: { fontSize: 16, fontWeight: '700', color: C.textPrimary },
+    spreadBarBg: { height: 4, backgroundColor: C.barTrack || C.inputBg, borderRadius: 2, overflow: 'hidden', marginBottom: 10 },
+    spreadBarFill: { height: '100%', borderRadius: 2, backgroundColor: C.textPrimary },
     spreadStats: { gap: 4 },
-    spreadStat: { fontSize: 11, color: C.textMuted, letterSpacing: 0.2 },
-    offlineBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.warning, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 },
-    offlineBannerText: { color: '#fff', fontSize: 11, flex: 1 },
+    spreadStat: { fontSize: 12, fontWeight: '400', color: C.textMuted, letterSpacing: 0.2 },
+    offlineBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.textPrimary, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, gap: 6, marginTop: 6 },
+    offlineBannerText: { color: C.onAccent, fontSize: 12, fontWeight: '400', flex: 1 },
     pasteBtn: { paddingLeft: 8, paddingVertical: 4 },
-    pasteInner: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3 },
-    pasteText: { fontSize: 11, fontWeight: '700' },
+    pasteInner: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 6, flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: C.textPrimary },
+    pasteText: { fontSize: 11, fontWeight: '600' },
   });
 }
 
@@ -94,43 +97,36 @@ export default function ConverterScreen() {
   const RATE_TYPES = useMemo(() => getRateTypes(C), [C]);
   const h = useConverterData();
 
-  const getCurrentColor = () => RATE_TYPES.find((r) => r.key === h.selectedRate)?.color || C.accent;
+  const getCurrentColor = () => RATE_TYPES.find((r) => r.key === h.selectedRate)?.color || C.textPrimary;
   const getRateLabel = () => RATE_TYPES.find((r) => r.key === h.selectedRate)?.label || '';
   const currentColor = getCurrentColor();
 
-  const getSpreadColor = (colorKey) => {
-    if (colorKey === 'highlight') return C.highlight;
-    if (colorKey === 'warning') return C.warning;
-    return C.success;
-  };
-
   const renderSpread = (spread, title, icon, iconColor, lunesColor) => {
     if (!spread) return null;
-    const barColor = getSpreadColor(spread.barColor);
     return (
       <View style={[styles.spreadCard, title.includes('Lunes') && { marginTop: 8 }]}>
         <View style={styles.spreadHeader}>
           <View style={styles.spreadTitleRow}>
-            <Ionicons name={icon} size={13} color={iconColor} />
+            <Ionicons name={icon} size={13} color={C.textSecondary} />
             <Text style={styles.spreadTitle}>{title}</Text>
           </View>
-          <Text style={[styles.spreadPercent, { color: barColor }]}>{spread.diffPercent.toFixed(1)}%</Text>
+          <Text style={styles.spreadPercent}>{spread.diffPercent.toFixed(1)}%</Text>
         </View>
         <View style={styles.spreadBarBg}>
-          <View style={[styles.spreadBarFill, { width: `${spread.barPercent}%`, backgroundColor: barColor }]} />
+          <View style={[styles.spreadBarFill, { width: `${spread.barPercent}%` }]} />
         </View>
         <View style={styles.spreadStats}>
           <Text style={styles.spreadStat}>
             {title.includes('Lunes') ? 'BCV (Lunes): ' : 'BCV: '}
-            <Text style={{ color: title.includes('Lunes') ? lunesColor : C.success, fontWeight: '700' }}>
+            <Text style={{ color: C.textPrimary, fontWeight: '700' }}>
               Bs. {formatCurrency(title.includes('Lunes') ? h.rates.bcv_lunes : h.rates.bcv)}
             </Text>
           </Text>
           <Text style={styles.spreadStat}>
-            Paralelo: <Text style={{ color: C.highlight, fontWeight: '700' }}>Bs. {formatCurrency(h.rates.paralelo)}</Text>
+            Paralelo: <Text style={{ color: C.textPrimary, fontWeight: '700' }}>Bs. {formatCurrency(h.rates.paralelo)}</Text>
           </Text>
           <Text style={styles.spreadStat}>
-            Diferencia: <Text style={{ color: barColor, fontWeight: '700' }}>Bs. {formatCurrency(spread.diff)}</Text>
+            Diferencia: <Text style={{ color: C.textPrimary, fontWeight: '700' }}>Bs. {formatCurrency(spread.diff)}</Text>
           </Text>
         </View>
       </View>
@@ -152,32 +148,31 @@ export default function ConverterScreen() {
               </View>
               {h.offlineMode && (
                 <View style={styles.offlineBanner}>
-                  <Ionicons name="cloud-offline-outline" size={12} color="#fff" />
+                  <Ionicons name="cloud-offline-outline" size={12} color={C.onAccent} />
                   <Text style={styles.offlineBannerText}>
                     Sin conexión — Mostrando últimas tasas{h.offlineCachedAt ? ` (${new Date(h.offlineCachedAt).toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' })})` : ''}
                   </Text>
                 </View>
               )}
               {h.loadError && !h.offlineMode && (
-                <View style={[styles.offlineBanner, { backgroundColor: C.flagRed }]}>
-                  <Ionicons name="alert-circle-outline" size={12} color="#fff" />
+                <View style={[styles.offlineBanner, { backgroundColor: C.dimmed }]}>
+                  <Ionicons name="alert-circle-outline" size={12} color={C.onAccent} />
                   <Text style={styles.offlineBannerText}>{h.loadError}</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.converterCard}>
-              <View style={[styles.cardGlow, { backgroundColor: currentColor }]} />
               {/* Mode Toggle */}
               <TouchableOpacity style={styles.modeToggle} onPress={() => { hapticSelection(); h.handleSwapMode(); }} activeOpacity={0.7}>
-                <View style={[styles.modeSide, h.mode === 'usd-to-bs' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
-                  <Ionicons name="logo-usd" size={16} color={h.mode === 'usd-to-bs' ? currentColor : C.textMuted} />
-                  <Text style={[styles.modeText, h.mode === 'usd-to-bs' && { color: currentColor, fontWeight: '700' }]}>USD</Text>
+                <View style={[styles.modeSide, h.mode === 'usd-to-bs' && styles.modeSideActive]}>
+                  <Ionicons name="logo-usd" size={16} color={h.mode === 'usd-to-bs' ? C.onAccent : C.textMuted} />
+                  <Text style={[styles.modeText, h.mode === 'usd-to-bs' && { color: C.onAccent, fontWeight: '700' }]}>USD</Text>
                 </View>
                 <View style={styles.swapCircle}><Ionicons name="swap-horizontal" size={16} color={C.textMuted} /></View>
-                <View style={[styles.modeSide, h.mode === 'bs-to-usd' && { backgroundColor: currentColor + '20', borderColor: currentColor + '40' }]}>
-                  <Text style={[styles.modeText, h.mode === 'bs-to-usd' && { color: currentColor, fontWeight: '700' }]}>Bs.</Text>
-                  <Ionicons name="cash" size={16} color={h.mode === 'bs-to-usd' ? currentColor : C.textMuted} />
+                <View style={[styles.modeSide, h.mode === 'bs-to-usd' && styles.modeSideActive]}>
+                  <Text style={[styles.modeText, h.mode === 'bs-to-usd' && { color: C.onAccent, fontWeight: '700' }]}>Bs.</Text>
+                  <Ionicons name="cash" size={16} color={h.mode === 'bs-to-usd' ? C.onAccent : C.textMuted} />
                 </View>
               </TouchableOpacity>
 
@@ -197,13 +192,13 @@ export default function ConverterScreen() {
               {/* Input */}
               <View style={[styles.inputContainer, h.isKeyboardVisible && styles.inputContainerFocused]}>
                 <Ionicons name={h.mode === 'usd-to-bs' ? 'logo-usd' : 'cash'} size={16} color={C.textMuted} style={styles.inputIcon} />
-                <TextInput ref={h.inputRef} style={[styles.input, { borderColor: currentColor + '30' }]} placeholder="0.00" placeholderTextColor={C.textMuted}
+                <TextInput ref={h.inputRef} style={styles.input} placeholder="0.00" placeholderTextColor={C.textMuted}
                   keyboardType="decimal-pad" value={h.rawAmount} onChangeText={h.handleChangeText}
                   returnKeyType="done" onSubmitEditing={h.handleConvert} />
                 <TouchableOpacity onPress={() => { hapticLight(); h.handlePaste(); }} activeOpacity={0.6} style={styles.pasteBtn}>
-                  <View style={[styles.pasteInner, { backgroundColor: h.pasteFeedback ? C.success + '20' : currentColor + '20' }]}>
-                    <Ionicons name={h.pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={h.pasteFeedback ? C.success : currentColor} />
-                    <Text style={[styles.pasteText, { color: h.pasteFeedback ? C.success : currentColor }]}>{h.pasteFeedback ? '¡Pegado!' : 'Pegar'}</Text>
+                  <View style={[styles.pasteInner, h.pasteFeedback && { backgroundColor: C.textPrimary }]}>
+                    <Ionicons name={h.pasteFeedback ? 'checkmark-circle' : 'clipboard'} size={13} color={h.pasteFeedback ? C.onAccent : C.textPrimary} />
+                    <Text style={[styles.pasteText, { color: h.pasteFeedback ? C.onAccent : C.textPrimary }]}>{h.pasteFeedback ? '¡Pegado!' : 'Pegar'}</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -211,40 +206,39 @@ export default function ConverterScreen() {
               {/* Quick amounts */}
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickRow} contentContainerStyle={styles.quickContent}>
                 {h.quickAmounts.map((val) => (
-                  <TouchableOpacity key={val} style={[styles.quickChip, h.numericAmount === val && { backgroundColor: currentColor + '20', borderColor: currentColor }]}
+                  <TouchableOpacity key={val} style={[styles.quickChip, h.numericAmount === val && styles.quickChipActive]}
                     onPress={() => { hapticSelection(); h.handleQuickAmount(val); }} activeOpacity={0.7}>
-                    <Text style={[styles.quickChipText, h.numericAmount === val && { color: currentColor, fontWeight: '700' }]}>{val.toLocaleString('es-VE')}</Text>
+                    <Text style={[styles.quickChipText, h.numericAmount === val && styles.quickChipTextActive]}>{val.toLocaleString('es-VE')}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
 
               {/* Convert button */}
               <TouchableOpacity style={[styles.convertButton, { backgroundColor: currentColor }]} onPress={() => { hapticMedium(); h.handleConvert(); }} activeOpacity={0.8}>
-                <Ionicons name="calculator" size={18} color="#fff" />
+                <Ionicons name="calculator" size={18} color={C.onAccent} />
                 <Text style={styles.convertButtonText}>Convertir</Text>
               </TouchableOpacity>
 
               {/* Validación inline (sin Alert nativo) */}
               {h.validationError && (
-                <Text style={[styles.validationError, { color: C.flagRed }]}>
+                <Text style={styles.validationError}>
                   {h.validationError}
                 </Text>
               )}
 
-              {/* Result */}
+              {/* Result — caja invertida (fondo negro/blanco, texto contrastado) */}
               {h.result && (
                 <View style={styles.inlineResult}>
-                  <View style={styles.resultDivider} />
                   <Text style={styles.resultLabel}>Resultado</Text>
                   <View style={styles.resultContent}>
                     <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.amount), 'result-source'); }}>
                       <Text style={styles.resultItemLabel}>{h.copiedType === 'result-source' ? '¡Copiado!' : (h.mode === 'usd-to-bs' ? 'USD' : 'Bs.')}</Text>
-                      <Text style={[styles.resultItemValue, h.copiedType === 'result-source' && { color: C.success }]}>{formatCurrency(h.result.amount)}</Text>
+                      <Text style={styles.resultItemValue}>{formatCurrency(h.result.amount)}</Text>
                     </TouchableOpacity>
-                    <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.textMuted} /></View>
+                    <View style={styles.resultArrow}><Ionicons name="arrow-forward" size={16} color={C.onAccent} /></View>
                     <TouchableOpacity style={styles.resultItem} activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrencySmart(h.result.converted), 'result-target'); }}>
                       <Text style={styles.resultItemLabel}>{h.copiedType === 'result-target' ? '¡Copiado!' : (h.mode === 'usd-to-bs' ? 'Bs.' : 'USD')}</Text>
-                      <Text style={[styles.resultItemValue, { color: h.copiedType === 'result-target' ? C.success : currentColor }]}>{formatCurrencySmart(h.result.converted)}</Text>
+                      <Text style={[styles.resultItemValue, h.copiedType === 'result-target' && { opacity: 0.7 }]}>{formatCurrencySmart(h.result.converted)}</Text>
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity activeOpacity={0.7} onPress={() => { hapticSuccess(); h.handleCopy(formatCurrency(h.result.rate), 'rate'); }}>
@@ -261,15 +255,14 @@ export default function ConverterScreen() {
                 const isActive = h.selectedRate === rt.key;
                 const rateVal = h.rates[rt.key];
                 return (
-                  <TouchableOpacity key={rt.key} style={[styles.rateOption, isActive && { backgroundColor: rt.color + '12', borderColor: rt.color }]}
+                  <TouchableOpacity key={rt.key} style={[styles.rateOption, isActive && styles.rateOptionActive]}
                     activeOpacity={0.7} onPress={() => { hapticSelection(); h.setSelectedRate(rt.key); h.setResult(null); }}>
-                    {isActive && <View style={[styles.rateActiveBar, { backgroundColor: rt.color }]} />}
-                    <View style={[styles.rateDot, { backgroundColor: isActive ? rt.color : 'rgba(255,255,255,0.15)' }]} />
+                    <View style={[styles.rateDot, { backgroundColor: isActive ? C.textPrimary : C.cardBorder }]} />
                     <View style={styles.rateOptionText}>
                       <Text style={[styles.rateOptionLabel, isActive && { color: C.textPrimary, fontWeight: '700' }]}>{rt.label}</Text>
                       <Text style={styles.rateOptionValue}>{rateVal ? `Bs. ${formatCurrency(rateVal)}` : 'Cargando...'}</Text>
                     </View>
-                    {isActive && <Ionicons name="checkmark-circle" size={18} color={rt.color} />}
+                    {isActive && <Ionicons name="checkmark-circle" size={18} color={C.textPrimary} />}
                   </TouchableOpacity>
                 );
               })}
