@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ThemeToggleMini from './ThemeToggleMini';
+import UiStyleToggle from './UiStyleToggle';
 
 function RatesHeader({ C, error, offlineMode, offlineCachedAt }) {
   return (
@@ -24,6 +25,7 @@ function RatesHeader({ C, error, offlineMode, offlineCachedAt }) {
           <Text style={styles.badgeText}>🇻🇪</Text>
         </View>
         <ThemeToggleMini />
+        <UiStyleToggle />
       </View>
 
       {/* Error / offline banner */}
