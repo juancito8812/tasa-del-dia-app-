@@ -130,8 +130,14 @@ function AnimatedAppContent() {
               <View style={styles.page} key="conversor">
                 {visitedTabs.includes(1) ? <Pkg.Screens.converter /> : null}
               </View>
+              <View style={styles.page} key="datos">
+                {visitedTabs.includes(2) ? <Pkg.Screens.bankData /> : null}
+              </View>
+              <View style={styles.page} key="paypal">
+                {visitedTabs.includes(3) ? <Pkg.Screens.paypalCalc /> : null}
+              </View>
               <View style={styles.page} key="historial">
-                {visitedTabs.includes(2) ? <Pkg.Screens.history /> : null}
+                {visitedTabs.includes(4) ? <Pkg.Screens.history /> : null}
               </View>
             </PagerView>
             <Pkg.TabBar

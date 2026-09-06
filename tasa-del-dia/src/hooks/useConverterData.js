@@ -179,36 +179,20 @@ export default function useConverterData() {
   const displayAmount = rawAmount ? formatRawDisplay(rawAmount) : '';
   const numericAmount = rawAmount ? parseFloat(rawAmount.replace(',', '.')) || 0 : 0;
 
-  // Spread calculations
-  const spreadBcv = (() => {
-    const { bcv, paralelo } = rates;
-    if (!bcv || !paralelo) return null;
-    const diff = paralelo - bcv;
-    const diffPercent = (diff / bcv) * 100;
-    const isHigh = diffPercent > 15;
-    const isMedium = diffPercent > 8;
+  const calcSpread = useCallback((rateA, rateB) => {
+    if (!rateA || !rateB) return null;
+    const diff = rateB - rateA;
+    const diffPercent = (diff / rateA) * 100;
     return {
       diff,
       diffPercent,
       barPercent: Math.min((diffPercent / 30) * 100, 100),
-      barColor: isHigh ? 'highlight' : isMedium ? 'warning' : 'success',
+      barColor: diffPercent > 15 ? 'highlight' : diffPercent > 8 ? 'warning' : 'success',
     };
-  })();
+  }, []);
 
-  const spreadLunes = (() => {
-    const { bcv_lunes, paralelo } = rates;
-    if (!bcv_lunes || !paralelo) return null;
-    const diff = paralelo - bcv_lunes;
-    const diffPercent = (diff / bcv_lunes) * 100;
-    const isHigh = diffPercent > 15;
-    const isMedium = diffPercent > 8;
-    return {
-      diff,
-      diffPercent,
-      barPercent: Math.min((diffPercent / 30) * 100, 100),
-      barColor: isHigh ? 'highlight' : isMedium ? 'warning' : 'success',
-    };
-  })();
+  const spreadBcv = useMemo(() => calcSpread(rates.bcv, rates.paralelo), [calcSpread, rates.bcv, rates.paralelo]);
+  const spreadLunes = useMemo(() => calcSpread(rates.bcv_lunes, rates.paralelo), [calcSpread, rates.bcv_lunes, rates.paralelo]);
 
   const quickAmounts = useMemo(() => {
     const rate = rates[selectedRate] || 1;

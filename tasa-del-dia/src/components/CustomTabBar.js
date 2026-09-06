@@ -8,6 +8,8 @@ import { hapticLight } from '../utils/haptics';
 const TABS = /** @type {const} */ ([
   { key: 'Tasas', icon: 'pulse' },
   { key: 'Conversor', icon: 'swap-horizontal' },
+  { key: 'Datos', icon: 'wallet' },
+  { key: 'PayPal', icon: 'logo-paypal' },
   { key: 'Historial', icon: 'stats-chart' },
 ]);
 
