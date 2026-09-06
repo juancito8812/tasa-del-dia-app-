@@ -1,5 +1,10 @@
 import React from 'react';
-import { View, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '../context/ThemeContext';
@@ -13,7 +18,50 @@ const TABS = /** @type {const} */ ([
   { key: 'Historial', icon: 'stats-chart' },
 ]);
 
-function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
+function TabItem({ tab, index, activeIndex, colors, onTabPress }) {
+  const isActive = index === activeIndex;
+  const progress = useSharedValue(isActive ? 1 : 0);
+
+  React.useEffect(() => {
+    progress.value = withSpring(isActive ? 1 : 0, {
+      damping: 15,
+      stiffness: 150,
+    });
+  }, [activeIndex, isActive, progress]);
+
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: progress.value }],
+  }));
+
+  const iconColor = isActive ? colors.highlight : colors.textMuted;
+
+  return (
+    <TouchableOpacity
+      onPress={() => { hapticLight(); onTabPress(index); }}
+      style={styles.tab}
+      accessibilityLabel={tab.key}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: isActive }}
+      activeOpacity={0.7}
+    >
+      <View style={styles.iconWrapper}>
+        <Ionicons name={tab.icon} size={22} color={iconColor} />
+      </View>
+      <Animated.Text style={[styles.label, { color: iconColor }]}>
+        {tab.key}
+      </Animated.Text>
+      <Animated.View
+        style={[
+          styles.indicator,
+          { backgroundColor: colors.highlight },
+          indicatorStyle,
+        ]}
+      />
+    </TouchableOpacity>
+  );
+}
+
+function CustomTabBar({ activeIndex, onTabPress, colors }) {
   const { isDark } = useTheme();
   return (
     <BlurView intensity={Platform.OS === 'android' ? 60 : 90} tint={isDark ? 'dark' : 'light'} style={[
@@ -21,61 +69,16 @@ function CustomTabBar({ activeIndex, onTabPress, colors, scrollOffset }) {
       { borderTopColor: colors.tabBarBorder }
     ]}>
       <View style={styles.tabsRow}>
-        {TABS.map((tab, i) => {
-          const inputRange = [i - 1, i, i + 1];
-
-          const activeProgress = scrollOffset.interpolate({
-            inputRange,
-            outputRange: [0, 1, 0],
-            extrapolate: 'clamp',
-          });
-
-          const iconColor = activeProgress.interpolate({
-            inputRange: [0, 1],
-            outputRange: [colors.textMuted, colors.highlight],
-          });
-
-          const indicatorScaleX = activeProgress.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-          });
-
-          const isActive = i === activeIndex;
-
-          return (
-            <TouchableOpacity
-              key={tab.key}
-              onPress={() => { hapticLight(); onTabPress(i); }}
-              style={styles.tab}
-              accessibilityLabel={tab.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: isActive }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.iconWrapper}>
-                <Animated.View>
-                  <Ionicons
-                    name={tab.icon}
-                    size={22}
-                    color={iconColor}
-                  />
-                </Animated.View>
-              </View>
-              <Animated.Text style={[styles.label, { color: iconColor }]}>
-                {tab.key}
-              </Animated.Text>
-              <Animated.View
-                style={[
-                  styles.indicator,
-                  {
-                    backgroundColor: colors.highlight,
-                    transform: [{ scaleX: indicatorScaleX }],
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          );
-        })}
+        {TABS.map((tab, i) => (
+          <TabItem
+            key={tab.key}
+            tab={tab}
+            index={i}
+            activeIndex={activeIndex}
+            colors={colors}
+            onTabPress={onTabPress}
+          />
+        ))}
       </View>
     </BlurView>
   );

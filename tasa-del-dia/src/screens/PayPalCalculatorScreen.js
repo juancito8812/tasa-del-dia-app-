@@ -16,15 +16,14 @@ import useRatesData from '../hooks/useRatesData';
 import { PAYPAL_FEES, calculateNet, calculateGross } from '../constants/paypalFees';
 import { hapticLight } from '../utils/haptics';
 
-const FEE_TYPES = Object.values(PAYPAL_FEES);
-
 function PayPalCalculatorScreen() {
   const { colors: C } = useTheme();
   const { data } = useRatesData();
 
   const [mode, setMode] = useState('net'); // 'net' = ¿Cuánto recibo?, 'gross' = ¿Cuánto cobro?
-  const [feeType, setFeeType] = useState('send_friends');
   const [amount, setAmount] = useState('');
+
+  const styles = useMemo(() => createStyles(C), [C]);
 
   const parsedAmount = useMemo(() => {
     const normalized = amount.includes(',')
@@ -33,12 +32,14 @@ function PayPalCalculatorScreen() {
     return parseFloat(normalized) || 0;
   }, [amount]);
 
+  const feeType = 'receive';
+
   const result = useMemo(() => {
     if (parsedAmount <= 0) return null;
     if (mode === 'net') {
-      return calculateNet(parsedAmount, feeType);
+      return calculateGross(parsedAmount, feeType);
     }
-    return calculateGross(parsedAmount, feeType);
+    return calculateNet(parsedAmount, feeType);
   }, [parsedAmount, feeType, mode]);
 
   const equivalents = useMemo(() => {
@@ -49,7 +50,7 @@ function PayPalCalculatorScreen() {
     const bcv = data.tasaBCV ? usdAmount * Number(data.tasaBCV) : null;
     const paralelo = data.tasaParalelo ? usdAmount * Number(data.tasaParalelo) : null;
     const binance = data.tasaBinanceP2P ? usdAmount * Number(data.tasaBinanceP2P) : null;
-    const euro = data.tasaEuro ? usdAmount / Number(data.tasaEuro) : null;
+    const euro = data.tasaEuro ? usdAmount * Number(data.tasaEuro) : null;
 
     return { bcv, paralelo, binance, euro };
   }, [result, data]);
@@ -64,11 +65,6 @@ function PayPalCalculatorScreen() {
     return `$ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, []);
 
-  const formatEur = useCallback((value) => {
-    if (value == null) return 'N/A';
-    return `€ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  }, []);
-
   const buildResultText = useCallback(() => {
     const usdAmount = result.gross ?? result.net;
     const lines = [
@@ -81,9 +77,9 @@ function PayPalCalculatorScreen() {
     if (equivalents.bcv != null) lines.push(`BCV: ${formatBs(equivalents.bcv)}`);
     if (equivalents.paralelo != null) lines.push(`Paralelo: ${formatBs(equivalents.paralelo)}`);
     if (equivalents.binance != null) lines.push(`Binance: ${formatBs(equivalents.binance)}`);
-    if (equivalents.euro != null) lines.push(`Euro: ${formatEur(equivalents.euro)}`);
+    if (equivalents.euro != null) lines.push(`Euro: ${formatBs(equivalents.euro)}`);
     return lines.join('\n');
-  }, [result, equivalents, feeType, parsedAmount, mode, formatBs, formatEur]);
+  }, [result, equivalents, feeType, parsedAmount, mode, formatBs]);
 
   const handleCopy = useCallback(async () => {
     hapticLight();
@@ -99,66 +95,50 @@ function PayPalCalculatorScreen() {
   }, [result, equivalents, buildResultText]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: C.background }]} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={[styles.headerTitle, { color: C.textPrimary }]}>Calculadora PayPal</Text>
-        <Text style={[styles.headerSubtitle, { color: C.textSecondary }]}>Comisiones oficiales Venezuela</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoContainer}>
+            <Ionicons name="logo-paypal" size={18} color={C.highlight} />
+          </View>
+          <View>
+            <Text style={styles.headerTitle}>Calculadora PayPal</Text>
+            <Text style={styles.headerSubtitle}>Comisiones oficiales Venezuela</Text>
+          </View>
+        </View>
       </View>
 
       {/* Mode Toggle */}
-      <View style={[styles.toggleContainer, { backgroundColor: C.card, borderColor: C.border }]}>
+      <View style={styles.toggleContainer}>
         <TouchableOpacity
           onPress={() => { hapticLight(); setMode('net'); }}
-          style={[styles.toggleButton, mode === 'net' && { backgroundColor: C.highlight }]}
+          style={[styles.toggleButton, mode === 'net' && styles.toggleActive]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.toggleText, { color: mode === 'net' ? '#fff' : C.textPrimary }]}>
-            ¿Cuánto recibo?
+          <Text style={[styles.toggleText, { color: mode === 'net' ? '#fff' : C.textSecondary }]}>
+            Para recibir
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => { hapticLight(); setMode('gross'); }}
-          style={[styles.toggleButton, mode === 'gross' && { backgroundColor: C.highlight }]}
+          style={[styles.toggleButton, mode === 'gross' && styles.toggleActive]}
           activeOpacity={0.7}
         >
-          <Text style={[styles.toggleText, { color: mode === 'gross' ? '#fff' : C.textPrimary }]}>
-            ¿Cuánto cobro?
+          <Text style={[styles.toggleText, { color: mode === 'gross' ? '#fff' : C.textSecondary }]}>
+            Para enviar
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Fee Type Selector */}
-      <Text style={[styles.label, { color: C.textSecondary }]}>Tipo de transacción</Text>
-      <View style={styles.chipRow}>
-        {FEE_TYPES.map((fee) => (
-          <TouchableOpacity
-            key={fee.key}
-            onPress={() => { hapticLight(); setFeeType(fee.key); }}
-            style={[
-              styles.chip,
-              {
-                backgroundColor: feeType === fee.key ? C.highlight : C.card,
-                borderColor: feeType === fee.key ? C.highlight : C.border,
-              },
-            ]}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.chipText, { color: feeType === fee.key ? '#fff' : C.textPrimary }]}>
-              {fee.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
       {/* Amount Input */}
-      <Text style={[styles.label, { color: C.textSecondary }]}>
-        {mode === 'net' ? 'Monto a enviar' : 'Monto neto a recibir'}
+      <Text style={styles.label}>
+        {mode === 'net' ? 'Monto a recibir' : 'Monto a enviar'}
       </Text>
-      <View style={[styles.inputContainer, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Text style={[styles.inputPrefix, { color: C.textSecondary }]}>$</Text>
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputPrefix}>$</Text>
         <TextInput
-          style={[styles.input, { color: C.textPrimary }]}
+          style={styles.input}
           value={amount}
           onChangeText={setAmount}
           placeholder="0.00"
@@ -169,11 +149,16 @@ function PayPalCalculatorScreen() {
 
       {/* Result */}
       {result && parsedAmount > 0 && (
-        <View style={[styles.resultCard, { backgroundColor: C.card, borderColor: C.border }]}>
+        <View style={styles.resultCard}>
+          {/* Glow bar */}
+          <View style={[styles.glowBar, { backgroundColor: C.highlight }]} />
+
           <View style={styles.resultHeader}>
-            <Ionicons name="checkmark-circle" size={20} color={C.highlight} />
-            <Text style={[styles.resultTitle, { color: C.textPrimary }]}>
-              {mode === 'net' ? 'Monto neto' : 'Monto a cobrar'}
+            <View style={[styles.resultIcon, { backgroundColor: C.highlight + '20' }]}>
+              <Ionicons name="checkmark-circle" size={18} color={C.highlight} />
+            </View>
+            <Text style={styles.resultTitle}>
+              {mode === 'net' ? 'Monto a enviar' : 'Monto neto'}
             </Text>
           </View>
 
@@ -181,72 +166,82 @@ function PayPalCalculatorScreen() {
             {formatUsd(result.gross ?? result.net)}
           </Text>
 
-          <View style={[styles.resultRow, { borderTopColor: C.border }]}>
-            <Text style={[styles.resultLabel, { color: C.textSecondary }]}>Comisión PayPal</Text>
-            <Text style={[styles.resultValue, { color: C.textPrimary }]}>{formatUsd(result.fee)}</Text>
+          <View style={styles.resultRow}>
+            <Text style={styles.resultLabel}>Comisión PayPal</Text>
+            <Text style={styles.resultValue}>{formatUsd(result.fee)}</Text>
           </View>
 
-          <View style={[styles.resultRow, { borderTopColor: C.border }]}>
-            <Text style={[styles.resultLabel, { color: C.textSecondary }]}>Tipo</Text>
-            <Text style={[styles.resultValue, { color: C.textPrimary }]}>{result.breakdown ?? ''}</Text>
+          <View style={styles.resultRow}>
+            <Text style={styles.resultLabel}>Tipo</Text>
+            <Text style={styles.resultValue}>{result.breakdown ?? ''}</Text>
           </View>
 
           {/* Equivalents */}
           {equivalents && (
             <>
-              <Text style={[styles.sectionTitle, { color: C.textSecondary, borderTopColor: C.border }]}>
-                Equivalente en divisas
-              </Text>
+              <Text style={styles.sectionTitle}>EQUIVALENTE EN DIVISAS</Text>
 
               {equivalents.bcv != null && (
                 <View style={styles.resultRow}>
-                  <Text style={[styles.resultLabel, { color: C.textSecondary }]}>🏦 BCV</Text>
-                  <Text style={[styles.resultValue, { color: C.textPrimary }]}>{formatBs(equivalents.bcv)}</Text>
+                  <View style={styles.resultLabelRow}>
+                    <Ionicons name="landmark" size={14} color={C.textSecondary} />
+                    <Text style={styles.resultLabel}>BCV</Text>
+                  </View>
+                  <Text style={styles.resultValue}>{formatBs(equivalents.bcv)}</Text>
                 </View>
               )}
 
               {equivalents.paralelo != null && (
                 <View style={styles.resultRow}>
-                  <Text style={[styles.resultLabel, { color: C.textSecondary }]}>💵 Paralelo</Text>
-                  <Text style={[styles.resultValue, { color: C.textPrimary }]}>{formatBs(equivalents.paralelo)}</Text>
+                  <View style={styles.resultLabelRow}>
+                    <Ionicons name="cash" size={14} color={C.textSecondary} />
+                    <Text style={styles.resultLabel}>Paralelo</Text>
+                  </View>
+                  <Text style={styles.resultValue}>{formatBs(equivalents.paralelo)}</Text>
                 </View>
               )}
 
               {equivalents.binance != null && (
                 <View style={styles.resultRow}>
-                  <Text style={[styles.resultLabel, { color: C.textSecondary }]}>₿ Binance P2P</Text>
-                  <Text style={[styles.resultValue, { color: C.textPrimary }]}>{formatBs(equivalents.binance)}</Text>
+                  <View style={styles.resultLabelRow}>
+                    <Ionicons name="logo-bitcoin" size={14} color={C.textSecondary} />
+                    <Text style={styles.resultLabel}>Binance P2P</Text>
+                  </View>
+                  <Text style={styles.resultValue}>{formatBs(equivalents.binance)}</Text>
                 </View>
               )}
 
               {equivalents.euro != null && (
                 <View style={styles.resultRow}>
-                  <Text style={[styles.resultLabel, { color: C.textSecondary }]}>🇪🇺 Euro</Text>
-                  <Text style={[styles.resultValue, { color: C.textPrimary }]}>{formatEur(equivalents.euro)}</Text>
+                  <View style={styles.resultLabelRow}>
+                    <Ionicons name="globe" size={14} color={C.textSecondary} />
+                    <Text style={styles.resultLabel}>Euro</Text>
+                  </View>
+                  <Text style={styles.resultValue}>{formatBs(equivalents.euro)}</Text>
                 </View>
               )}
             </>
           )}
 
           {/* Actions */}
-          <View style={[styles.actions, { borderTopColor: C.border }]}>
-            <TouchableOpacity onPress={handleCopy} style={[styles.actionButton, { backgroundColor: C.highlight + '20' }]} activeOpacity={0.7}>
+          <View style={styles.actions}>
+            <TouchableOpacity onPress={handleCopy} style={styles.actionButton} activeOpacity={0.7}>
               <Ionicons name="copy" size={16} color={C.highlight} />
-              <Text style={[styles.actionText, { color: C.highlight }]}>Copiar</Text>
+              <Text style={styles.actionText}>Copiar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleShare} style={[styles.actionButton, { backgroundColor: C.highlight + '20' }]} activeOpacity={0.7}>
+            <TouchableOpacity onPress={handleShare} style={styles.actionButton} activeOpacity={0.7}>
               <Ionicons name="share" size={16} color={C.highlight} />
-              <Text style={[styles.actionText, { color: C.highlight }]}>Compartir</Text>
+              <Text style={styles.actionText}>Compartir</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       {/* Info */}
-      <View style={[styles.infoCard, { backgroundColor: C.card, borderColor: C.border }]}>
-        <Ionicons name="information-circle" size={16} color={C.textSecondary} />
-        <Text style={[styles.infoText, { color: C.textSecondary }]}>
-          Tarifas oficiales PayPal Venezuela (actualizado mayo 2026). Las tasas de cambio son las que muestra la app en tiempo real.
+      <View style={styles.infoCard}>
+        <Ionicons name="information-circle" size={16} color={C.textMuted} />
+        <Text style={styles.infoText}>
+          Tarifas oficiales PayPal Venezuela: 5.4% + $0.30 USD. Las tasas de cambio son las que muestra la app en tiempo real.
         </Text>
       </View>
     </ScrollView>
@@ -255,102 +250,150 @@ function PayPalCalculatorScreen() {
 
 export default PayPalCalculatorScreen;
 
-const styles = StyleSheet.create({
+const createStyles = (C) => StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: C.primary,
   },
   content: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logoContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: C.highlight + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
+    color: C.textPrimary,
+    letterSpacing: 0.5,
   },
   headerSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
+    fontSize: 12,
+    fontWeight: '500',
+    color: C.textMuted,
+    marginTop: 1,
   },
   toggleContainer: {
     flexDirection: 'row',
-    borderRadius: 10,
-    borderWidth: 1,
+    backgroundColor: C.inputBg,
+    borderRadius: 12,
     padding: 4,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: C.inputBorder,
   },
   toggleButton: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 10,
     alignItems: 'center',
   },
+  toggleActive: {
+    backgroundColor: C.highlight,
+  },
   toggleText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: C.textMuted,
+    marginBottom: 10,
   },
   label: {
     fontSize: 13,
     fontWeight: '600',
+    color: C.textSecondary,
     marginBottom: 8,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: C.inputBg,
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
+    borderColor: C.inputBorder,
+    borderRadius: 14,
+    paddingHorizontal: 14,
     marginBottom: 16,
   },
   inputPrefix: {
     fontSize: 18,
     fontWeight: '700',
+    color: C.textMuted,
     marginRight: 8,
   },
   input: {
     flex: 1,
     fontSize: 18,
     fontWeight: '700',
-    paddingVertical: 12,
+    color: C.textPrimary,
+    paddingVertical: 14,
   },
   resultCard: {
+    backgroundColor: C.glassCard,
     borderWidth: 1,
-    borderRadius: 12,
+    borderColor: C.cardBorder,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 16,
+    overflow: 'hidden',
+  },
+  glowBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    opacity: 0.5,
   },
   resultHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 8,
+    marginTop: 4,
+  },
+  resultIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   resultTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
+    color: C.textPrimary,
   },
   resultAmount: {
     fontSize: 32,
     fontWeight: '800',
     marginBottom: 12,
+    fontVariant: ['tabular-nums'],
   },
   resultRow: {
     flexDirection: 'row',
@@ -358,54 +401,74 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderTopWidth: 1,
+    borderTopColor: C.cardBorder,
   },
   resultLabel: {
     fontSize: 13,
     fontWeight: '500',
+    color: C.textSecondary,
+  },
+  resultLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   resultValue: {
     fontSize: 14,
     fontWeight: '600',
+    color: C.textPrimary,
+    fontVariant: ['tabular-nums'],
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.2,
+    color: C.textMuted,
     marginTop: 8,
     paddingTop: 12,
     borderTopWidth: 1,
+    borderTopColor: C.cardBorder,
     marginBottom: 4,
   },
   actions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
+    borderTopColor: C.cardBorder,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: C.highlight + '18',
+    borderWidth: 1,
+    borderColor: C.highlight + '30',
   },
   actionText: {
     fontSize: 13,
     fontWeight: '600',
+    color: C.highlight,
   },
   infoCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 8,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.glassCard,
   },
   infoText: {
     fontSize: 12,
+    fontWeight: '500',
+    color: C.textMuted,
     flex: 1,
     lineHeight: 18,
   },

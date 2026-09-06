@@ -2,8 +2,6 @@ import React from 'react';
 import TestRenderer from 'react-test-renderer';
 import RateCard from '../RateCard';
 
-import { darkThemeEditorial } from '../palette';
-
 jest.mock('expo-blur', () => {
   const React = require('react');
   const { View } = require('react-native');

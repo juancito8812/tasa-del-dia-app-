@@ -1,6 +1,6 @@
 // Versión semver única. El release workflow (release-automatic.yml) la bumpa
 // vía sed sobre esta línea (formato: const VERSION = 'x.y.z').
-const VERSION = '1.6.0';
+const VERSION = '1.6.1';
 
 // Detect if building for Galaxy Store via env var
 const IS_GALAXY_STORE = process.env.DISTRIBUTION === 'galaxy-store';
@@ -55,7 +55,7 @@ module.exports = {
         "expo-build-properties",
         {
           android: {
-            newArchEnabled: true,
+            newArchEnabled: false,
             hermesEnabled: true,
             compileSdkVersion: 36,
             targetSdkVersion: 36,
@@ -63,7 +63,7 @@ module.exports = {
             usesCleartextTraffic: false,
           },
           ios: {
-            newArchEnabled: true,
+            newArchEnabled: false,
           },
         },
       ],

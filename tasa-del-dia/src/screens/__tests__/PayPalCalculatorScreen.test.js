@@ -84,22 +84,8 @@ describe('PayPalCalculatorScreen', () => {
     const instance = renderer.root;
     const texts = instance.findAllByType('Text');
     const labels = texts.map((t) => t.props.children).filter(Boolean);
-    expect(labels).toContain('¿Cuánto recibo?');
-    expect(labels).toContain('¿Cuánto cobro?');
-  });
-
-  it('shows fee type options', () => {
-    let renderer;
-    TestRenderer.act(() => {
-      renderer = TestRenderer.create(<PayPalCalculatorScreen />);
-    });
-    const instance = renderer.root;
-    const texts = instance.findAllByType('Text');
-    const labels = texts.map((t) => t.props.children).filter(Boolean);
-    expect(labels).toContain('Enviar a amigos');
-    expect(labels).toContain('Recibir pago');
-    expect(labels).toContain('Enviar pago');
-    expect(labels).toContain('Vender (Goods & Services)');
+    expect(labels).toContain('Para enviar');
+    expect(labels).toContain('Para recibir');
   });
 
   it('shows info disclaimer', () => {
