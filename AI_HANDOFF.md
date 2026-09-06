@@ -8,7 +8,7 @@
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.4.6, releases, auto-update verified) |
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.6.0, releases, auto-update verified) |
 | `feature/ui-2026` | Rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Mergeada a main |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
@@ -66,6 +66,41 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 - `UiStyleToggle`: botón cíclico en los 3 headers (`7d575a0`)
 - Smoke tests de componentes terminal y editorial con sus paletas (`1bc4ac3`)
 - **QA:** 26 suites / 388 tests passing · typecheck 0 errores · lint 0 errores
+
+### Sesión 05-Sep-2026 — Datos Bancarios + PayPal Calculator + Code Review
+
+- **Nueva pestaña "Datos Bancarios":**
+  - CRUD completo de cuentas bancarias venezolanas
+  - Selector de banco con filtro por nombre en tiempo real (19 bancos)
+  - Soporte para cuentas: Corriente, Ahorro, Debito, Nomina, Otro
+  - Edición y eliminación de cuentas existentes
+  - Caché con TTL de 24h (AsyncStorage)
+  - Archivos: `BankDataScreen.js`, `BankAccountCard.js`, `BankAccountForm.js`, `bankData.js`, `banks.js`, `documentTypes.js`
+  - Tests: 8 unitarios (service) + 5 integración (screen)
+
+- **Nueva pestaña "PayPal Calculator":**
+  - 4 tipos de tarifa con oficial Venezuela (May 2026):
+    - Enviar amigos (internacional): USD 4.99 + 3.4% + $0.30
+    - Recibir pago (conversión): 3.50%
+    - Enviar pago (conversión): 4.50%
+    - Vender (Bienes/Servicios): 4.4% + $0.30
+  - Modo neto/bruto con conversión automática a BCV/Paralelo/Binance/Euro
+  - Botones copiar y compartir resultados
+  - Archivos: `PayPalCalculatorScreen.js`, `paypalFees.js`
+  - Tests: 17 unitarios (fees) + 5 integración (screen)
+
+- **Code Review + Fixes:**
+  - Extracted `calcSpread(rateA, rateB)` helper en `useConverterData.js` (DRY, ~15 líneas eliminadas)
+  - `spreadBcv`/`spreadLunes` envueltos en `useMemo` (performance)
+  - Fix: `buildResultText` usa `!= null` en vez de truthy check (correctness)
+  - `sanitizeId()` en `bankData.js` — filtra chars peligrosos, limita a 64 chars (security)
+  - DRY en `PayPalCalculatorScreen.js`: `buildResultText()` compartido entre `handleCopy` y `handleShare`
+
+- **Integración UI:** 3 paquetes (Original, Terminal, Editorial) registrados en `src/ui/index.js`. Terminal usa tag "PP" en vez de icono. Tab order: Tasas (0) → Conversor (1) → Datos (2) → PayPal (3) → Historial (4)
+
+- **Version bump:** 1.4.7 → 1.6.0 (nuevos features significativos)
+- **Release:** v1.6.0 publicada en GitHub
+- **Tests:** 444/444 passing (32 suites) · typecheck 0 errores · lint 0 errores
 
 ### Sesión 21-Jun-2026 — Auditoría de seguridad + Skills review
 
@@ -169,15 +204,15 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **versión estable v1.4.6** (versionCode 10406) — incluye fixes de lint (57→0), signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end, fix de APK signing mismatch en auto-update.
+- `main` — **versión estable v1.6.0** (versionCode 10600) — incluye Datos Bancarios, PayPal Calculator, fixes de lint, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
 - `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
 
 ### Móvil / Mobile (rama `main`)
-- **176 tests, 21 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
-- **Lint:** 0 errors, **0 warnings** (antes 57; deshabilitadas reglas experimentales del React Compiler + fixes reales de exhaustive-deps)
-- **Versión actual:** **1.4.6** (package.json + app.config.js = 1.4.6, versionCode derivado 10406)
+- **444 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
+- **Lint:** 0 errors, **0 warnings** (deshabilitadas reglas experimentales del React Compiler)
+- **Versión actual:** **1.6.0** (package.json + app.config.js = 1.6.0, versionCode derivado 10600)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
 - `.env` **no existe en el repo** — está en `.gitignore`
@@ -186,14 +221,14 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
   - **Signing:** usa `eas build --local` con EXPO_TOKEN → keystore EAS consistente. SHA-256: `299073e3...`. Los workflows verifican la firma automáticamente antes de subir.
   - Assets: **`TasaDelDia-vX.Y.Z.apk`** (versionado)
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
-- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5 → v1.4.6). v1.4.6 fix: auto-update ahora busca APKs `TasaDelDia*` (firma EAS) en vez de cualquier `.apk` (que incluía `app-release.apk` con firma debug)
+- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5 → v1.4.6 → v1.4.7). v1.4.6 fix: auto-update ahora busca APKs `TasaDelDia*` (firma EAS) en vez de cualquier `.apk`
 
 **Workflows móviles activos (4):**
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
 | `build-apk.yml` | Push a main + manual | Build (EAS) + firma verification + Auto-release |
 | `release-automatic.yml` | Manual + tags v* | Release con changelog + firma verification + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests (176) + lint (0) + typecheck |
+| `mobile-ci.yml` | Push/PR a main | Tests (444) + lint (0) + typecheck |
 | `auto-sync.yml` | Cron diario 6AM UTC + manual | Auto-commit diario de cambios pendientes |
 
 **Workflows eliminados:** `release-apk.yml` y `android-build.yml`
@@ -229,12 +264,15 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 5. ~~Probar auto-update end-to-end~~ — ✅ **HECHO (19-Ago)**: v1.4.4→v1.4.5 verificado en Galaxy A12 y Galaxy A54
 6. ~~Limpiar warnings de lint~~ — ✅ **HECHO (19-Ago)**: 57→0 warnings
 7. ~~Signing key fix~~ — ✅ **HECHO (19-Ago)**: APK reconstruida con EAS, firma verificada, CI hardening
-8. ~~**📢 Comunicar a usuarios**~~ — ✅ **HECHO (19-Ago)**: release v1.4.6 publicada con fix de signing. Usuarios de v1.4.4 pueden actualizar directo.
-9. **Revisar auto-update en Galaxy A54 con v1.4.6**: usuario confirmó que funciona
-9. **Opcional: migrar a DownloadManager nativo**: la descarga sobrevive al cierre de la app, estilo Telegram; NO es necesario para el funcionamiento actual
-10. **Opcional: migrar AnimatedNumber del hero a Reanimated** (hilo UI) para eliminar el último plateau de jank en arranque (~97ms pico 99th)
-11. Ajustes finos al glassmorphism / UI
-12. **Opcional: agregar test de `gradlew assembleRelease` en CI** que intente build y verifique que falla (defensivo contra regression)
+8. ~~**📢 Comunicar a usuarios**~~ — ✅ **HECHO (19-Ago)**: release v1.4.6 publicada con fix de signing
+9. ~~Datos Bancarios~~ — ✅ **HECHO (05-Sep)**: CRUD completo con tests
+10. ~~PayPal Calculator~~ — ✅ **HECHO (05-Sep)**: 4 tipos de tarifa con tests
+11. ~~Code review + refactor~~ — ✅ **HECHO (05-Sep)**: calcSpread DRY, useMemo, sanitizeId, buildResultText fix
+12. **Probar en Expo Go en dispositivo:** verificar que las nuevas pestañas funcionan correctamente
+13. **Build EAS release v1.6.0:** compilar APK con firma EAS para distribución
+14. **Opcional: migrar a DownloadManager nativo**: la descarga sobrevive al cierre de la app, estilo Telegram
+15. **Opcional: migrar AnimatedNumber del hero a Reanimated** (hilo UI) para eliminar el último plateau de jank en arranque
+16. **Opcional: agregar test de `gradlew assembleRelease` en CI** que intente build y verifique que falla (defensivo contra regression)
 
 ---
 
@@ -616,4 +654,4 @@ APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 20-Ago-2026*
+*Fin del documento de traspaso — Última actualización: 05-Sep-2026*
