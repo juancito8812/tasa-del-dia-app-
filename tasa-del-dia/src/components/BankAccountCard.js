@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatDocument } from '../constants/documentTypes';
 import { formatBankDisplay } from '../constants/banks';
-import { formatAccountText, formatSectionText, hasPagoMovil, hasTransferencia, hasDigital } from '../services/bankData';
+import { formatAccountText, formatSectionText, hasPagoMovil, hasTransferencia, hasZelle, hasPayPal, hasBinance } from '../services/bankData';
 import { hapticLight } from '../utils/haptics';
 
 function BankAccountCard({ account, onEdit, onDelete, colors }) {
@@ -104,21 +104,58 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
         </View>
       )}
 
-      {/* Digital */}
-      {hasDigital(account) && (
+      {/* Zelle */}
+      {hasZelle(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>📧 Digital</Text>
-            <TouchableOpacity onPress={() => handleCopySection('digital')} activeOpacity={0.7}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>📧 Zelle</Text>
+            <TouchableOpacity onPress={() => handleCopySection('zelle')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
             {account.email}
           </Text>
-          {account.walletAddress && (
+        </View>
+      )}
+
+      {/* PayPal */}
+      {hasPayPal(account) && (
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>💳 PayPal</Text>
+            <TouchableOpacity onPress={() => handleCopySection('paypal')} activeOpacity={0.7}>
+              <Ionicons name="copy" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+            {account.emailPayPal}
+          </Text>
+        </View>
+      )}
+
+      {/* Binance */}
+      {hasBinance(account) && (
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>🟡 Binance</Text>
+            <TouchableOpacity onPress={() => handleCopySection('binance')} activeOpacity={0.7}>
+              <Ionicons name="copy" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          {account.binanceWallet && (
             <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
-              Wallet: {account.walletAddress}
+              Wallet: {account.binanceWallet}
+            </Text>
+          )}
+          {account.binanceEmail && (
+            <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+              Email: {account.binanceEmail}
+            </Text>
+          )}
+          {account.binanceId && (
+            <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+              ID: {account.binanceId}
             </Text>
           )}
         </View>

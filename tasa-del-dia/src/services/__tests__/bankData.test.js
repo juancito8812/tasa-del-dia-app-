@@ -7,6 +7,9 @@ import {
   formatSectionText,
   hasPagoMovil,
   hasTransferencia,
+  hasZelle,
+  hasPayPal,
+  hasBinance,
   hasDigital,
 } from '../bankData';
 
@@ -23,7 +26,10 @@ const mockAccount = {
   tipoCuenta: 'ahorro',
   numeroCuenta: '0134-12-1234567890',
   email: 'juan@email.com',
-  walletAddress: '',
+  emailPayPal: 'paypal@ejemplo.com',
+  binanceWallet: 'TBinanc3Wallet',
+  binanceEmail: 'binance@ejemplo.com',
+  binanceId: '12345678',
 };
 
 describe('bankData', () => {
@@ -111,9 +117,21 @@ describe('bankData', () => {
       expect(text).not.toContain('Pago Móvil');
     });
 
-    it('formats digital section', () => {
-      const text = formatSectionText(mockAccount, 'digital');
+    it('formats zelle section', () => {
+      const text = formatSectionText(mockAccount, 'zelle');
       expect(text).toContain('juan@email.com');
+    });
+
+    it('formats paypal section', () => {
+      const text = formatSectionText(mockAccount, 'paypal');
+      expect(text).toContain('paypal@ejemplo.com');
+    });
+
+    it('formats binance section', () => {
+      const text = formatSectionText(mockAccount, 'binance');
+      expect(text).toContain('TBinanc3Wallet');
+      expect(text).toContain('binance@ejemplo.com');
+      expect(text).toContain('12345678');
     });
   });
 
@@ -137,13 +155,43 @@ describe('bankData', () => {
     });
   });
 
-  describe('hasDigital', () => {
+  describe('hasZelle', () => {
     it('returns true when has email', () => {
-      expect(hasDigital(mockAccount)).toBe(true);
+      expect(hasZelle(mockAccount)).toBe(true);
     });
 
     it('returns false when missing email', () => {
-      expect(hasDigital({ ...mockAccount, email: '' })).toBe(false);
+      expect(hasZelle({ ...mockAccount, email: '' })).toBe(false);
+    });
+  });
+
+  describe('hasPayPal', () => {
+    it('returns true when has emailPayPal', () => {
+      expect(hasPayPal(mockAccount)).toBe(true);
+    });
+
+    it('returns false when missing emailPayPal', () => {
+      expect(hasPayPal({ ...mockAccount, emailPayPal: '' })).toBe(false);
+    });
+  });
+
+  describe('hasBinance', () => {
+    it('returns true when has binanceWallet', () => {
+      expect(hasBinance(mockAccount)).toBe(true);
+    });
+
+    it('returns false when missing all binance fields', () => {
+      expect(hasBinance({ ...mockAccount, binanceWallet: '', binanceEmail: '', binanceId: '' })).toBe(false);
+    });
+  });
+
+  describe('hasDigital', () => {
+    it('returns true when has any digital field', () => {
+      expect(hasDigital(mockAccount)).toBe(true);
+    });
+
+    it('returns false when missing all digital fields', () => {
+      expect(hasDigital({ ...mockAccount, email: '', emailPayPal: '', binanceWallet: '' })).toBe(false);
     });
   });
 });

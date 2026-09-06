@@ -107,12 +107,22 @@ export function formatAccountText(account) {
 
   if (account.email) {
     lines.push('');
-    lines.push('📧 Zelle / PayPal / Binance');
+    lines.push('📧 Zelle');
     lines.push(`Email: ${account.email}`);
   }
 
-  if (account.walletAddress) {
-    lines.push(`Wallet: ${account.walletAddress}`);
+  if (account.emailPayPal) {
+    lines.push('');
+    lines.push('💳 PayPal');
+    lines.push(`Email: ${account.emailPayPal}`);
+  }
+
+  if (account.binanceWallet || account.binanceEmail || account.binanceId) {
+    lines.push('');
+    lines.push('🟡 Binance');
+    if (account.binanceWallet) lines.push(`Wallet: ${account.binanceWallet}`);
+    if (account.binanceEmail) lines.push(`Email: ${account.binanceEmail}`);
+    if (account.binanceId) lines.push(`ID: ${account.binanceId}`);
   }
 
   return lines.filter((l) => l !== '').join('\n');
@@ -121,7 +131,7 @@ export function formatAccountText(account) {
 /**
  * Formatea una sección específica de la cuenta para copiar.
  * @param {Object} account
- * @param {'pago_movil'|'transferencia'|'digital'} section
+ * @param {'pago_movil'|'transferencia'|'zelle'|'paypal'|'binance'} section
  * @returns {string}
  */
 export function formatSectionText(account, section) {
@@ -145,13 +155,24 @@ export function formatSectionText(account, section) {
     lines.push(`Tipo: ${account.tipoCuenta === 'corriente' ? 'Corriente' : 'Ahorro'}`);
   }
 
-  if (section === 'digital' && account.email) {
+  if (section === 'zelle' && account.email) {
     lines.push('');
-    lines.push('📧 Digital');
+    lines.push('📧 Zelle');
     lines.push(`Email: ${account.email}`);
-    if (account.walletAddress) {
-      lines.push(`Wallet: ${account.walletAddress}`);
-    }
+  }
+
+  if (section === 'paypal' && account.emailPayPal) {
+    lines.push('');
+    lines.push('💳 PayPal');
+    lines.push(`Email: ${account.emailPayPal}`);
+  }
+
+  if (section === 'binance' && (account.binanceWallet || account.binanceEmail || account.binanceId)) {
+    lines.push('');
+    lines.push('🟡 Binance');
+    if (account.binanceWallet) lines.push(`Wallet: ${account.binanceWallet}`);
+    if (account.binanceEmail) lines.push(`Email: ${account.binanceEmail}`);
+    if (account.binanceId) lines.push(`ID: ${account.binanceId}`);
   }
 
   return lines.filter((l) => l !== '').join('\n');
@@ -176,10 +197,37 @@ export function hasTransferencia(account) {
 }
 
 /**
- * Verifica si una cuenta tiene datos digitales.
+ * Verifica si una cuenta tiene datos de Zelle.
+ * @param {Object} account
+ * @returns {boolean}
+ */
+export function hasZelle(account) {
+  return !!(account.email);
+}
+
+/**
+ * Verifica si una cuenta tiene datos de PayPal.
+ * @param {Object} account
+ * @returns {boolean}
+ */
+export function hasPayPal(account) {
+  return !!(account.emailPayPal);
+}
+
+/**
+ * Verifica si una cuenta tiene datos de Binance.
+ * @param {Object} account
+ * @returns {boolean}
+ */
+export function hasBinance(account) {
+  return !!(account.binanceWallet || account.binanceEmail || account.binanceId);
+}
+
+/**
+ * Verifica si una cuenta tiene datos digitales (legacy).
  * @param {Object} account
  * @returns {boolean}
  */
 export function hasDigital(account) {
-  return !!(account.email);
+  return !!(account.email || account.emailPayPal || account.binanceWallet);
 }
