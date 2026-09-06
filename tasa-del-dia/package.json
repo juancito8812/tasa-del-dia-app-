@@ -1,6 +1,6 @@
 {
   "name": "tasa-del-dia",
-  "version": "1.4.7",
+  "version": "1.6.0",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
