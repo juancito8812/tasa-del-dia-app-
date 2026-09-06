@@ -67,6 +67,38 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 - Smoke tests de componentes terminal y editorial con sus paletas (`1bc4ac3`)
 - **QA:** 26 suites / 388 tests passing · typecheck 0 errores · lint 0 errores
 
+### Sesión 06-Sep-2026 — PayPal Calculator fixes + BankAccountForm digital + CI fixes + v1.6.2
+
+- **PayPal Calculator — fórmulas corregidas:**
+  - Fórmulas erradas (solo porcentaje) → fórmulas correctas de vendercomprardolares.com (5.4% + $0.30)
+  - "Para recibir": `gross = (net + $0.30) / (1 - 5.4%)`
+  - "Para enviar": `net = gross × (1 - 4.6%) - $0.30`
+  - Eliminados tipos de transacción innecesarios (solo quedan Recibir/Enviar)
+  - Iconos Ionicons (business, cash, logo-bitcoin, globe) en vez de emojis
+  - Euro muestra equivalente en Bs (USD / tasaEuro × tasaBCV)
+  - Labels: "Para recibir" / "Para enviar"
+
+- **BankAccountForm — sección digital separada:**
+  - Zelle: email propio
+  - PayPal: email propio
+  - Binance: wallet address + email + Binance ID
+  - Transferencia: selector de banco con búsqueda independiente (mismo patrón que pago móvil)
+
+- **CI fixes (3 errores TypeScript):**
+  1. `App.js` — prop `scrollOffset` eliminada de CustomTabBar (leftover de migración Reanimated)
+  2. `PayPalCalculatorScreen.js` — `"landmark"` → `"business"` (icono Ionicons inválido)
+  3. `app.config.js` — `newArchEnabled: true` (Reanimated 4.x lo requiere; EAS lee de app.config.js)
+
+- **Migración Reanimated completada:**
+  - `App.js`: fadeAnim de `useRef(new Animated.Value)` → `useSharedValue` + `useAnimatedStyle` + `withTiming`/`withSequence`
+  - `CustomTabBar.js` (original): animaciones de `useSharedValue` + `withSpring` + `useAnimatedStyle`
+  - `CustomTabBar.js` (terminal): ídem
+  - Eliminado prop `scrollOffset` de PagerView → CustomTabBar
+
+- **Code quality:** 439/439 tests, 0 lint warnings, 0 TypeScript errors
+- **Release:** v1.6.2 publicada con APK (72MB, firma EAS verificada)
+- **Verificación en dispositivo:** 5 pestañas probadas en celular (Tasas, Conversor, Datos, PayPal, Historial)
+
 ### Sesión 05-Sep-2026 — Datos Bancarios + PayPal Calculator + Code Review
 
 - **Nueva pestaña "Datos Bancarios":**
@@ -204,31 +236,31 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **versión estable v1.6.0** (versionCode 10600) — incluye Datos Bancarios, PayPal Calculator, fixes de lint, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
+- `main` — **versión estable v1.6.2** (versionCode 10602) — incluye Datos Bancarios, PayPal Calculator (5.4%+$0.30), Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
 - `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
 
 ### Móvil / Mobile (rama `main`)
-- **444 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
+- **439 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
 - **Lint:** 0 errors, **0 warnings** (deshabilitadas reglas experimentales del React Compiler)
-- **Versión actual:** **1.6.0** (package.json + app.config.js = 1.6.0, versionCode derivado 10600)
+- **Versión actual:** **1.6.2** (package.json + app.config.js = 1.6.2, versionCode derivado 10602)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
-- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`
+- Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`, `react-native-reanimated`
 - `.env` **no existe en el repo** — está en `.gitignore`
 - Para desarrollo: `npx expo start --tunnel`
 - Build APK: GitHub Action `Build APK (React Native)` (~6 min)
   - **Signing:** usa `eas build --local` con EXPO_TOKEN → keystore EAS consistente. SHA-256: `299073e3...`. Los workflows verifican la firma automáticamente antes de subir.
   - Assets: **`TasaDelDia-vX.Y.Z.apk`** (versionado)
 - Release con changelog: `Release Automático con Changelog` (workflow_dispatch o tags v*)
-- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5 → v1.4.6 → v1.4.7). v1.4.6 fix: auto-update ahora busca APKs `TasaDelDia*` (firma EAS) en vez de cualquier `.apk`
+- **Auto-update verificado end-to-end** en Galaxy A12 y Galaxy A54 (v1.4.4 → v1.4.5 → v1.4.6 → v1.4.7 → v1.6.x). v1.4.6 fix: auto-update ahora busca APKs `TasaDelDia*` (firma EAS) en vez de cualquier `.apk`
 
 **Workflows móviles activos (4):**
 | Workflow | Trigger | Propósito |
 |----------|---------|-----------|
 | `build-apk.yml` | Push a main + manual | Build (EAS) + firma verification + Auto-release |
 | `release-automatic.yml` | Manual + tags v* | Release con changelog + firma verification + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests (444) + lint (0) + typecheck |
+| `mobile-ci.yml` | Push/PR a main | Tests (439) + lint (0) + typecheck |
 | `auto-sync.yml` | Cron diario 6AM UTC + manual | Auto-commit diario de cambios pendientes |
 
 **Workflows eliminados:** `release-apk.yml` y `android-build.yml`
@@ -266,10 +298,10 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 7. ~~Signing key fix~~ — ✅ **HECHO (19-Ago)**: APK reconstruida con EAS, firma verificada, CI hardening
 8. ~~**📢 Comunicar a usuarios**~~ — ✅ **HECHO (19-Ago)**: release v1.4.6 publicada con fix de signing
 9. ~~Datos Bancarios~~ — ✅ **HECHO (05-Sep)**: CRUD completo con tests
-10. ~~PayPal Calculator~~ — ✅ **HECHO (05-Sep)**: 4 tipos de tarifa con tests
-11. ~~Code review + refactor~~ — ✅ **HECHO (05-Sep)**: calcSpread DRY, useMemo, sanitizeId, buildResultText fix
-12. **Probar en Expo Go en dispositivo:** verificar que las nuevas pestañas funcionan correctamente
-13. **Build EAS release v1.6.0:** compilar APK con firma EAS para distribución
+10. ~~PayPal Calculator~~ — ✅ **HECHO (06-Sep)**: fórmulas correctas (5.4%+$0.30), modos Para recibir/Enviar
+11. ~~Code review + refactor~~ — ✅ **HECHO (05-Sep)**: calcSpread DRY, useMemo, sanitizeId
+12. ~~Reanimated 4.x migration~~ — ✅ **HECHO (06-Sep)**: App.js, CustomTabBar (original+terminal)
+13. ~~CI fixes~~ — ✅ **HECHO (06-Sep)**: scrollOffset, landmark→business, newArchEnabled
 14. **Opcional: migrar a DownloadManager nativo**: la descarga sobrevive al cierre de la app, estilo Telegram
 15. **Opcional: migrar AnimatedNumber del hero a Reanimated** (hilo UI) para eliminar el último plateau de jank en arranque
 16. **Opcional: agregar test de `gradlew assembleRelease` en CI** que intente build y verifique que falla (defensivo contra regression)
@@ -654,4 +686,4 @@ APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 05-Sep-2026*
+*Fin del documento de traspaso — Última actualización: 06-Sep-2026*

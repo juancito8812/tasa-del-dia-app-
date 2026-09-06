@@ -17,8 +17,8 @@
 
 - **Tasas en vivo:** BCV, Paralelo, Euro, Binance P2P con brechas y gasolina
 - **Conversor Bs/USD:** con tasas en tiempo real, modo offline
-- **Datos Bancarios:** CRUD de cuentas bancarias venezolanas (entidad, tipo, titular, CI, cuenta, Swift)
-- **PayPal Calculator:** 4 tipos de tarifa (enviar amigos, recibir pago, enviar pago, vender) con conversión automática
+- **Datos Bancarios:** CRUD de cuentas bancarias venezolanas con búsqueda de banco, secciones Zelle/PayPal/Binance
+- **PayPal Calculator:** 5.4% + $0.30 con modos "Para recibir" / "Para enviar" y conversión a BCV/Paralelo/Binance/Euro
 - **Historial:** 900+ registros desde 2023 con chart y detalle por día
 - **Selector de diseño:** Original / Terminal / Editorial (botón en el header, preferencia persistente)
 - **Auto-update:** descarga APK desde GitHub sin desinstalar
@@ -31,10 +31,10 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.6.0** (versionCode 10600) |
+| Versión actual | **1.6.2** (versionCode 10602) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 444/444 passing · 32 suites |
+| Tests | 439/439 passing · 32 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
 
@@ -86,7 +86,9 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 
 **v1.4.7 Fixes (QA en Galaxy A12, 20-ago-2026):** BCV (Lunes) se refleja al instante en el Conversor sin reiniciar (pub/sub), validación inline en vez de Alert nativo, decimales para montos < 1 (1,5 Bs → 0,0019 USD), teclado ya no tapa los botones del modal, prefill con formato es-VE ("780,50"), y tarjetas sin acción ya no parecen botones.
 
-**v1.6.0 Features (05-Sep-2026):** Nueva pestaña "Datos Bancarios" con CRUD de cuentas bancarias y caché 24h. Nueva pestaña "PayPal Calculator" con 4 tipos de tarifa oficiales Venezuela y conversión a BCV/Paralelo/Binance/Euro. Refactor: calcSpread() DRY, useMemo en spreads, sanitizeId() para seguridad.
+**v1.6.0 Features (05-Sep-2026):** Nueva pestaña "Datos Bancarios" con CRUD de cuentas bancarias y caché 24h. Nueva pestaña "PayPal Calculator" con tarifa 5.4% + $0.30 y modos "Para recibir" / "Para enviar". Refactor: calcSpread() DRY, useMemo en spreads, sanitizeId() para seguridad.
+
+**v1.6.2 Fixes (06-Sep-2026):** Fórmulas PayPal corregidas (5.4% + $0.30). Sección Digital separada en Zelle/PayPal/Binance. Transferencia con selector de banco. Reanimated 4.x migration. CI: newArchEnabled=true, iconos Ionicons, TypeScript fixes.
 
 ### 🔐 Signing Policy (importante)
 
@@ -114,7 +116,7 @@ tasa-del-dia-app/
 │   ├── App.js                     # Entry point, 5 pestañas + auto-update
 │   ├── src/
 │   │   ├── screens/               # RatesScreen, ConverterScreen, BankDataScreen, PayPalCalculatorScreen, HistoryScreen
-│   │   ├── components/            # RateCard, UpdateModal, CustomTabBar, BankAccountCard, BankAccountForm, etc.
+│   │   ├── components/            # RateCard, UpdateModal, CustomTabBar (Reanimated), BankAccountCard, BankAccountForm, etc.
 │   │   ├── ui/                     # Paquetes de diseño alternativos
 │   │   │   ├── index.js            # Registro getUiPackage(uiStyle)
 │   │   │   ├── terminal/           # Rediseño Terminal (monocromo)
@@ -149,7 +151,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (444) + lint (0 warnings) + typecheck |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (439) + lint (0 warnings) + typecheck |
 | **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
 | **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |
@@ -173,6 +175,7 @@ Cuando no hay conexión:
 ## 🛠️ Stack Tecnológico
 
 - React Native 0.81 + Expo SDK 54
+- Reanimated 4.x (animaciones en hilo UI)
 - Navegación por pestañas con `react-native-pager-view` + `CustomTabBar` (sin react-navigation)
 - AsyncStorage + expo-notifications + expo-background-fetch
 - Typecheck real con `checkJs` (`npm run typecheck` / `npx tsc --noEmit`)
