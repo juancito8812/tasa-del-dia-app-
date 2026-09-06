@@ -6,6 +6,8 @@ import { hapticLight } from '../../utils/haptics';
 const TABS = /** @type {const} */ ([
   { key: 'Tasas', tag: 'TAS' },
   { key: 'Conversor', tag: 'CONV' },
+  { key: 'Datos', tag: 'DATOS' },
+  { key: 'PayPal', tag: 'PP' },
   { key: 'Historial', tag: 'HIST' },
 ]);
 

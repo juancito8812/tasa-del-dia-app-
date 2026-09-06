@@ -4,6 +4,8 @@
 
 import RatesScreenOriginal from '../screens/RatesScreen';
 import ConverterScreenOriginal from '../screens/ConverterScreen';
+import BankDataScreenOriginal from '../screens/BankDataScreen';
+import PayPalCalculatorScreenOriginal from '../screens/PayPalCalculatorScreen';
 import HistoryScreenOriginal from '../screens/HistoryScreen';
 import CustomTabBarOriginal from '../components/CustomTabBar';
 import ScreenContainerOriginal from '../components/ScreenContainer';
@@ -31,6 +33,8 @@ const PACKAGES = {
     Screens: {
       rates: RatesScreenOriginal,
       converter: ConverterScreenOriginal,
+      bankData: BankDataScreenOriginal,
+      paypalCalc: PayPalCalculatorScreenOriginal,
       history: HistoryScreenOriginal,
     },
     TabBar: CustomTabBarOriginal,
@@ -41,6 +45,8 @@ const PACKAGES = {
     Screens: {
       rates: RatesScreenTerminal,
       converter: ConverterScreenTerminal,
+      bankData: BankDataScreenOriginal,
+      paypalCalc: PayPalCalculatorScreenOriginal,
       history: HistoryScreenTerminal,
     },
     TabBar: CustomTabBarTerminal,
@@ -51,6 +57,8 @@ const PACKAGES = {
     Screens: {
       rates: RatesScreenEditorial,
       converter: ConverterScreenEditorial,
+      bankData: BankDataScreenOriginal,
+      paypalCalc: PayPalCalculatorScreenOriginal,
       history: HistoryScreenEditorial,
     },
     TabBar: CustomTabBarOriginal,
