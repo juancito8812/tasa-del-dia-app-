@@ -55,6 +55,15 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
   const [errors, setErrors] = useState(/** @type {any} */ ({}));
   const [bankSearch, setBankSearch] = useState('');
   const [bankSearchTransfer, setBankSearchTransfer] = useState('');
+  const [formTab, setFormTab] = useState('banks'); // 'banks' | 'digital'
+
+  const resetForm = useCallback(() => {
+    setForm(INITIAL_FORM);
+    setErrors({});
+    setBankSearch('');
+    setBankSearchTransfer('');
+    setFormTab('banks');
+  }, []);
 
   const styles = useMemo(() => createStyles(C), [C]);
 
@@ -75,10 +84,10 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
     if (account) {
       setForm({ ...INITIAL_FORM, ...account });
     } else {
-      setForm(INITIAL_FORM);
+      resetForm();
     }
     setErrors({});
-  }, [account, visible]);
+  }, [account, visible, resetForm]);
 
   const sheetStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
@@ -247,7 +256,29 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
               />
               {errors.titular && <Text style={[styles.errorField, { color: C.highlight }]}>{errors.titular}</Text>}
 
+              {/* Segmented control */}
+              <View style={[styles.segmentedControl, { backgroundColor: C.inputBg, borderColor: C.inputBorder, marginTop: 20 }]}>
+                <TouchableOpacity
+                  onPress={() => setFormTab('banks')}
+                  style={[styles.segment, formTab === 'banks' && { backgroundColor: C.highlight + '20', borderColor: C.highlight }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="card" size={14} color={formTab === 'banks' ? C.highlight : C.textMuted} />
+                  <Text style={[styles.segmentText, { color: formTab === 'banks' ? C.highlight : C.textMuted }]}>Bancos</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setFormTab('digital')}
+                  style={[styles.segment, formTab === 'digital' && { backgroundColor: C.highlight + '20', borderColor: C.highlight }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="globe" size={14} color={formTab === 'digital' ? C.highlight : C.textMuted} />
+                  <Text style={[styles.segmentText, { color: formTab === 'digital' ? C.highlight : C.textMuted }]}>Digital</Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Pago Móvil */}
+              {formTab === 'banks' && (
+              <>
               <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>PAGO MÓVIL</Text>
 
               <Text style={[styles.label, { color: C.textSecondary }]}>Banco</Text>
@@ -385,7 +416,12 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
                 placeholderTextColor={C.textMuted}
                 keyboardType="numeric"
               />
+              </>
+              )}
 
+              {/* Digital */}
+              {formTab === 'digital' && (
+              <>
               {/* Zelle */}
               <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>ZELLE</Text>
 
@@ -482,6 +518,8 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
                 placeholderTextColor={C.textMuted}
                 keyboardType="numeric"
               />
+              </>
+              )}
 
               <View style={{ height: 32 }} />
             </ScrollView>
@@ -561,6 +599,32 @@ const createStyles = (C) => StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     marginBottom: 12,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 3,
+    gap: 6,
+  },
+  segment: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    paddingVertical: 10,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  separator: {
+    height: 1,
+    borderRadius: 0.5,
   },
   label: {
     fontSize: 13,
