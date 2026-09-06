@@ -184,7 +184,7 @@ function PayPalCalculatorScreen() {
               {equivalents.bcv != null && (
                 <View style={styles.resultRow}>
                   <View style={styles.resultLabelRow}>
-                    <Ionicons name="landmark" size={14} color={C.textSecondary} />
+                    <Ionicons name="business" size={14} color={C.textSecondary} />
                     <Text style={styles.resultLabel}>BCV</Text>
                   </View>
                   <Text style={styles.resultValue}>{formatBs(equivalents.bcv)}</Text>

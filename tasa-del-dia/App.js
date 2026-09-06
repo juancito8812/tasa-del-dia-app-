@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Text, View, StyleSheet, TouchableOpacity, BackHandler, InteractionManager } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, BackHandler, InteractionManager } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming } from 'react-native-reanimated';
 import PagerView from 'react-native-pager-view';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +16,7 @@ function AnimatedAppContent() {
   const { colors: C, isDark, theme, uiStyle, loaded } = useTheme();
   const { isGalaxyStore } = useDistribution();
   const Pkg = getUiPackage(uiStyle);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useSharedValue(1);
   const prevLookKey = useRef(`${theme}|${uiStyle}`);
   const pagerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -30,19 +31,17 @@ function AnimatedAppContent() {
     const key = `${theme}|${uiStyle}`;
     if (prevLookKey.current !== key) {
       prevLookKey.current = key;
-      fadeAnim.setValue(1);
-      Animated.sequence([
-        Animated.timing(fadeAnim, {
-          toValue: 0.5, duration: 120, useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1, duration: 300, useNativeDriver: true,
-        }),
-      ]).start();
+      fadeAnim.value = 1;
+      fadeAnim.value = withSequence(
+        withTiming(0.5, { duration: 120 }),
+        withTiming(1, { duration: 300 }),
+      );
     }
   }, [theme, uiStyle, fadeAnim]);
 
-  const scrollOffset = useRef(new Animated.Value(0)).current;
+  const fadeStyle = useAnimatedStyle(() => ({
+    opacity: fadeAnim.value,
+  }));
 
   const onTabPress = useCallback((index) => {
     pagerRef.current?.setPage(index);
@@ -50,11 +49,6 @@ function AnimatedAppContent() {
   }, []);
 
   const handleCloseUpdate = useCallback(() => setShowUpdate(false), []);
-
-  const onPageScroll = useCallback((e) => {
-    const { position, offset } = e.nativeEvent;
-    scrollOffset.setValue(position + offset);
-  }, [scrollOffset]);
 
   const onPageSelected = useCallback((e) => {
     const pos = e.nativeEvent.position;
@@ -111,7 +105,7 @@ function AnimatedAppContent() {
   }
 
   return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+    <Animated.View style={[{ flex: 1 }, fadeStyle]}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Pkg.ScreenContainer>
         <SafeAreaView style={{ flex: 1 }}>
@@ -120,7 +114,6 @@ function AnimatedAppContent() {
               ref={pagerRef}
               style={styles.pager}
               initialPage={0}
-              onPageScroll={onPageScroll}
               onPageSelected={onPageSelected}
               overScrollMode="never"
             >
@@ -142,7 +135,6 @@ function AnimatedAppContent() {
             </PagerView>
             <Pkg.TabBar
               activeIndex={activeIndex}
-              scrollOffset={scrollOffset}
               onTabPress={onTabPress}
               colors={C}
             />
