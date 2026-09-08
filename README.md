@@ -19,6 +19,7 @@
 - **Conversor Bs/USD:** con tasas en tiempo real, modo offline
 - **Datos Bancarios:** CRUD de cuentas bancarias venezolanas con búsqueda de banco, secciones Zelle/PayPal/Binance
 - **PayPal Calculator:** 5.4% + $0.30 con modos "Para recibir" / "Para enviar" y conversión a BCV/Paralelo/Binance/Euro
+- **Pagar compras en BS:** tarjeta que calcula el monto exacto a transferir por PayPal (USD) para cubrir una compra en bolívares (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto en Bs
 - **Historial:** 900+ registros desde 2023 con chart y detalle por día
 - **Selector de diseño:** Original / Terminal / Editorial (botón en el header, preferencia persistente)
 - **Auto-update:** descarga APK desde GitHub sin desinstalar
@@ -31,12 +32,13 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.6.2** (versionCode 10602) |
+| Versión actual | **1.6.3** (versionCode 10603) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 439/439 passing · 32 suites |
+| Tests | 465/465 passing · 32 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
+| Seguridad | Review full-app 07-sep-2026: 0 vulnerabilidades explotables |
 
 ### Instalación
 
@@ -70,6 +72,10 @@ cd android
 # APK: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
+> 💡 **Debug standalone:** la variante debug embebe el bundle JS (`debuggableVariants = []` en `android/app/build.gradle`) y usa el sufijo `applicationIdSuffix ".debug"` — corre sin Metro y puede convivir con la app de producción. Tras cambios de JS hay que recompilar la APK; `expo prebuild --clean` borra esta configuración.
+
+> 📦 **APK tester compartible:** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, bundle embebido — funciona sin PC, offline). Instala como `com.tasadeldia.app.debug`, así que convive con la app de producción. Solo para pruebas: firma debug ≠ firma EAS, así que NO sirve para auto-update (los testers deben desinstalarla antes de pasar a una release firmada) y NUNCA publicarla (bundle dev sin minificar + keystore debug público). Nota: la APK es full-ABI — RN 0.81 embarca libs prebuilt de AARs que ni `abiFilters` ni packaging excludes remueven; además `gradlew clean` está roto en este proyecto (quirk de CMake codegen) — purgar `android/app/build` manualmente si hace falta.
+
 > ⚠️ **NUNCA uses `gradlew assembleRelease` para builds que se subirán a GitHub Releases.** La APK de release firmada con el keystore local (`CN=Android Debug`) tiene una firma DIFERENTE a la del keystore EAS. Esto causa `"No se instaló la app"` cuando los usuarios intentan auto-update desde una versión firmada con EAS. Para releases, usá **siempre** `eas build --local` (ver abajo).
 
 **Requisitos:** Node.js 22+, Java 17, `ANDROID_HOME` configurado
@@ -89,6 +95,8 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 **v1.6.0 Features (05-Sep-2026):** Nueva pestaña "Datos Bancarios" con CRUD de cuentas bancarias y caché 24h. Nueva pestaña "PayPal Calculator" con tarifa 5.4% + $0.30 y modos "Para recibir" / "Para enviar". Refactor: calcSpread() DRY, useMemo en spreads, sanitizeId() para seguridad.
 
 **v1.6.2 Fixes (06-Sep-2026):** Fórmulas PayPal corregidas (5.4% + $0.30). Sección Digital separada en Zelle/PayPal/Binance. Transferencia con selector de banco. Reanimated 4.x migration. CI: newArchEnabled=true, iconos Ionicons, TypeScript fixes.
+
+**Pendiente de release (v1.6.4):** Tarjeta "Pagar compras en BS" en la pestaña PayPal — calcula el monto exacto a transferir (USD) para cubrir una compra en Bs (5.4% + $0.30 incluido), con chips de tasa en vivo, recomendación de entero superior y vuelto. Verificada en dispositivo (Galaxy A12) y disponible en la APK tester (ver Instalación).
 
 ### 🔐 Signing Policy (importante)
 
@@ -151,7 +159,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (439) + lint (0 warnings) + typecheck |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (465) + lint (0 warnings) + typecheck |
 | **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
 | **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |

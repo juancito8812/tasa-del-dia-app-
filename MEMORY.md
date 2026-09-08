@@ -1,14 +1,15 @@
 # Memory — Tasa del Día
 
-> Última actualización: 06-Sep-2026
+> Última actualización: 07-Sep-2026
 
 ## Estado Actual
 
-- **Versión:** 1.6.2 (versionCode 10602)
+- **Versión:** 1.6.3 en producción (versionCode 10603) · v1.6.4 pendiente con tarjeta "Pagar compras en BS" (código en working tree sin commit + APK tester generada)
 - **Rama:** `main`
-- **Tests:** 439/439 passing (32 suites)
+- **Tests:** 465/465 passing (32 suites)
 - **Lint:** 0 errors, 0 warnings
 - **Typecheck:** 0 errores (`checkJs: true`)
+- **Seguridad:** review full-app (07-sep-2026): 0 vulnerabilidades explotables; 2 notas "needs verification" (rangos de plausibilidad para tasas del API, `allowBackup=true` con datos bancarios en backups de nube)
 
 ## Features Activos
 
@@ -21,6 +22,7 @@
 | Auto-update desde GitHub | ✅ | `autoUpdate.js`, `UpdateModal.js` |
 | Datos Bancarios (CRUD + búsqueda bancos) | ✅ | `bankData.js`, `BankDataScreen.js`, `BankAccountForm.js` |
 | PayPal Calculator (5.4% + $0.30) | ✅ | `paypalFees.js`, `PayPalCalculatorScreen.js` |
+| Pagar compras en BS (tarjeta en pestaña PayPal) | ✅ | `calculateBsPurchase()` en `paypalFees.js`, `PayPalCalculatorScreen.js` |
 
 ## Stack
 
@@ -68,7 +70,7 @@ src/
 ├── constants/
 │   ├── banks.js                 # 19 bancos venezolanos
 │   ├── documentTypes.js
-│   └── paypalFees.js            # 2 tipos tarifa (5.4% + $0.30)
+│   └── paypalFees.js            # tarifas (5.4% + $0.30) + calculateBsPurchase (Pagar compras en BS)
 ├── context/
 │   └── ThemeContext.js           # 3 UI styles, dark/light/system
 └── ui/
@@ -89,6 +91,14 @@ src/
 - Para enviar (gross → net): `net = gross × (1 - 5.4%) - $0.30`
 - Fuente: vendercomprardolares.com
 
+**Pagar compras en BS** (`calculateBsPurchase(montoBs, tasaCambio)`): cadena sin redondeos intermedios salvo el pago exacto (round2, alimenta el ceil) y el vuelto (round2):
+- `netoUsd = montoBs / tasaCambio`
+- `pagoExactoUsd = round2((netoUsd + $0.30) / (1 - 5.4%))` ← monto a transferir
+- `pagoRecomendadoUsd = Math.ceil(pagoExactoUsd)` → `comision = recom × 5.4% + $0.30` → `netoRecibido = recom − comision`
+- `equivalenteBs = netoRecibido × tasa` → `vueltoBs = round2(equivalenteBs − montoBs)`
+- Ejemplo: 1000 Bs @ 37.5 → transferir **$28.51** · recomendado $29 · vuelto Bs 17.52
+- Devuelve `null` con inputs ≤ 0 o no finitos. Edge: el round2 del pago exacto puede dejar vuelto levemente negativo (centavos)
+
 ## BankAccountForm — Secciones Digitales
 
 | Sección | Campos |
@@ -105,11 +115,18 @@ Transferencia usa selector de banco con búsqueda independiente.
 - Siempre usar `eas build --local` con EXPO_TOKEN
 - SHA-256 keystore EAS: `299073e3f85f9fc471298bc9d3e61f3c207a5dd0b406ec1d1ffc3ede37e528eb`
 - `newArchEnabled: true` en app.config.js (Reanimated 4.x lo requiere)
+- `app.config.js` (`const VERSION`) es la fuente de la versión; los workflows la bump-ean vía sed. ⚠️ `package.json` quedó en 1.6.1 (inconsistencia conocida, cosmética)
+- APK debug standalone: `debuggableVariants = []` + `applicationIdSuffix ".debug"` en `android/app/build.gradle` — corre sin Metro y convive con producción (ver Gotchas)
+- **APK tester compartible:** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, sin trackear) — bundle embebido, funciona offline y sin PC; genera con `./gradlew assembleDebug` + copiar de `android/app/build/outputs/apk/debug/`. Firma debug: no sirve para auto-update y nunca publicarla. Build.gradle del generated `android/` corregido en sesión (decía v1.4.6/10406 de un prebuild viejo → ahora 1.6.3/10603, consistente con app.config.js)
 - Git identity: `git config user.name "juancito8812"` / `git config user.email "juancito8812@users.noreply.github.com"`
 
 ## Gotchas
 
+- APK debug standalone (sin Metro): `debuggableVariants = []` dentro del bloque `react {}` de `android/app/build.gradle` embebe el bundle JS en la APK (por defecto RN salta el bundling en debug). El sufijo `applicationIdSuffix ".debug"` en `buildTypes.debug` permite instalarla junto a la de producción. Tras cambios de JS: recompilar con `./gradlew assembleDebug`. `android/` es generado (gitignore) — editarlo con `sed`/heredoc, y `expo prebuild --clean` borra estos cambios
+
 - `expo-file-system` v19: usar SIEMPRE `expo-file-system/legacy` para `cacheDirectory`/`createDownloadResumable`/`getContentUriAsync`
+- `gradlew clean` está ROTO en este proyecto (quirk CMake/codegen RN) — si hace falta un build limpio, borrar `android/app/build` a mano
+- Reducir tamaño de APK debug: `abiFilters` y packaging excludes NO remueven las libs prebuilt de los AARs de RN 0.81 (quedan stubs) — full-ABI (118 MB) es el estado aceptado; si el tamaño importa de verdad, usar buildType `release` con keystore debug
 - `React.memo(function X() {...})` rompe inferencia de props en `checkJs`. Usar: `function X() {...} export default React.memo(X)`
 - Hooks (`useMemo`) nunca después de early returns (rules-of-hooks)
 - Para que `React.memo` sirva, handlers pasados como props deben ser `useCallback`
@@ -121,6 +138,10 @@ Transferencia usa selector de banco con búsqueda independiente.
 
 ## Pendientes
 
-1. Opcional: DownloadManager nativo para descarga que sobreviva cierre
-2. Opcional: Migrar AnimatedNumber a Reanimated (hilo UI)
-3. Opcional: Test defensivo de `gradlew assembleRelease` en CI
+1. **Publicar release v1.6.4** con la tarjeta "Pagar compras en BS" (código listo: 465/465 tests, verificado en dispositivo Galaxy A12) — flujo acordado: tester valida APK → bump a v1.6.4 en `app.config.js` → commit → workflow de release corta la release EAS (los testers deben desinstalar la debug antes de instalar la EAS por la firma)
+2. **Commitear el working tree** (feature + docs + cleanup, sin la APK tester ni `docs/superpowers/plans/2026-08-23-*.md` salvo decisión en contrario)
+3. Opcional: DownloadManager nativo para descarga que sobreviva cierre
+4. Opcional: Migrar AnimatedNumber a Reanimated (hilo UI)
+5. Opcional: Test defensivo de `gradlew assembleRelease` en CI
+6. Opcional (seguridad): rango de plausibilidad para tasas del API antes de auto-llenar chips · excluir `@bank_accounts` de backups (`allowBackup`/`dataExtractionRules`)
+7. Opcional (consistencia): alinear `package.json` (1.6.1) con `app.config.js` (1.6.3)

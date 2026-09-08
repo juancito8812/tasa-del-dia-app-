@@ -8,7 +8,7 @@
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.6.0, releases, auto-update verified) |
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.6.3 en producción; v1.6.4 pendiente, releases, auto-update verified) |
 | `feature/ui-2026` | Rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Mergeada a main |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
@@ -53,6 +53,34 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ---
 
 ## 🚀 Sesiones
+
+### Sesión 06-Sep-2026 — Tarjeta "Pagar compras en BS" en pestaña PayPal
+
+- **Nueva función pura `calculateBsPurchase(montoBs, tasaCambio)`** en `src/constants/paypalFees.js`:
+  - Cadena: `netoUsd = montoBs / tasa` → `pagoExactoUsd = round2((netoUsd + 0.30) / 0.946)` → `recomendado = ceil(pagoExacto)` → `comision = recom × 5.4% + 0.30` → `netoRecibido` → `equivalenteBs` → `vueltoBs = round2(...)`
+  - Deriva porcentajes de `PAYPAL_FEES.receive` (sin números mágicos); devuelve `null` con inputs ≤ 0 o no finitos
+  - Ejemplo: 1000 Bs @ 37.5 → transferir **$28.51** · recomendado $29 · vuelto Bs 17.52
+- **Nueva tarjeta "Pagar compras en BS"** al final de `PayPalCalculatorScreen.js` (compartida por los 3 paquetes UI):
+  - Inputs "Monto a pagar (BS)" y "Tasa de cambio (BS/USD)" con parsing es-VE (helper `parseNumericInput` extraído)
+  - Chips de tasa en vivo (BCV/Paralelo/Binance) que auto-llenan la tasa
+  - Resultado en tiempo real con el monto a transferir resaltado + bloque "Recomendación para enviar completo" (recomendado, equivalente Bs, vuelto) + botón Copiar
+  - Estilos con tokens del tema vía `createStyles(C)` (dark/light OK)
+- **Tests:** +13 unitarios (`calculateBsPurchase`) +5 integración (tarjeta) → **465/465 passing (32 suites)**
+- **Validación:** typecheck 0 errores · lint 0 errores/0 warnings
+- **Variante debug standalone:** `react { debuggableVariants = [] }` en `android/app/build.gradle` embebe el bundle JS (`assets/index.android.bundle`) en la APK debug → corre sin Metro. Con `applicationIdSuffix ".debug"` convive con la app de producción (datos separados). Verificado en Galaxy A12 sin ruta a Metro (`debug_http_host=null`): tarjeta cálcula igual ($28.51/$29.00/Bs 17,52), 0 fatals. ⚠️ Tras cambios de JS hay que recompilar (`./gradlew assembleDebug`); `expo prebuild --clean` borra la config
+- **Verificación en dispositivo (Galaxy A12, USB):**
+  - Tarjeta probada por UI automation (`uiautomator dump` + `input tap/text`): 1000 Bs @ 37.5 → **$28.51** a transferir · $26.67 neto · $1.84 comisión · recomendado **$29.00** · **Bs 1.017,53** · vuelto **Bs 17,52** — coincidencia exacta con los unit tests
+  - Chips de tasa verificados (auto-llenan y recalculan en vivo); fix en caliente: chips redondean la tasa a 2 decimales al llenar
+  - 0 fatal exceptions · 0 errores JS · screenshot capturado
+- **APK debug standalone:** la variante debug quedó configurada para embeber el bundle JS (sin depender de Metro) y convive con la app de producción vía `applicationIdSuffix ".debug"` (datos separados). Verificada en el teléfono SIN ruta a Metro (`debug_http_host=null`): mismos resultados. Detalles en `MEMORY.md` (Gotchas)
+- **Estado:** código listo para release v1.6.4 (no publicado todavía)
+- Gotcha aplicado: `handleCopyBsPurchase` debe definirse DESPUÉS de `formatBs`/`formatUsd` (TDZ en deps del `useCallback`)
+
+**Continuación 07-sep-2026 (mismo feature, sesiones posteriores):**
+- **Reviews ejecutados:** `security-review` del diff de sesión → 0 vulnerabilidades; luego review full-app (services, hooks, storage, auto-update, update flow, contexts, manifest, workflows) → 0 vulnerabilidades explotables, 2 notas needs-verification: (1) las chips confían en las tasas del API verbatim — considerar rango de plausibilidad antes de auto-llenar; (2) `allowBackup=true` incluye `@bank_accounts` (PII financiera) en backups de nube — decidir si excluir via `dataExtractionRules`. Después `code-review-and-quality` (5 ejes) sobre el feature → **Aprobado** (nits opcionales: documentar en JSDoc que `pagoExactoUsd` sale sin redondear; DRY-ear los `Math.round(x*100)/100` viejos con `round2`; considerar extraer la tarjeta a `PayPalBsPurchaseCard.js` — la pantalla pasó de ~250 a ~800 líneas)
+- **Limpieza de repo:** eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/` y `dogfood-output/` (quitado del index con `git rm -r --cached` y borrado; recuperable del commit `277bc9f`); `.gitignore` ampliado (logs/, .freebuff/, temp_files/, dogfood-output/); 2 comentarios ponytail reescritos en `api.js`/`autoUpdate.js`. Cero TODOs/FIXMEs, cero console.log en producción, sin código muerto. Pendientes de decisión: commit del plan no trackeado `docs/superpowers/plans/2026-08-23-update-docs-galaxy-store.md` y alinear `package.json` (1.6.1) con `app.config.js` (1.6.3)
+- **APK tester compartible:** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, sin trackear) con la tarjeta nueva — bundle JS embebido (standalone, offline, sin Metro), `applicationIdSuffix ".debug"` convive con la app de producción. `build.gradle` generado corregido (decía v1.4.6/10406 de un prebuild viejo → ahora 1.6.3/10603). No se logró reducir a arm64-only: los `abiFilters`/packaging excludes no remueven las libs prebuilt de los AARs de RN 0.81 y `gradlew clean` está roto (quirk CMake) — se aceptó full-ABI
+- ⚠️ Todo el trabajo de estas sesiones está SIN COMMIT en el working tree (feature + tests + docs + cleanup). El plan para merge a main: tester valida → bump v1.6.4 → commit → workflow de release
 
 ### Sesión 23-Ago-2026 — Selector de diseño de UI
 
@@ -236,15 +264,15 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **versión estable v1.6.2** (versionCode 10602) — incluye Datos Bancarios, PayPal Calculator (5.4%+$0.30), Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
+- `main` — **v1.6.3 en producción** (versionCode 10603) — incluye Datos Bancarios, PayPal Calculator (5.4%+$0.30), tarjeta "Pagar compras en BS" (pendiente de release v1.6.4), Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
 - `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
 
 ### Móvil / Mobile (rama `main`)
-- **439 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
+- **465 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
 - **Lint:** 0 errors, **0 warnings** (deshabilitadas reglas experimentales del React Compiler)
-- **Versión actual:** **1.6.2** (package.json + app.config.js = 1.6.2, versionCode derivado 10602)
+- **Versión actual:** **1.6.3** (app.config.js `const VERSION`; versionCode derivado 10603). ⚠️ `package.json` quedó en 1.6.1 — inconsistencia conocida y cosmética (los workflows leen de app.config.js)
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`, `react-native-reanimated`
 - `.env` **no existe en el repo** — está en `.gitignore`
@@ -260,7 +288,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 |----------|---------|-----------|
 | `build-apk.yml` | Push a main + manual | Build (EAS) + firma verification + Auto-release |
 | `release-automatic.yml` | Manual + tags v* | Release con changelog + firma verification + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests (439) + lint (0) + typecheck |
+| `mobile-ci.yml` | Push/PR a main | Tests (465) + lint (0) + typecheck |
 | `auto-sync.yml` | Cron diario 6AM UTC + manual | Auto-commit diario de cambios pendientes |
 
 **Workflows eliminados:** `release-apk.yml` y `android-build.yml`
@@ -283,8 +311,9 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 | Archivo | Qué contiene |
 |---------|-------------|
 | `AI_HANDOFF.md` | **Este archivo** — estado y handoff |
-| `docs/superpowers/specs/` | ⚠️ **No existe en este repo** — referencia histórica de specs (sesiones previas); no hay `docs/` |
-| `docs/superpowers/plans/` | ⚠️ **No existe en este repo** — referencia histórica de planes; no hay `docs/` |
+| `docs/superpowers/specs/` | Specs históricos (ej. diseño del selector de UI) |
+| `docs/superpowers/plans/` | Planes históricos (ui-selector, galaxy-store) |
+| `docs/privacy-policy.md`, `docs/galaxy-store-checklist.md` | Distribución en Galaxy Store |
 
 ---
 
@@ -622,7 +651,7 @@ El pico 99th (~93-500 ms) persiste en corridas puntuales (parseo del bundle + pr
 
 ### Sesión 20-Ago-2026 — QA funcional en Galaxy A12 + fixes de los 5 hallazgos
 
-**QA realizado:** sesión completa (~1h) en Galaxy A12 (SM-A125M, Android 12) con la v1.4.6 EAS, vía adb/uiautomator/logcat (QA funcional, sin inspección visual). Reporte: `dogfood-output/report.md`. Resultado: 0 crashes, 0 errores JS, matemática correcta. 5 hallazgos (1 medio, 4 bajos) + 3 observaciones INFO.
+**QA realizado:** sesión completa (~1h) en Galaxy A12 (SM-A125M, Android 12) con la v1.4.6 EAS, vía adb/uiautomator/logcat (QA funcional, sin inspección visual). Reporte: `dogfood-output/report.md` (eliminado del repo el 07-sep-2026; ver commit `277bc9f` si se necesita). Resultado: 0 crashes, 0 errores JS, matemática correcta. 5 hallazgos (1 medio, 4 bajos) + 3 observaciones INFO.
 
 **Fixes aplicados (todos con tests):**
 
@@ -686,4 +715,4 @@ APK **oficial del repositorio** (descargado de la release v1.4.7, firma EAS `299
 
 ---
 
-*Fin del documento de traspaso — Última actualización: 06-Sep-2026*
+*Fin del documento de traspaso — Última actualización: 07-Sep-2026*
