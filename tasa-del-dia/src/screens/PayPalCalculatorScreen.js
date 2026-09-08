@@ -13,8 +13,22 @@ import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import useRatesData from '../hooks/useRatesData';
-import { PAYPAL_FEES, calculateNet, calculateGross } from '../constants/paypalFees';
+import { PAYPAL_FEES, calculateNet, calculateGross, calculateBsPurchase } from '../constants/paypalFees';
 import { hapticLight } from '../utils/haptics';
+
+/**
+ * Normaliza un input numérico es-VE: "1.234,56" → 1234.56, "37,5" → 37.5.
+ * La coma es separador decimal; los puntos antes de una coma son miles.
+ * @param {string} value
+ * @returns {number}
+ */
+function parseNumericInput(value) {
+  if (!value) return 0;
+  const normalized = value.includes(',')
+    ? value.replace(/\./g, '').replace(',', '.')
+    : value.replace(',', '.');
+  return parseFloat(normalized) || 0;
+}
 
 function PayPalCalculatorScreen() {
   const { colors: C } = useTheme();
@@ -22,15 +36,12 @@ function PayPalCalculatorScreen() {
 
   const [mode, setMode] = useState('net'); // 'net' = ¿Cuánto recibo?, 'gross' = ¿Cuánto cobro?
   const [amount, setAmount] = useState('');
+  const [bsAmount, setBsAmount] = useState(''); // Pagar compras en BS: monto
+  const [bsRate, setBsRate] = useState(''); // Pagar compras en BS: tasa
 
   const styles = useMemo(() => createStyles(C), [C]);
 
-  const parsedAmount = useMemo(() => {
-    const normalized = amount.includes(',')
-      ? amount.replace(/\./g, '').replace(',', '.')
-      : amount.replace(',', '.');
-    return parseFloat(normalized) || 0;
-  }, [amount]);
+  const parsedAmount = useMemo(() => parseNumericInput(amount), [amount]);
 
   const feeType = 'receive';
 
@@ -55,6 +66,24 @@ function PayPalCalculatorScreen() {
     return { bcv, paralelo, binance, euro };
   }, [result, data]);
 
+  // --- Pagar compras en BS ---
+  const parsedBsAmount = useMemo(() => parseNumericInput(bsAmount), [bsAmount]);
+  const parsedBsRate = useMemo(() => parseNumericInput(bsRate), [bsRate]);
+
+  const bsPurchase = useMemo(
+    () => calculateBsPurchase(parsedBsAmount, parsedBsRate),
+    [parsedBsAmount, parsedBsRate]
+  );
+
+  const rateChips = useMemo(() => {
+    /** @type {Array<{ label: string, rate: number, icon: React.ComponentProps<typeof Ionicons>['name'] }>} */
+    const chips = [];
+    if (data.tasaBCV) chips.push({ label: 'Tasa BCV', rate: Number(data.tasaBCV), icon: 'business' });
+    if (data.tasaParalelo) chips.push({ label: 'Tasa Paralelo', rate: Number(data.tasaParalelo), icon: 'cash' });
+    if (data.tasaBinanceP2P) chips.push({ label: 'Tasa Binance', rate: Number(data.tasaBinanceP2P), icon: 'logo-bitcoin' });
+    return chips;
+  }, [data]);
+
   const formatBs = useCallback((value) => {
     if (value == null) return 'N/A';
     return `Bs ${value.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -64,6 +93,24 @@ function PayPalCalculatorScreen() {
     if (value == null) return 'N/A';
     return `$ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }, []);
+
+  const handleCopyBsPurchase = useCallback(async () => {
+    hapticLight();
+    if (!bsPurchase) return;
+    const lines = [
+      'Pagar compras en BS',
+      `Monto a pagar: ${formatBs(parsedBsAmount)}`,
+      `Tasa: ${parsedBsRate.toLocaleString('es-VE', { maximumFractionDigits: 2 })} Bs/USD`,
+      '',
+      `Transferir en PayPal: ${formatUsd(bsPurchase.pagoExactoUsd)}`,
+      `Comisión incluida: ${formatUsd(bsPurchase.pagoExactoUsd - bsPurchase.netoUsd)}`,
+      `Recomendado: ${formatUsd(bsPurchase.pagoRecomendadoUsd)}`,
+      `Equivale a: ${formatBs(bsPurchase.equivalenteBs)}`,
+      `Vuelto: ${formatBs(bsPurchase.vueltoBs)}`,
+    ];
+    await Clipboard.setStringAsync(lines.join('\n'));
+    Alert.alert('Copiado', 'Resultado copiado al portapapeles');
+  }, [bsPurchase, parsedBsAmount, parsedBsRate, formatBs, formatUsd]);
 
   const buildResultText = useCallback(() => {
     const usdAmount = result.gross ?? result.net;
@@ -236,6 +283,110 @@ function PayPalCalculatorScreen() {
           </View>
         </View>
       )}
+
+      {/* Pagar compras en BS */}
+      <View style={styles.bsSectionCard}>
+        <View style={styles.bsSectionHeader}>
+          <View style={styles.bsSectionIcon}>
+            <Ionicons name="card" size={16} color={C.highlight} />
+          </View>
+          <View>
+            <Text style={styles.bsSectionTitle}>Pagar compras en BS</Text>
+            <Text style={styles.bsSectionSubtitle}>Calcula el envío PayPal que cubre tu compra</Text>
+          </View>
+        </View>
+
+        <Text style={styles.label}>Monto a pagar (BS)</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputPrefix}>Bs</Text>
+          <TextInput
+            style={styles.input}
+            value={bsAmount}
+            onChangeText={setBsAmount}
+            placeholder="0,00"
+            placeholderTextColor={C.textMuted}
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        <Text style={styles.label}>Tasa de cambio (BS/USD)</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.inputPrefix}>Bs</Text>
+          <TextInput
+            style={styles.input}
+            value={bsRate}
+            onChangeText={setBsRate}
+            placeholder="0,00"
+            placeholderTextColor={C.textMuted}
+            keyboardType="decimal-pad"
+          />
+        </View>
+
+        {rateChips.length > 0 && (
+          <View style={styles.bsChipsRow}>
+            {rateChips.map((chip) => (
+              <TouchableOpacity
+                key={chip.label}
+                style={styles.bsChip}
+                activeOpacity={0.7}
+                onPress={() => {
+                  hapticLight();
+                  setBsRate(String(Math.round(chip.rate * 100) / 100));
+                }}
+              >
+                <Ionicons name={chip.icon} size={12} color={C.textSecondary} />
+                <Text style={styles.bsChipLabel}>{chip.label}</Text>
+                <Text style={styles.bsChipValue}>
+                  {chip.rate.toLocaleString('es-VE', { maximumFractionDigits: 2 })}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {bsPurchase && (
+          <View style={styles.bsResultBlock}>
+            <View style={styles.bsResultRow}>
+              <Text style={styles.bsResultLabel}>Equivalente de la compra</Text>
+              <Text style={styles.bsResultValue}>{formatUsd(bsPurchase.netoUsd)}</Text>
+            </View>
+
+            <View style={styles.bsResultMain}>
+              <Text style={styles.bsResultMainLabel}>Monto a transferir en PayPal (USD)</Text>
+              <Text style={styles.bsResultMainValue}>{formatUsd(bsPurchase.pagoExactoUsd)}</Text>
+            </View>
+
+            <View style={styles.bsResultRow}>
+              <Text style={styles.bsResultLabel}>Comisión PayPal incluida</Text>
+              <Text style={styles.bsResultValue}>
+                {formatUsd(bsPurchase.pagoExactoUsd - bsPurchase.netoUsd)}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {bsPurchase && (
+          <View style={styles.bsRecoCard}>
+            <View style={styles.bsRecoHeader}>
+              <Ionicons name="bulb" size={14} color={C.highlight} />
+              <Text style={styles.bsRecoTitle}>Recomendación para enviar completo</Text>
+            </View>
+            <Text style={styles.bsRecoAmount}>{formatUsd(bsPurchase.pagoRecomendadoUsd)}</Text>
+            <View style={styles.bsRecoRow}>
+              <Text style={styles.bsRecoLabel}>Equivale a</Text>
+              <Text style={styles.bsRecoValue}>{formatBs(bsPurchase.equivalenteBs)}</Text>
+            </View>
+            <View style={styles.bsRecoRow}>
+              <Text style={styles.bsRecoLabel}>Vuelto / saldo a favor</Text>
+              <Text style={styles.bsRecoValue}>{formatBs(bsPurchase.vueltoBs)}</Text>
+            </View>
+            <TouchableOpacity style={styles.bsCopyButton} activeOpacity={0.7} onPress={handleCopyBsPurchase}>
+              <Ionicons name="copy" size={14} color={C.highlight} />
+              <Text style={styles.bsCopyText}>Copiar</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
 
       {/* Info */}
       <View style={styles.infoCard}>
@@ -471,5 +622,180 @@ const createStyles = (C) => StyleSheet.create({
     color: C.textMuted,
     flex: 1,
     lineHeight: 18,
+  },
+  // --- Pagar compras en BS ---
+  bsSectionCard: {
+    backgroundColor: C.glassCard,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  bsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  bsSectionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: C.highlight + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bsSectionTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: C.textPrimary,
+    letterSpacing: 0.3,
+  },
+  bsSectionSubtitle: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: C.textMuted,
+    marginTop: 1,
+  },
+  bsChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 14,
+  },
+  bsChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: C.highlight + '30',
+    backgroundColor: C.highlight + '12',
+  },
+  bsChipLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: C.textSecondary,
+  },
+  bsChipValue: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: C.highlight,
+    fontVariant: ['tabular-nums'],
+  },
+  bsResultBlock: {
+    borderTopWidth: 1,
+    borderTopColor: C.cardBorder,
+    paddingTop: 4,
+    marginTop: 2,
+  },
+  bsResultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 7,
+  },
+  bsResultLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: C.textSecondary,
+  },
+  bsResultValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: C.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  bsResultMain: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginVertical: 6,
+    borderRadius: 12,
+    backgroundColor: C.highlight + '15',
+    borderWidth: 1,
+    borderColor: C.highlight + '35',
+  },
+  bsResultMainLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.textPrimary,
+    flex: 1,
+    lineHeight: 17,
+    marginRight: 8,
+  },
+  bsResultMainValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: C.highlight,
+    fontVariant: ['tabular-nums'],
+  },
+  bsRecoCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: C.cardBorder,
+    backgroundColor: C.inputBg,
+  },
+  bsRecoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  bsRecoTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: C.textSecondary,
+    flex: 1,
+  },
+  bsRecoAmount: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: C.highlight,
+    marginBottom: 8,
+    fontVariant: ['tabular-nums'],
+  },
+  bsRecoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+  },
+  bsRecoLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: C.textSecondary,
+  },
+  bsRecoValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.textPrimary,
+    fontVariant: ['tabular-nums'],
+  },
+  bsCopyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: C.highlight + '18',
+    borderWidth: 1,
+    borderColor: C.highlight + '30',
+  },
+  bsCopyText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.highlight,
   },
 });

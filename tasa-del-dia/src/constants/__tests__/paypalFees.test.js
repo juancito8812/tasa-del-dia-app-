@@ -1,4 +1,4 @@
-import { PAYPAL_FEES, calculateNet, calculateGross } from '../paypalFees';
+import { PAYPAL_FEES, calculateNet, calculateGross, calculateBsPurchase } from '../paypalFees';
 
 describe('paypalFees', () => {
   describe('PAYPAL_FEES', () => {
@@ -82,6 +82,90 @@ describe('paypalFees', () => {
       const netAmount = 75.50;
       const result = calculateGross(netAmount, 'receive');
       expect(result.gross - result.fee).toBeCloseTo(netAmount, 1);
+    });
+  });
+
+  describe('calculateBsPurchase', () => {
+    it('calculates the full chain for 1000 Bs @ 37.5', () => {
+      const r = calculateBsPurchase(1000, 37.5);
+      expect(r.netoUsd).toBe(26.67);
+      expect(r.pagoExactoUsd).toBe(28.51);
+      expect(r.pagoRecomendadoUsd).toBe(29);
+      expect(r.comisionRecomendado).toBe(1.87);
+      expect(r.netoRecibidoRecomendado).toBe(27.13);
+      expect(r.equivalenteBs).toBe(1017.53);
+      expect(r.vueltoBs).toBe(17.52);
+    });
+
+    it('calculates for 500 Bs @ 39.5', () => {
+      const r = calculateBsPurchase(500, 39.5);
+      expect(r.netoUsd).toBe(12.66);
+      expect(r.pagoExactoUsd).toBe(13.7);
+      expect(r.pagoRecomendadoUsd).toBe(14);
+      expect(r.comisionRecomendado).toBe(1.06);
+      expect(r.netoRecibidoRecomendado).toBe(12.94);
+      expect(r.equivalenteBs).toBe(511.29);
+      expect(r.vueltoBs).toBe(11.29);
+    });
+
+    it('recommended payment is always a whole dollar (ceil)', () => {
+      const r = calculateBsPurchase(500, 39.5);
+      expect(Number.isInteger(r.pagoRecomendadoUsd)).toBe(true);
+      expect(r.pagoRecomendadoUsd).toBeGreaterThanOrEqual(r.pagoExactoUsd);
+    });
+
+    it('returns vuelto 0 when the exact payment is a whole dollar', () => {
+      const r = calculateBsPurchase(366.4, 40);
+      expect(r.pagoExactoUsd).toBe(10);
+      expect(r.pagoRecomendadoUsd).toBe(10);
+      expect(r.vueltoBs).toBe(0);
+    });
+
+    it('edge: slightly negative vuelto when round2 lands just below a whole dollar', () => {
+      const r = calculateBsPurchase(1017.560475, 37.5);
+      expect(r.pagoExactoUsd).toBe(29);
+      expect(r.pagoRecomendadoUsd).toBe(29);
+      expect(r.vueltoBs).toBe(-0.04);
+    });
+
+    it('keeps consistency: netoRecibido = recomendado - comision', () => {
+      const r = calculateBsPurchase(250, 36.9);
+      const feeRate = PAYPAL_FEES.receive.percentage / 100;
+      const comisionExacta = r.pagoRecomendadoUsd * feeRate + PAYPAL_FEES.receive.fixedFee;
+      expect(r.netoRecibidoRecomendado).toBeCloseTo(r.pagoRecomendadoUsd - comisionExacta, 1);
+    });
+
+    it('equivalenteBs matches netoRecibido * tasa', () => {
+      const r = calculateBsPurchase(1000, 37.5);
+      const feeRate = PAYPAL_FEES.receive.percentage / 100;
+      const netoExacto = r.pagoRecomendadoUsd - (r.pagoRecomendadoUsd * feeRate + PAYPAL_FEES.receive.fixedFee);
+      expect(r.equivalenteBs).toBeCloseTo(netoExacto * 37.5, 1);
+    });
+
+    it('returns null for zero montoBs', () => {
+      expect(calculateBsPurchase(0, 37.5)).toBeNull();
+    });
+
+    it('returns null for negative montoBs', () => {
+      expect(calculateBsPurchase(-50, 37.5)).toBeNull();
+    });
+
+    it('returns null for zero tasa', () => {
+      expect(calculateBsPurchase(1000, 0)).toBeNull();
+    });
+
+    it('returns null for negative tasa', () => {
+      expect(calculateBsPurchase(1000, -37.5)).toBeNull();
+    });
+
+    it('returns null for NaN inputs', () => {
+      expect(calculateBsPurchase(NaN, 37.5)).toBeNull();
+      expect(calculateBsPurchase(1000, NaN)).toBeNull();
+    });
+
+    it('returns null for Infinity inputs', () => {
+      expect(calculateBsPurchase(Infinity, 37.5)).toBeNull();
+      expect(calculateBsPurchase(1000, Infinity)).toBeNull();
     });
   });
 });
