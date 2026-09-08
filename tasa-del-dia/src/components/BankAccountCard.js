@@ -69,7 +69,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
       {hasPagoMovil(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>📱 Pago Móvil</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="phone-portrait-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Pago Móvil</Text>
+            </View>
             <TouchableOpacity onPress={() => handleCopySection('pago_movil')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -87,7 +90,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
       {hasTransferencia(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>🏦 Transferencia</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="business-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Transferencia</Text>
+            </View>
             <TouchableOpacity onPress={() => handleCopySection('transferencia')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -108,7 +114,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
       {hasZelle(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>📧 Zelle</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="mail-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Zelle</Text>
+            </View>
             <TouchableOpacity onPress={() => handleCopySection('zelle')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -123,7 +132,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
       {hasPayPal(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>💳 PayPal</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="card-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PayPal</Text>
+            </View>
             <TouchableOpacity onPress={() => handleCopySection('paypal')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -138,7 +150,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
       {hasBinance(account) && (
         <View style={[styles.section, { borderTopColor: colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>🟡 Binance</Text>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="logo-bitcoin" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Binance</Text>
+            </View>
             <TouchableOpacity onPress={() => handleCopySection('binance')} activeOpacity={0.7}>
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -218,6 +233,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   sectionTitle: {
     fontSize: 12,

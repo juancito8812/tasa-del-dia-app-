@@ -91,14 +91,14 @@ export function formatAccountText(account) {
   if (account.banco) {
     if (account.telefono) {
       lines.push('');
-      lines.push('📱 Pago Móvil');
+      lines.push('PAGO MOVIL');
       lines.push(`Banco: ${formatBankDisplay(account.banco)}`);
       lines.push(`Tel: ${account.telefono}`);
     }
 
     if (account.numeroCuenta) {
       lines.push('');
-      lines.push('🏦 Transferencia');
+      lines.push('TRANSFERENCIA');
       lines.push(`Banco: ${formatBankDisplay(account.banco)}`);
       lines.push(`Cta: ${account.numeroCuenta}`);
       lines.push(`Tipo: ${account.tipoCuenta === 'corriente' ? 'Corriente' : 'Ahorro'}`);
@@ -107,19 +107,19 @@ export function formatAccountText(account) {
 
   if (account.email) {
     lines.push('');
-    lines.push('📧 Zelle');
+    lines.push('ZELLE');
     lines.push(`Email: ${account.email}`);
   }
 
   if (account.emailPayPal) {
     lines.push('');
-    lines.push('💳 PayPal');
+    lines.push('PAYPAL');
     lines.push(`Email: ${account.emailPayPal}`);
   }
 
   if (account.binanceWallet || account.binanceEmail || account.binanceId) {
     lines.push('');
-    lines.push('🟡 Binance');
+    lines.push('BINANCE');
     if (account.binanceWallet) lines.push(`Wallet: ${account.binanceWallet}`);
     if (account.binanceEmail) lines.push(`Email: ${account.binanceEmail}`);
     if (account.binanceId) lines.push(`ID: ${account.binanceId}`);
@@ -142,14 +142,14 @@ export function formatSectionText(account, section) {
 
   if (section === 'pago_movil' && account.banco && account.telefono) {
     lines.push('');
-    lines.push('📱 Pago Móvil');
+    lines.push('PAGO MOVIL');
     lines.push(`Banco: ${formatBankDisplay(account.banco)}`);
     lines.push(`Tel: ${account.telefono}`);
   }
 
   if (section === 'transferencia' && account.banco && account.numeroCuenta) {
     lines.push('');
-    lines.push('🏦 Transferencia');
+    lines.push('TRANSFERENCIA');
     lines.push(`Banco: ${formatBankDisplay(account.banco)}`);
     lines.push(`Cta: ${account.numeroCuenta}`);
     lines.push(`Tipo: ${account.tipoCuenta === 'corriente' ? 'Corriente' : 'Ahorro'}`);
@@ -157,19 +157,19 @@ export function formatSectionText(account, section) {
 
   if (section === 'zelle' && account.email) {
     lines.push('');
-    lines.push('📧 Zelle');
+    lines.push('ZELLE');
     lines.push(`Email: ${account.email}`);
   }
 
   if (section === 'paypal' && account.emailPayPal) {
     lines.push('');
-    lines.push('💳 PayPal');
+    lines.push('PAYPAL');
     lines.push(`Email: ${account.emailPayPal}`);
   }
 
   if (section === 'binance' && (account.binanceWallet || account.binanceEmail || account.binanceId)) {
     lines.push('');
-    lines.push('🟡 Binance');
+    lines.push('BINANCE');
     if (account.binanceWallet) lines.push(`Wallet: ${account.binanceWallet}`);
     if (account.binanceEmail) lines.push(`Email: ${account.binanceEmail}`);
     if (account.binanceId) lines.push(`ID: ${account.binanceId}`);
