@@ -17,7 +17,7 @@ const STALL_TIMEOUT_MS = 45000;
 /**
  * Compara dos versiones semver (ej: "1.0.1" vs "1.0.2").
  * Retorna: -1 si a < b, 0 si igual, 1 si a > b.
- * ponytail: split-map-compare en 10 líneas, sin dependencias externas.
+ * Implementación sin dependencias externas.
  */
 function compareVersions(a, b) {
   const pa = a.split('.').map(Number);

@@ -307,7 +307,7 @@ const STORAGE_KEY_HISTORICAL_API_CACHE = '@tasa_del_dia/historical_api_cache';
  * Fetch historical rates desde DolarApi.com.
  * Retorna un array de { dateKey, bcv, paralelo } o null si falla.
  * El endpoint devuelve 945+ registros desde 2023 con fuentes "oficial" y "paralelo".
- * ponytail: transformar el array plano a dict agrupado por fecha.
+ * Transforma el array plano a dict agrupado por fecha.
  */
 async function fetchHistoricalFromAPI() {
   try {

@@ -18,6 +18,12 @@ tasa-del-dia/android/local.properties
 *.apk
 *.aab
 
+# ─── Tooling / local runtime artifacts ───
+logs/
+.freebuff/
+temp_files/
+dogfood-output/
+
 # ─── Python / PyInstaller ───
 __pycache__/
 *.py[cod]
