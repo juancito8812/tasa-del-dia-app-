@@ -3,7 +3,7 @@
  * Genera un changelog markdown a partir de los commits desde el último tag.
  * Uso: node scripts/generate-changelog.js [--from <tag>] [--to <ref>]
  *
- * ponytail: sin dependencias externas, solo git log + procesamiento básico.
+ * Simple: sin dependencias externas, solo git log + procesamiento básico.
  */
 
 const { execSync } = require('child_process');
