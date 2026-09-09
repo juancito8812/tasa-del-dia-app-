@@ -1,15 +1,15 @@
 # Memory — Tasa del Día
 
-> Última actualización: 07-Sep-2026
+> Última actualización: 08-Sep-2026
 
 ## Estado Actual
 
-- **Versión:** 1.6.3 en producción (versionCode 10603) · v1.6.4 pendiente con tarjeta "Pagar compras en BS" (código en working tree sin commit + APK tester generada)
-- **Rama:** `main`
-- **Tests:** 465/465 passing (32 suites)
+- **Versión:** 1.6.4 en producción (versionCode 10604) · v1.6.5 pendiente
+- **Rama:** `main` (6 commits nuevos desde v1.6.3: f44ee74, e4170be, 048e319, 2bbea56, 9277b9c, 76cf61d + merge-bot)
+- **Tests:** 475/475 passing (32 suites)
 - **Lint:** 0 errors, 0 warnings
 - **Typecheck:** 0 errores (`checkJs: true`)
-- **Seguridad:** review full-app (07-sep-2026): 0 vulnerabilidades explotables; 2 notas "needs verification" (rangos de plausibilidad para tasas del API, `allowBackup=true` con datos bancarios en backups de nube)
+- **Seguridad:** reviews completadas (06-07-sep-2026): security-review del diff + full-app → 0 vulnerabilidades explotables; code-review-and-quality (5 ejes) del feature → Aprobado. 2 notas "needs verification" pendientes de decisión (rangos de plausibilidad para tasas del API, `allowBackup=true` con datos bancarios en backups de nube)
 
 ## Features Activos
 
@@ -20,7 +20,7 @@
 | Historial 900+ registros | ✅ | `useHistoryData.js`, `HistoryScreen.js` |
 | Selector UI (Original/Terminal/Editorial) | ✅ | `ui/index.js`, `ThemeContext.js` |
 | Auto-update desde GitHub | ✅ | `autoUpdate.js`, `UpdateModal.js` |
-| Datos Bancarios (CRUD + búsqueda bancos) | ✅ | `bankData.js`, `BankDataScreen.js`, `BankAccountForm.js` |
+| Datos Bancarios (CRUD + 6 métodos de pago) | ✅ | `bankData.js`, `BankDataScreen.js`, `BankAccountForm.js` |
 | PayPal Calculator (5.4% + $0.30) | ✅ | `paypalFees.js`, `PayPalCalculatorScreen.js` |
 | Pagar compras en BS (tarjeta en pestaña PayPal) | ✅ | `calculateBsPurchase()` en `paypalFees.js`, `PayPalCalculatorScreen.js` |
 
@@ -57,11 +57,11 @@ src/
 │   ├── RateCard.js
 │   ├── CustomTabBar.js          # Reanimated 4.x
 │   ├── BankAccountCard.js
-│   └── BankAccountForm.js       # Bottom sheet, 3 secciones digitales
+│   └── BankAccountForm.js       # Bottom sheet, 6 secciones digitales (Zelle/PayPal/Binance/Facebank/Zinli/Wally)
 ├── services/
 │   ├── api.js                   # DolarApi + Binance P2P
 │   ├── autoUpdate.js
-│   ├── bankData.js              # CRUD + cache 24h + sanitizeId()
+│   ├── bankData.js              # CRUD + cache 24h + sanitizeId() + formatAccountText/formatSectionText + has* helpers
 │   └── notifications.js
 ├── hooks/
 │   ├── useRatesData.js          # SWR + pub/sub BCV Lunes
@@ -106,6 +106,9 @@ src/
 | Zelle | email |
 | PayPal | email |
 | Binance | wallet address, email, binance ID |
+| Facebank | email, account |
+| Zinli | email |
+| Wally | email |
 
 Transferencia usa selector de banco con búsqueda independiente.
 
@@ -117,7 +120,9 @@ Transferencia usa selector de banco con búsqueda independiente.
 - `newArchEnabled: true` en app.config.js (Reanimated 4.x lo requiere)
 - `app.config.js` (`const VERSION`) es la fuente de la versión; los workflows la bump-ean vía sed. ⚠️ `package.json` quedó en 1.6.1 (inconsistencia conocida, cosmética)
 - APK debug standalone: `debuggableVariants = []` + `applicationIdSuffix ".debug"` en `android/app/build.gradle` — corre sin Metro y convive con producción (ver Gotchas)
-- **APK tester compartible:** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, sin trackear) — bundle embebido, funciona offline y sin PC; genera con `./gradlew assembleDebug` + copiar de `android/app/build/outputs/apk/debug/`. Firma debug: no sirve para auto-update y nunca publicarla. Build.gradle del generated `android/` corregido en sesión (decía v1.4.6/10406 de un prebuild viejo → ahora 1.6.3/10603, consistente con app.config.js)
+- **APK release v1.6.4:** `TasaDelDia-v1.6.4.apk` (76 MB, firma EAS verificada) — publicada en GitHub Releases el 08-Sep-2026 via workflow_dispatch (run 34278668785, 21:06→21:27 UTC). Changelog generado con 8 entradas desde v1.6.3. ~~APK tester compartible~~ deshecho: la release oficial lo reemplaza (la debug era solo para validación interna).
+- **APK debug standalone (deshecho):** `TasaDelDia-v1.6.3-debug-tester.apk` (118 MB) quedó solo en disco como artefacto de la sesión de validación — nunca entró a git (`*.apk` en `.gitignore`). La release v1.6.4 lo hace obsoleto:users deben desinstalar la debug para instalar la EAS (firmas distintas).
+- **Build.gradle generado corregido** en sesión: el `android/app/build.gradle` (gitignored, prebuild) decía v1.4.6/10406 de un prebuild viejo → ahora 1.6.3/10603, consistente con `app.config.js` al momento del bump
 - Git identity: `git config user.name "juancito8812"` / `git config user.email "juancito8812@users.noreply.github.com"`
 
 ## Gotchas
@@ -138,10 +143,9 @@ Transferencia usa selector de banco con búsqueda independiente.
 
 ## Pendientes
 
-1. **Publicar release v1.6.4** con la tarjeta "Pagar compras en BS" (código listo: 465/465 tests, verificado en dispositivo Galaxy A12) — flujo acordado: tester valida APK → bump a v1.6.4 en `app.config.js` → commit → workflow de release corta la release EAS (los testers deben desinstalar la debug antes de instalar la EAS por la firma)
-2. **Commitear el working tree** (feature + docs + cleanup, sin la APK tester ni `docs/superpowers/plans/2026-08-23-*.md` salvo decisión en contrario)
-3. Opcional: DownloadManager nativo para descarga que sobreviva cierre
-4. Opcional: Migrar AnimatedNumber a Reanimated (hilo UI)
-5. Opcional: Test defensivo de `gradlew assembleRelease` en CI
-6. Opcional (seguridad): rango de plausibilidad para tasas del API antes de auto-llenar chips · excluir `@bank_accounts` de backups (`allowBackup`/`dataExtractionRules`)
-7. Opcional (consistencia): alinear `package.json` (1.6.1) con `app.config.js` (1.6.3)
+1. **Siguiente release v1.6.5** — siguiente bump cuando haya nuevo feature/fix (flujo: `app.config.js` bump → commit → workflow de release)
+2. Opcional: DownloadManager nativo para descarga que sobreviva cierre
+3. Opcional: Migrar AnimatedNumber a Reanimated (hilo UI)
+4. Opcional: Test defensivo de `gradlew assembleRelease` en CI
+5. Opcional (seguridad, needs-verification pendientes de decisión): rango de plausibilidad para tasas del API antes de auto-llenar chips · excluir `@bank_accounts` de backups (`allowBackup`/`dataExtractionRules`)
+6. Opcional (consistencia): alinear `package.json` (1.6.4) con `app.config.js` (1.6.4) — ambos en 1.6.4 tras el bump del release-bot

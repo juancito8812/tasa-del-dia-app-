@@ -8,7 +8,7 @@
 
 | Parte | Stack | Rama | Estado |
 |-------|-------|------|--------|
-| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.6.3 en producción; v1.6.4 pendiente, releases, auto-update verified) |
+| `tasa-del-dia/` | React Native + Expo SDK 54 | `main` | ✅ Activa (v1.6.4 en producción; v1.6.5 pendiente, releases, auto-update verified) |
 | `feature/ui-2026` | Rediseño glass 2.0 + optimizaciones de performance | feature branch | ✅ Mergeada a main |
 | `redesign` | Rediseño mobile (histórica) | feature branch | ⏸️ Reemplazada por `feature/ui-2026` |
 
@@ -65,7 +65,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
   - Chips de tasa en vivo (BCV/Paralelo/Binance) que auto-llenan la tasa
   - Resultado en tiempo real con el monto a transferir resaltado + bloque "Recomendación para enviar completo" (recomendado, equivalente Bs, vuelto) + botón Copiar
   - Estilos con tokens del tema vía `createStyles(C)` (dark/light OK)
-- **Tests:** +13 unitarios (`calculateBsPurchase`) +5 integración (tarjeta) → **465/465 passing (32 suites)**
+- **Tests:** +13 unitarios (`calculateBsPurchase`) +5 integración (tarjeta) → **475/475 passing (32 suites)**
 - **Validación:** typecheck 0 errores · lint 0 errores/0 warnings
 - **Variante debug standalone:** `react { debuggableVariants = [] }` en `android/app/build.gradle` embebe el bundle JS (`assets/index.android.bundle`) en la APK debug → corre sin Metro. Con `applicationIdSuffix ".debug"` convive con la app de producción (datos separados). Verificado en Galaxy A12 sin ruta a Metro (`debug_http_host=null`): tarjeta cálcula igual ($28.51/$29.00/Bs 17,52), 0 fatals. ⚠️ Tras cambios de JS hay que recompilar (`./gradlew assembleDebug`); `expo prebuild --clean` borra la config
 - **Verificación en dispositivo (Galaxy A12, USB):**
@@ -73,14 +73,65 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
   - Chips de tasa verificados (auto-llenan y recalculan en vivo); fix en caliente: chips redondean la tasa a 2 decimales al llenar
   - 0 fatal exceptions · 0 errores JS · screenshot capturado
 - **APK debug standalone:** la variante debug quedó configurada para embeber el bundle JS (sin depender de Metro) y convive con la app de producción vía `applicationIdSuffix ".debug"` (datos separados). Verificada en el teléfono SIN ruta a Metro (`debug_http_host=null`): mismos resultados. Detalles en `MEMORY.md` (Gotchas)
-- **Estado:** código listo para release v1.6.4 (no publicado todavía)
+- **Estado (al cierre de sesión):** código listo para release v1.6.4 (no publicado todavía)
 - Gotcha aplicado: `handleCopyBsPurchase` debe definirse DESPUÉS de `formatBs`/`formatUsd` (TDZ en deps del `useCallback`)
 
 **Continuación 07-sep-2026 (mismo feature, sesiones posteriores):**
 - **Reviews ejecutados:** `security-review` del diff de sesión → 0 vulnerabilidades; luego review full-app (services, hooks, storage, auto-update, update flow, contexts, manifest, workflows) → 0 vulnerabilidades explotables, 2 notas needs-verification: (1) las chips confían en las tasas del API verbatim — considerar rango de plausibilidad antes de auto-llenar; (2) `allowBackup=true` incluye `@bank_accounts` (PII financiera) en backups de nube — decidir si excluir via `dataExtractionRules`. Después `code-review-and-quality` (5 ejes) sobre el feature → **Aprobado** (nits opcionales: documentar en JSDoc que `pagoExactoUsd` sale sin redondear; DRY-ear los `Math.round(x*100)/100` viejos con `round2`; considerar extraer la tarjeta a `PayPalBsPurchaseCard.js` — la pantalla pasó de ~250 a ~800 líneas)
-- **Limpieza de repo:** eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/` y `dogfood-output/` (quitado del index con `git rm -r --cached` y borrado; recuperable del commit `277bc9f`); `.gitignore` ampliado (logs/, .freebuff/, temp_files/, dogfood-output/); 2 comentarios ponytail reescritos en `api.js`/`autoUpdate.js`. Cero TODOs/FIXMEs, cero console.log en producción, sin código muerto. Pendientes de decisión: commit del plan no trackeado `docs/superpowers/plans/2026-08-23-update-docs-galaxy-store.md` y alinear `package.json` (1.6.1) con `app.config.js` (1.6.3)
-- **APK tester compartible:** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, sin trackear) con la tarjeta nueva — bundle JS embebido (standalone, offline, sin Metro), `applicationIdSuffix ".debug"` convive con la app de producción. `build.gradle` generado corregido (decía v1.4.6/10406 de un prebuild viejo → ahora 1.6.3/10603). No se logró reducir a arm64-only: los `abiFilters`/packaging excludes no remueven las libs prebuilt de los AARs de RN 0.81 y `gradlew clean` está roto (quirk CMake) — se aceptó full-ABI
-- ⚠️ Todo el trabajo de estas sesiones está SIN COMMIT en el working tree (feature + tests + docs + cleanup). El plan para merge a main: tester valida → bump v1.6.4 → commit → workflow de release
+- **Limpieza de repo:** eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/` y `dogfood-output/` (quitado del index con `git rm -r --cached` y borrado; recuperable del commit `277bc9f`); `.gitignore` ampliado (logs/, .freebuff/, temp_files/, dogfood-output/); 2 comentarios ponytail reescritos en `api.js`/`autoUpdate.js`. Cero TODOs/FIXMEs, cero console.log en producción, sin código muerto. Pendientes de decisión en esa sesión: commit del plan no trackeado `docs/superpowers/plans/2026-08-23-update-docs-galaxy-store.md` (ya commiteado en a659d07) y alinear `package.json` (1.6.1) con `app.config.js` (1.6.3) (ya alineado en 9277b9c)
+- **APK release v1.6.4 (producción):** `TasaDelDia-v1.6.4.apk` (76 MB, firma EAS) — release oficial publicada el 08-Sep-2026 vía workflow_dispatch (run 34278668785, 21:06→21:27 UTC). Changelog generado con 8 entradas desde v1.6.3. Tag `v1.6.4` creado y pushado.
+- **APK tester (obsoleta, solo disco):** `TasaDelDia-v1.6.3-debug-tester.apk` (118 MB) quedó solo en disco — nunca entró a git (`*.apk` en `.gitignore`). Obsoleta tras v1.6.4.
+- **Al cierre de esta sesión todo el trabajo estaba SIN COMMIT** en el working tree (feature + tests + docs + cleanup). Plan para merge a main: tester valida → bump v1.6.4 → commit → workflow de release → release publicada el 08-Sep-2026 (ver continuación 08-sep-2026)
+
+**Continuación 08-sep-2026 — Release v1.6.4 (el usuario probó la APK y dio visto bueno):**
+- **Merge a main enviado:** se pushearon 6 commits (`f44ee74`, `e4170be`, `048e319`, `2bbea56`, `9277b9c`, `76cf61d`) a `origin/main` (merge con resolución "ours" contra el bump del release-bot del v1.6.3)
+- CI verde: `mobile-ci.yml` pasó green (475 tests) en el push
+- **Release v1.6.4 publicada** el 08-Sep-2026 a las 21:27 UTC:
+  - Workflow: `release-automatic.yml` (workflow_dispatch con `version=1.6.4`, run 34278668785, 21:06→21:27 UTC)
+  - APK: `TasaDelDia-v1.6.4.apk` (75,917,179 bytes / ~76 MB, firma EAS, aplicación/vnd.android.package-archive)
+  - Changelog: 8 entradas desde v1.6.3 (2 nuevas funcionalidades, 1 docs, 4 mantenimiento/bumps, 1 merge)
+  - Tag `v1.6.4` creado y pushado
+- **Versiones alineadas:** `app.config.js` y `package.json` en 1.6.4 (bump del release-bot `9277b9c` + merge `76cf61d`)
+- **Estado al cierre:** v1.6.4 en producción, working tree limpio (sin cambios sin commit), docs pendientes de actualizar con el release (README, MEMORY, AI_HANDOFF marcados como pendientes en esa sesión)
+
+### Sesión 08-Sep-2026 (noche) — Nuevos métodos de pago digital + formato de copia mejorado
+
+- **Nuevos métodos de pago digital en BankAccountForm:**
+  - **Facebank:** `facebankEmail` + `facebankAccount` (sección Facebank)
+  - **Zinli:** `zinliEmail` (sección Zinli)
+  - **Wally:** `wallyEmail` (sección Wally)
+  - Actualizado `INITIAL_FORM` en `BankAccountForm.js` con los 4 nuevos campos
+  - Sección Facebank/Zinli/Wally en el tab "Digital" con sus respectivos iconos Ionicons
+
+- **Formato de copia mejorado en `bankData.js`:**
+  - `formatSectionText(account, section)` — **compacto sin etiquetas** para copia individual de sección:
+    ```
+    5624208
+    04143451767
+    Mercantil 0105
+    ```
+  - `formatAccountText(account)` — **con etiquetas** para "copiar todo":
+    ```
+    Cédula: 5624208
+    Teléfono: 04143451767
+    Banco: Mercantil 0105
+    ```
+  - Incluye Facebank/Zinli/Wally con el mismo patrón compacto/etiquetado
+
+- **Nuevos helpers en `bankData.js`:**
+  - `hasFacebank(account)` — true si tiene email o cuenta de Facebank
+  - `hasZinli(account)` — true si tiene email de Zinli
+  - `hasWally(account)` — true si tiene email de Wally
+  - `hasDigital(account)` — actualizado para incluir las 6 plataformas
+
+- **BankAccountCard.js — secciones UI para Facebank/Zinli/Wally:**
+  - Sección Facebank con icono `business`, email + cuenta, botones copiar
+  - Sección Zinli con icono `globe`, email, botón copiar
+  - Sección Wally con icono `wallet`, email, botón copiar
+
+- **Tests:** +10 tests (`bankData.test.js`) para Facebank/Zinli/Wally → **475/475 passing (32 suites)**
+- **Validación:** typecheck 0 errores · lint 0 errores/0 warnings
+- **Docs:** README, MEMORY, AI_HANDOFF actualizados con nuevos features y test count
 
 ### Sesión 23-Ago-2026 — Selector de diseño de UI
 
@@ -264,15 +315,15 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 ## 📋 Estado Actual
 
 ### Ramas principales
-- `main` — **v1.6.3 en producción** (versionCode 10603) — incluye Datos Bancarios, PayPal Calculator (5.4%+$0.30), tarjeta "Pagar compras en BS" (pendiente de release v1.6.4), Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
+- `main` — **v1.6.4 en producción** (versionCode 10604) — incluye Datos Bancarios, PayPal Calculator (5.4%+$0.30), tarjeta "Pagar compras en BS", BankAccountCard con iconos Ionicons serios (sin emojis), Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end. 6 commits desde v1.6.3: limpieza de repo + endurecer .gitignore, PayPal Pagar compras en BS, BankData iconos Ionicons, bump v1.6.3 [skip ci], bump v1.6.4 [skip ci], merge-bot bump 1.6.3., Reanimated 4.x, fixes de lint/typecheck, signing verification en CI, EAS token en GitHub Secrets, auto-update verified end-to-end.
 - `feature/ui-2026` — histórica (rediseño glass 2.0), mergeada a main.
 - `fix/download-android-16`, `fix/auto-update-install`, `feat/version-code`, `feature/ui-2026` — ramas remotas históricas, contenidas en main.
 - `redesign` — histórica, reemplazada.
 
 ### Móvil / Mobile (rama `main`)
-- **465 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
+- **475 tests, 32 suites — 100% passing** ✅ · typecheck real activo (`checkJs: true`)
 - **Lint:** 0 errors, **0 warnings** (deshabilitadas reglas experimentales del React Compiler)
-- **Versión actual:** **1.6.3** (app.config.js `const VERSION`; versionCode derivado 10603). ⚠️ `package.json` quedó en 1.6.1 — inconsistencia conocida y cosmética (los workflows leen de app.config.js)
+- **Versión actual:** **1.6.4** (app.config.js `const VERSION`; versionCode derivado 10604). `package.json` 1.6.4 — alineado tras el bump del release-bot
 - Fuentes: DolarApi.com (BCV, Paralelo, Euro) + Binance P2P directo
 - Dependencias: `expo-blur`, `react-native-pager-view`, `expo-linear-gradient`, `expo-file-system`, `expo-linking`, `react-native-reanimated`
 - `.env` **no existe en el repo** — está en `.gitignore`
@@ -288,7 +339,7 @@ Todas las skills han sido revisadas y corregidas con frontmatter HADS completo, 
 |----------|---------|-----------|
 | `build-apk.yml` | Push a main + manual | Build (EAS) + firma verification + Auto-release |
 | `release-automatic.yml` | Manual + tags v* | Release con changelog + firma verification + APK |
-| `mobile-ci.yml` | Push/PR a main | Tests (465) + lint (0) + typecheck |
+| `mobile-ci.yml` | Push/PR a main | Tests (475) + lint (0) + typecheck |
 | `auto-sync.yml` | Cron diario 6AM UTC + manual | Auto-commit diario de cambios pendientes |
 
 **Workflows eliminados:** `release-apk.yml` y `android-build.yml`
