@@ -39,6 +39,10 @@ const INITIAL_FORM = {
   walletAddress: '',
   emailBinance: '',
   binanceId: '',
+  facebankEmail: '',
+  facebankAccount: '',
+  zinliEmail: '',
+  wallyEmail: '',
 };
 
 /**
@@ -129,7 +133,7 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
 
     const hasPagoMovil = form.banco && form.telefono;
     const hasTransferencia = form.bancoTransferencia && form.numeroCuenta;
-    const hasDigital = form.email || form.emailPayPal || form.walletAddress || form.emailBinance || form.binanceId;
+    const hasDigital = form.email || form.emailPayPal || form.walletAddress || form.emailBinance || form.binanceId || form.facebankEmail || form.facebankAccount || form.zinliEmail || form.wallyEmail;
 
     if (!hasPagoMovil && !hasTransferencia && !hasDigital) {
       newErrors.general = 'Agrega al menos un método de pago';
@@ -517,6 +521,86 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
                 placeholder="123456789"
                 placeholderTextColor={C.textMuted}
                 keyboardType="numeric"
+              />
+
+              {/* Facebank */}
+              <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>FACEBANK</Text>
+
+              <Text style={[styles.label, { color: C.textSecondary }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: C.inputBg,
+                    color: C.textPrimary,
+                    borderColor: C.inputBorder,
+                  },
+                ]}
+                value={form.facebankEmail}
+                onChangeText={(v) => updateField('facebankEmail', v)}
+                placeholder="correo@facebank.com"
+                placeholderTextColor={C.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={[styles.label, { color: C.textSecondary }]}>Número de cuenta</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: C.inputBg,
+                    color: C.textPrimary,
+                    borderColor: C.inputBorder,
+                  },
+                ]}
+                value={form.facebankAccount}
+                onChangeText={(v) => updateField('facebankAccount', v)}
+                placeholder="0134-12-1234567890"
+                placeholderTextColor={C.textMuted}
+                keyboardType="numeric"
+              />
+
+              {/* Zinli */}
+              <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>ZINLI</Text>
+
+              <Text style={[styles.label, { color: C.textSecondary }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: C.inputBg,
+                    color: C.textPrimary,
+                    borderColor: C.inputBorder,
+                  },
+                ]}
+                value={form.zinliEmail}
+                onChangeText={(v) => updateField('zinliEmail', v)}
+                placeholder="correo@zinli.com"
+                placeholderTextColor={C.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              {/* Wally */}
+              <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>WALLY</Text>
+
+              <Text style={[styles.label, { color: C.textSecondary }]}>Email</Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: C.inputBg,
+                    color: C.textPrimary,
+                    borderColor: C.inputBorder,
+                  },
+                ]}
+                value={form.wallyEmail}
+                onChangeText={(v) => updateField('wallyEmail', v)}
+                placeholder="correo@wally.tech"
+                placeholderTextColor={C.textMuted}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
               </>
               )}

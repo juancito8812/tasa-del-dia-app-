@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatDocument } from '../constants/documentTypes';
 import { formatBankDisplay } from '../constants/banks';
-import { formatAccountText, formatSectionText, hasPagoMovil, hasTransferencia, hasZelle, hasPayPal, hasBinance } from '../services/bankData';
+import { formatAccountText, formatSectionText, hasPagoMovil, hasTransferencia, hasZelle, hasPayPal, hasBinance, hasFacebank, hasZinli, hasWally } from '../services/bankData';
 import { hapticLight } from '../utils/haptics';
 
 function BankAccountCard({ account, onEdit, onDelete, colors }) {
@@ -160,19 +160,80 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
           </View>
           {account.binanceWallet && (
             <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
-              Wallet: {account.binanceWallet}
+              {account.binanceWallet}
             </Text>
           )}
           {account.binanceEmail && (
             <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
-              Email: {account.binanceEmail}
+              {account.binanceEmail}
             </Text>
           )}
           {account.binanceId && (
             <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
-              ID: {account.binanceId}
+              {account.binanceId}
             </Text>
           )}
+        </View>
+      )}
+
+      {/* Facebank */}
+      {hasFacebank(account) && (
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="globe-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Facebank</Text>
+            </View>
+            <TouchableOpacity onPress={() => handleCopySection('facebank')} activeOpacity={0.7}>
+              <Ionicons name="copy" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          {account.facebankEmail && (
+            <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+              {account.facebankEmail}
+            </Text>
+          )}
+          {account.facebankAccount && (
+            <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+              {account.facebankAccount}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Zinli */}
+      {hasZinli(account) && (
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="wallet-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Zinli</Text>
+            </View>
+            <TouchableOpacity onPress={() => handleCopySection('zinli')} activeOpacity={0.7}>
+              <Ionicons name="copy" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+            {account.zinliEmail}
+          </Text>
+        </View>
+      )}
+
+      {/* Wally */}
+      {hasWally(account) && (
+        <View style={[styles.section, { borderTopColor: colors.border }]}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="phone-portrait-outline" size={13} color={colors.textSecondary} />
+              <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Wally</Text>
+            </View>
+            <TouchableOpacity onPress={() => handleCopySection('wally')} activeOpacity={0.7}>
+              <Ionicons name="copy" size={14} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
+            {account.wallyEmail}
+          </Text>
         </View>
       )}
 
