@@ -85,11 +85,13 @@ jobs:
           npx eas whoami --non-interactive
 
       - name: Instalar Android SDK (cmdline-tools)
-        uses: android-actions/setup-android@v3
+        # v4: Google stopped serving the deprecated 'tools' package
+        # (android-actions/setup-android#537); v3 requests it by default
+        # and fails with "Failed to find package 'tools'".
+        # build-tools 35.0.0 and platform android-35 ship with ubuntu-latest.
+        uses: android-actions/setup-android@v4
         with:
           cmdline-tools-version: 11076708
-          build-tools: 35.0.0
-          android-sdk-level: 35
 
       - name: Verificar variables de Android
         run: |
