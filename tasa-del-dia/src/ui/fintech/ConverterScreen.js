@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — conversor: cifras en JetBrains Mono, pastillas 999px para
+// Estilo FINTECH — conversor: cifras en JetBrains Mono, pastillas 999px para
 // montos rápidos, botones radio 13px y tarjetas blancas/filas oscuras del sitio.
 import React, { useMemo } from 'react';
 import {
@@ -11,7 +11,7 @@ import ThemeToggleMini from '../../components/ThemeToggleMini';
 import useConverterData from '../../hooks/useConverterData';
 import { getRateTypes, formatCurrency, formatCurrencySmart } from '../../utils/formatting';
 import { hapticLight, hapticMedium, hapticSuccess, hapticSelection } from '../../utils/haptics';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 const TAB_BAR_HEIGHT = 60;
 
@@ -96,7 +96,7 @@ function createStyles(C, F) {
 
 export default function ConverterScreen() {
   const { colors: C } = useTheme();
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const styles = useMemo(() => createStyles(C, F), [C, F]);
   const RATE_TYPES = useMemo(() => getRateTypes(C), [C]);
   const h = useConverterData();

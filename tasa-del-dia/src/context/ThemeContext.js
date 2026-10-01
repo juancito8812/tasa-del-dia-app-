@@ -4,24 +4,24 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { darkTheme, lightTheme } from '../constants/themes';
 import { darkThemeTerminal, lightThemeTerminal } from '../ui/terminal/palette';
 import { darkThemeEditorial, lightThemeEditorial } from '../ui/editorial/palette';
-import { darkThemeCotizave, lightThemeCotizave } from '../ui/cotizave/palette';
+import { darkThemeFintech, lightThemeFintech } from '../ui/fintech/palette';
 
 const THEME_STORAGE_KEY = '@tasa_del_dia_theme_pref';
 const UI_STYLE_STORAGE_KEY = '@tasa_del_dia_ui_style';
 
-/** @typedef {'original'|'terminal'|'editorial'|'cotizave'} UiStyle */
+/** @typedef {'original'|'terminal'|'editorial'|'fintech'} UiStyle */
 
 /** @type {Record<UiStyle, {dark: object, light: object}>} */
 const PALETTES = {
   original: { dark: darkTheme, light: lightTheme },
   terminal: { dark: darkThemeTerminal, light: lightThemeTerminal },
   editorial: { dark: darkThemeEditorial, light: lightThemeEditorial },
-  cotizave: { dark: darkThemeCotizave, light: lightThemeCotizave },
+  fintech: { dark: darkThemeFintech, light: lightThemeFintech },
 };
 
 // Lista LOCAL (no importar UI_STYLES de src/ui: generaría ciclo de imports,
 // porque src/ui/index.js importa las pantallas y éstas importan este contexto).
-const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'cotizave']);
+const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'fintech']);
 
 /**
  * @typedef {object} ThemeContextValue

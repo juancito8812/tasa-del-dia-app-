@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — modal de actualización: radio 18px (radio de modales del
+// Estilo FINTECH — modal de actualización: radio 18px (radio de modales del
 // sitio), textos Space Grotesk y versiones en JetBrains Mono.
 import React, { useState } from 'react';
 import {
@@ -6,12 +6,12 @@ import {
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { downloadAndInstall, skipVersion } from '../../services/autoUpdate';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 function UpdateModal({
   visible, onClose, currentVersion, latestVersion, apkUrl, notes, C,
 }) {
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');

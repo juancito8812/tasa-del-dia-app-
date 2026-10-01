@@ -1,4 +1,4 @@
-// 🔤 Tipografías del estilo COTIZAVE — las mismas de cotizave.com:
+// 🔤 Tipografías del estilo FINTECH — sans + mono geométricas:
 //   --font-sans: "Space Grotesk"  ·  --font-mono: "JetBrains Mono"
 // Se cargan perezosamente al montar el primer componente del paquete; mientras
 // cargan (o si la carga falla) las pantallas caen a la fuente del sistema.
@@ -35,7 +35,7 @@ const SYSTEM_FALLBACK = /** @type {Record<string, string|undefined>} */ ({});
  * Devuelve FONT cuando las tipografías están listas; un objeto vacío
  * (→ fuente del sistema) mientras cargan o si la carga falla.
  */
-export function useCotizaveFonts() {
+export function useFintechFonts() {
   const [loaded] = useFonts({
     SpaceGrotesk_400Regular,
     SpaceGrotesk_500Medium,

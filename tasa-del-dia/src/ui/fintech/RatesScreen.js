@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — parrilla de tasas como el panel hero de cotizave.com:
+// Estilo FINTECH — parrilla de tasas tipo panel hero:
 // chips pastilla (999px), cifras mono y tarjeta de gasolina con números tabulares.
 import React, { useState, useMemo, useCallback } from 'react';
 import {
@@ -17,7 +17,7 @@ import RateCard from './RateCard';
 import RatesHeader from './RatesHeader';
 import BCVModal from './BCVModal';
 import { formatCurrency } from '../../utils/formatting';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 function createStyles(C, F) {
   return StyleSheet.create({
@@ -88,7 +88,7 @@ function createStyles(C, F) {
 
 export default function RatesScreen() {
   const { colors: C } = useTheme();
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const styles = useMemo(() => createStyles(C, F), [C, F]);
   const hook = useRatesData();
 

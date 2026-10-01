@@ -1,11 +1,11 @@
-// 🎨 Tasa del Día — Paleta COTIZAVE
-// Extraída de cotizave.com (tokens --v3-* del CSS, oct 2026):
+// 🎨 Tasa del Día — Paleta FINTECH
+// Definida a mano a partir de tokens CSS (--v3-*), oct 2026:
 //   --v3-bg #fbfaf7 · --v3-ink #1b1b1a · --v3-line #eceae3 · --v3-field #f6f5f1
 //   --v3-vino #7a1f2b · --v3-ok #2d8a4e · --v3-danger #c0392b · --v3-yellow #ffd93d
 //   Panel oscuro #14130f/#1b1916 con filas rgba(255,255,255,.035) y fila BCV amarilla.
 // Light = la página clara (crema + vino); Dark = el panel hero "EN VIVO" del sitio.
 
-export const darkThemeCotizave = {
+export const darkThemeFintech = {
   // Backgrounds — panel oscuro cálido del hero
   primary: '#14130F', // --v3-dark
   secondary: '#1B1916', // celda .rc-stat del panel
@@ -64,7 +64,7 @@ export const darkThemeCotizave = {
   flagRed: '#EE8888',
 };
 
-export const lightThemeCotizave = {
+export const lightThemeFintech = {
   // Backgrounds — la página clara (crema)
   primary: '#FBFAF7', // --v3-bg
   secondary: '#F6F5F1', // --v3-field

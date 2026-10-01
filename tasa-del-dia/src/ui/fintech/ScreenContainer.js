@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — degradado del panel hero (#14130f) o de la página crema (#fbfaf7).
+// Estilo FINTECH — degradado del panel hero (#14130f) o de la página crema (#fbfaf7).
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';

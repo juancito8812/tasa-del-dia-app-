@@ -8,7 +8,7 @@ const isReactComponent = (component) =>
 
 describe('registro de estilos de UI', () => {
   it('declara exactamente los 4 estilos', () => {
-    expect([...UI_STYLES]).toEqual(['original', 'terminal', 'editorial', 'cotizave']);
+    expect([...UI_STYLES]).toEqual(['original', 'terminal', 'editorial', 'fintech']);
   });
 
   it.each(UI_STYLES)('resuelve el paquete completo para %s', (style) => {

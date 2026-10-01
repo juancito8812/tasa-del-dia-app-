@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — tarjetas de tasa al estilo de las filas .rc-row de cotizave.com:
+// Estilo FINTECH — tarjetas de tasa al estilo de las filas .rc-row:
 // radios 13px, chip "EN VIVO" con punto verde, icono en pastilla tintada y
 // cifras en JetBrains Mono (la --font-mono del sitio).
 import React, { useMemo, useCallback, useRef, useEffect } from 'react';
@@ -9,7 +9,7 @@ import AnimatedNumber from '../../components/AnimatedNumber';
 import ShimmerEffect from '../../components/ShimmerEffect';
 import PressableScale from '../../components/PressableScale';
 import useReduceMotion from '../../hooks/useReduceMotion';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 const ICON_NAMES = {
   bank: 'bank',
@@ -19,7 +19,7 @@ const ICON_NAMES = {
   calendar: 'calendar',
 };
 
-// Verde "EN VIVO" del punto .rc-live de cotizave.com
+// Verde "EN VIVO" del punto .rc-live
 const LIVE_DOT = '#58D488';
 
 function createStyles(C, F) {
@@ -261,7 +261,7 @@ function RateCard({
   type,
 }) {
   const { colors: C } = useTheme();
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const styles = useMemo(() => createStyles(C, F), [C, F]);
 
   const formatRate = useCallback((value) => {

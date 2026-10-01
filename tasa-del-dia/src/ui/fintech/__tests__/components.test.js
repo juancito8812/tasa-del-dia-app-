@@ -1,20 +1,20 @@
 import React from 'react';
 import TestRenderer from 'react-test-renderer';
 import RateCard from '../RateCard';
-import { darkThemeCotizave, lightThemeCotizave } from '../palette';
+import { darkThemeFintech, lightThemeFintech } from '../palette';
 
 // Las tipografías del paquete (Space Grotesk / JetBrains Mono) no se cargan en
 // Jest: el hook devuelve el fallback vacío (fuente del sistema).
 jest.mock('../fonts', () => ({
-  useCotizaveFonts: () => ({}),
+  useFintechFonts: () => ({}),
 }));
 
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
     theme: 'dark',
     isDark: true,
-    colors: require('../palette').darkThemeCotizave,
-    uiStyle: 'cotizave',
+    colors: require('../palette').darkThemeFintech,
+    uiStyle: 'fintech',
     setUiStyle: jest.fn(),
     themePref: 'dark',
     setTheme: jest.fn(),
@@ -22,7 +22,7 @@ jest.mock('../../../context/ThemeContext', () => ({
   }),
 }));
 
-describe('componentes cotizave', () => {
+describe('componentes fintech', () => {
   it('RateCard monta sin lanzar', () => {
     expect(() =>
       TestRenderer.act(() => {
@@ -61,19 +61,19 @@ describe('componentes cotizave', () => {
   });
 });
 
-describe('paleta cotizave — tokens del sitio', () => {
-  it('dark usa el panel oscuro cálido y el amarillo BCV de cotizave.com', () => {
-    expect(darkThemeCotizave.primary).toBe('#14130F'); // --v3-dark
-    expect(darkThemeCotizave.secondary).toBe('#1B1916'); // .rc-stat
-    expect(darkThemeCotizave.success).toBe('#FFD93D'); // --v3-yellow
-    expect(darkThemeCotizave.highlight).toBe('#74D99A'); // .rc-val.up
+describe('paleta fintech — tokens del sitio', () => {
+  it('dark usa el panel oscuro cálido y el amarillo BCV', () => {
+    expect(darkThemeFintech.primary).toBe('#14130F'); // --v3-dark
+    expect(darkThemeFintech.secondary).toBe('#1B1916'); // .rc-stat
+    expect(darkThemeFintech.success).toBe('#FFD93D'); // --v3-yellow
+    expect(darkThemeFintech.highlight).toBe('#74D99A'); // .rc-val.up
   });
 
   it('light usa la página crema con acento vino', () => {
-    expect(lightThemeCotizave.primary).toBe('#FBFAF7'); // --v3-bg
-    expect(lightThemeCotizave.cardBorder).toBe('#ECEAE3'); // --v3-line
-    expect(lightThemeCotizave.textPrimary).toBe('#1B1B1A'); // --v3-ink
-    expect(lightThemeCotizave.bcvLunes).toBe('#7A1F2B'); // --v3-vino
-    expect(lightThemeCotizave.warning).toBe('#C0392B'); // --v3-danger
+    expect(lightThemeFintech.primary).toBe('#FBFAF7'); // --v3-bg
+    expect(lightThemeFintech.cardBorder).toBe('#ECEAE3'); // --v3-line
+    expect(lightThemeFintech.textPrimary).toBe('#1B1B1A'); // --v3-ink
+    expect(lightThemeFintech.bcvLunes).toBe('#7A1F2B'); // --v3-vino
+    expect(lightThemeFintech.warning).toBe('#C0392B'); // --v3-danger
   });
 });

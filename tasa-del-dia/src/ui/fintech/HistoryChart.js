@@ -1,13 +1,13 @@
-// Estilo COTIZAVE — gráfico de barras con los colores reales de cada tasa
+// Estilo FINTECH — gráfico de barras con los colores reales de cada tasa
 // (BCV amarillo, Paralelo verde) y etiquetas en JetBrains Mono.
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 const screenWidth = Dimensions.get('window').width;
 
 function HistoryChartBase({ chartInfo, C, ratesCount }) {
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   if (!chartInfo) return null;
 
   const { data, labels } = chartInfo;

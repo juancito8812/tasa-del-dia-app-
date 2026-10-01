@@ -26,14 +26,14 @@ import HistoryScreenEditorial from './editorial/HistoryScreen';
 import ScreenContainerEditorial from './editorial/ScreenContainer';
 import UpdateModalEditorial from './editorial/UpdateModal';
 
-// Cotizave reutiliza la CustomTabBar original (se re-estila vía tokens), como editorial.
-import RatesScreenCotizave from './cotizave/RatesScreen';
-import ConverterScreenCotizave from './cotizave/ConverterScreen';
-import HistoryScreenCotizave from './cotizave/HistoryScreen';
-import ScreenContainerCotizave from './cotizave/ScreenContainer';
-import UpdateModalCotizave from './cotizave/UpdateModal';
+// Fintech reutiliza la CustomTabBar original (se re-estila vía tokens), como editorial.
+import RatesScreenFintech from './fintech/RatesScreen';
+import ConverterScreenFintech from './fintech/ConverterScreen';
+import HistoryScreenFintech from './fintech/HistoryScreen';
+import ScreenContainerFintech from './fintech/ScreenContainer';
+import UpdateModalFintech from './fintech/UpdateModal';
 
-export const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'cotizave']);
+export const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'fintech']);
 
 const PACKAGES = {
   original: {
@@ -72,23 +72,23 @@ const PACKAGES = {
     ScreenContainer: ScreenContainerEditorial,
     UpdateModal: UpdateModalEditorial,
   },
-  cotizave: {
+  fintech: {
     Screens: {
-      rates: RatesScreenCotizave,
-      converter: ConverterScreenCotizave,
+      rates: RatesScreenFintech,
+      converter: ConverterScreenFintech,
       bankData: BankDataScreenOriginal,
       paypalCalc: PayPalCalculatorScreenOriginal,
-      history: HistoryScreenCotizave,
+      history: HistoryScreenFintech,
     },
     TabBar: CustomTabBarOriginal,
-    ScreenContainer: ScreenContainerCotizave,
-    UpdateModal: UpdateModalCotizave,
+    ScreenContainer: ScreenContainerFintech,
+    UpdateModal: UpdateModalFintech,
   },
 };
 
 /**
  * Devuelve el paquete de componentes del estilo indicado.
- * @param {'original'|'terminal'|'editorial'|'cotizave'} uiStyle
+ * @param {'original'|'terminal'|'editorial'|'fintech'} uiStyle
  */
 export function getUiPackage(uiStyle) {
   return PACKAGES[uiStyle] ?? PACKAGES.original;

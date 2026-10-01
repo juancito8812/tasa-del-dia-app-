@@ -1,6 +1,6 @@
 import { darkTheme, lightTheme } from '../../constants/themes';
 import { darkThemeEditorial, lightThemeEditorial } from '../editorial/palette';
-import { darkThemeCotizave, lightThemeCotizave } from '../cotizave/palette';
+import { darkThemeFintech, lightThemeFintech } from '../fintech/palette';
 import { darkThemeTerminal, lightThemeTerminal } from '../terminal/palette';
 
 const REQUIRED_KEYS = [
@@ -19,7 +19,7 @@ const REQUIRED_KEYS = [
 const PALETTES = [
   ['original/dark', darkTheme], ['original/light', lightTheme],
   ['editorial/dark', darkThemeEditorial], ['editorial/light', lightThemeEditorial],
-  ['cotizave/dark', darkThemeCotizave], ['cotizave/light', lightThemeCotizave],
+  ['fintech/dark', darkThemeFintech], ['fintech/light', lightThemeFintech],
   ['terminal/dark', darkThemeTerminal], ['terminal/light', lightThemeTerminal],
 ];
 

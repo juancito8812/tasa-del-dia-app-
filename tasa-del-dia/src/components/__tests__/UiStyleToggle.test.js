@@ -43,16 +43,16 @@ describe('UiStyleToggle', () => {
     expect(mockTheme.setUiStyle).toHaveBeenCalledWith('editorial');
   });
 
-  it('cicla editorial -> cotizave al presionar', () => {
+  it('cicla editorial -> fintech al presionar', () => {
     mockTheme.uiStyle = 'editorial';
     let renderer;
     act(() => { renderer = TestRenderer.create(<UiStyleToggle />); });
     press(renderer.root.findByType(TouchableOpacity));
-    expect(mockTheme.setUiStyle).toHaveBeenCalledWith('cotizave');
+    expect(mockTheme.setUiStyle).toHaveBeenCalledWith('fintech');
   });
 
-  it('cicla cotizave -> original al presionar', () => {
-    mockTheme.uiStyle = 'cotizave';
+  it('cicla fintech -> original al presionar', () => {
+    mockTheme.uiStyle = 'fintech';
     let renderer;
     act(() => { renderer = TestRenderer.create(<UiStyleToggle />); });
     press(renderer.root.findByType(TouchableOpacity));

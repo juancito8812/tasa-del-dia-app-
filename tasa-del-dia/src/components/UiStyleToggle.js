@@ -11,7 +11,7 @@ const STYLES = /** @type {const} */ ([
   { id: 'original', icon: 'ellipse-outline', label: 'Original', radius: SIZE / 2 },
   { id: 'terminal', icon: 'code-slash', label: 'Terminal', radius: 0 },
   { id: 'editorial', icon: 'book', label: 'Editorial', radius: 4 },
-  { id: 'cotizave', icon: 'globe-outline', label: 'Cotizave', radius: 8 },
+  { id: 'fintech', icon: 'globe-outline', label: 'Fintech', radius: 8 },
 ]);
 
 function UiStyleToggle() {

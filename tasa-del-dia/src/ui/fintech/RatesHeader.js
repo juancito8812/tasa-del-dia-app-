@@ -1,14 +1,14 @@
-// Estilo COTIZAVE — cabecera de Tasas: título en Space Grotesk con tracking
+// Estilo FINTECH — cabecera de Tasas: título en Space Grotesk con tracking
 // negativo (como el h1 del sitio), subtítulo mono y pastilla de bandera.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ThemeToggleMini from '../../components/ThemeToggleMini';
 import UiStyleToggle from '../../components/UiStyleToggle';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 function RatesHeader({ C, error, offlineMode, offlineCachedAt }) {
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   return (
     <View style={{ paddingHorizontal: 14, paddingTop: 6, paddingBottom: 2 }}>
       {/* Header row — fondo transparente */}

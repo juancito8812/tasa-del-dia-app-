@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — historial: chips de fecha radio 13, cifras mono y
+// Estilo FINTECH — historial: chips de fecha radio 13, cifras mono y
 // tarjetas con el radio de fila del sitio.
 import React, { useMemo, useCallback } from 'react';
 import {
@@ -12,7 +12,7 @@ import useHistoryData, { formatDateKey } from '../../hooks/useHistoryData';
 import { getMonthAbbr, getDay, formatCurrency } from '../../utils/formatting';
 import HistoryChart from './HistoryChart';
 import DateDetailCard from './DateDetailCard';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 function createStyles(C, F) {
   return StyleSheet.create({
@@ -60,7 +60,7 @@ function createStyles(C, F) {
  * cambiar la selección o copiar, los 10 items NO se re-renderizan.
  */
 function HistoryListItemView({ item, C, onPress, handleCopy }) {
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const styles = useMemo(() => createStyles(C, F), [C, F]);
 
   const renderRateCol = (label, value, color) => (
@@ -113,7 +113,7 @@ const HistoryListItem = React.memo(HistoryListItemView);
 
 export default function HistoryScreen() {
   const { colors: C } = useTheme();
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const styles = useMemo(() => createStyles(C, F), [C, F]);
   const h = useHistoryData();
   const { handleSelectDate, selectedDateKey } = h;

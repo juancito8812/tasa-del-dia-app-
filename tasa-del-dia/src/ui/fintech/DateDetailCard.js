@@ -1,14 +1,14 @@
-// Estilo COTIZAVE — detalle del día: filas tintadas con el color de cada tasa
+// Estilo FINTECH — detalle del día: filas tintadas con el color de cada tasa
 // (como las .rc-row del sitio), valores mono y botones pastilla.
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { formatCurrency, getWeekDay } from '../../utils/formatting';
 import { formatDateKey } from '../../hooks/useHistoryData';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAll, onClose }) {
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   if (!selectedData) return null;
 
   const rates = [

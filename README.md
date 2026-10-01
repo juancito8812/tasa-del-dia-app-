@@ -21,7 +21,7 @@
 - **PayPal Calculator:** 5.4% + $0.30 con modos "Para recibir" / "Para enviar" y conversión a BCV/Paralelo/Binance/Euro
 - **Pagar compras en BS:** tarjeta que calcula el monto exacto a transferir por PayPal (USD) para cubrir una compra en bolívares (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto en Bs
 - **Historial:** 900+ registros desde 2023 con chart y detalle por día
-- **Selector de diseño:** Original / Terminal / Editorial / Cotizave — el nuevo estilo trae la paleta (crema + vino, panel oscuro con BCV amarillo) y las tipografías (Space Grotesk + JetBrains Mono) de cotizave.com (botón en el header, preferencia persistente)
+- **Selector de diseño:** Original / Terminal / Editorial / Fintech — el nuevo estilo trae la paleta (crema + vino, panel oscuro con BCV amarillo) y las tipografías Space Grotesk + JetBrains Mono (botón en el header, preferencia persistente)
 - **Auto-update:** descarga APK desde GitHub sin desinstalar
 
 ---
@@ -135,7 +135,7 @@ tasa-del-dia-app/
 │   │   │   ├── index.js            # Registro getUiPackage(uiStyle)
 │   │   │   ├── terminal/           # Rediseño Terminal (monocromo)
 │   │   │   ├── editorial/          # Rediseño Editorial (premium)
-│   │   │   └── cotizave/           # Rediseño Cotizave (paleta + tipografías de cotizave.com)
+│   │   │   └── fintech/           # Rediseño Fintech (paleta crema + vino, Space Grotesk + JetBrains Mono)
 │   │   ├── services/              # api.js, autoUpdate.js, bankData.js, notifications.js, etc.
 │   │   ├── hooks/                 # useRatesData, useConverterData, useHistoryData
 │   │   ├── constants/             # banks.js, documentTypes.js, paypalFees.js

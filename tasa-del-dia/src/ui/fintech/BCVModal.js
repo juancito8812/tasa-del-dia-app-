@@ -1,4 +1,4 @@
-// Estilo COTIZAVE — bottom sheet de BCV Lunes: hoja radio 18px (radio de
+// Estilo FINTECH — bottom sheet de BCV Lunes: hoja radio 18px (radio de
 // modales del sitio), input mono y botones radio 13px.
 import React, { useEffect, useState } from 'react';
 import {
@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import useReduceMotion from '../../hooks/useReduceMotion';
 import { hapticSuccess } from '../../utils/haptics';
-import { useCotizaveFonts } from './fonts';
+import { useFintechFonts } from './fonts';
 
 /**
  * BCVModal — hoja deslizante desde abajo (bottom sheet, tendencia 2026).
@@ -20,7 +20,7 @@ function BCVModal({
   visible, onClose, editValue, onChangeText, onSave, bcvLunesColor, C,
 }) {
   const reduceMotion = useReduceMotion();
-  const F = useCotizaveFonts();
+  const F = useFintechFonts();
   const translateY = useSharedValue(600);
   const backdropOpacity = useSharedValue(0);
   const [backdropActive, setBackdropActive] = useState(false);
