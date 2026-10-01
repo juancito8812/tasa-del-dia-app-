@@ -1,6 +1,6 @@
 // Registro de paquetes de UI por estilo de diseño.
 // Cada paquete expone las pantallas, la tab bar y los modales de SU diseño;
-// la lógica de negocio (hooks/servicios/utils) se comparte entre los tres.
+// la lógica de negocio (hooks/servicios/utils) se comparte entre todos.
 
 import RatesScreenOriginal from '../screens/RatesScreen';
 import ConverterScreenOriginal from '../screens/ConverterScreen';
@@ -26,7 +26,14 @@ import HistoryScreenEditorial from './editorial/HistoryScreen';
 import ScreenContainerEditorial from './editorial/ScreenContainer';
 import UpdateModalEditorial from './editorial/UpdateModal';
 
-export const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial']);
+// Cotizave reutiliza la CustomTabBar original (se re-estila vía tokens), como editorial.
+import RatesScreenCotizave from './cotizave/RatesScreen';
+import ConverterScreenCotizave from './cotizave/ConverterScreen';
+import HistoryScreenCotizave from './cotizave/HistoryScreen';
+import ScreenContainerCotizave from './cotizave/ScreenContainer';
+import UpdateModalCotizave from './cotizave/UpdateModal';
+
+export const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'cotizave']);
 
 const PACKAGES = {
   original: {
@@ -65,11 +72,23 @@ const PACKAGES = {
     ScreenContainer: ScreenContainerEditorial,
     UpdateModal: UpdateModalEditorial,
   },
+  cotizave: {
+    Screens: {
+      rates: RatesScreenCotizave,
+      converter: ConverterScreenCotizave,
+      bankData: BankDataScreenOriginal,
+      paypalCalc: PayPalCalculatorScreenOriginal,
+      history: HistoryScreenCotizave,
+    },
+    TabBar: CustomTabBarOriginal,
+    ScreenContainer: ScreenContainerCotizave,
+    UpdateModal: UpdateModalCotizave,
+  },
 };
 
 /**
  * Devuelve el paquete de componentes del estilo indicado.
- * @param {'original'|'terminal'|'editorial'} uiStyle
+ * @param {'original'|'terminal'|'editorial'|'cotizave'} uiStyle
  */
 export function getUiPackage(uiStyle) {
   return PACKAGES[uiStyle] ?? PACKAGES.original;

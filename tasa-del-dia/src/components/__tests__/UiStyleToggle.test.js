@@ -43,8 +43,16 @@ describe('UiStyleToggle', () => {
     expect(mockTheme.setUiStyle).toHaveBeenCalledWith('editorial');
   });
 
-  it('cicla editorial -> original al presionar', () => {
+  it('cicla editorial -> cotizave al presionar', () => {
     mockTheme.uiStyle = 'editorial';
+    let renderer;
+    act(() => { renderer = TestRenderer.create(<UiStyleToggle />); });
+    press(renderer.root.findByType(TouchableOpacity));
+    expect(mockTheme.setUiStyle).toHaveBeenCalledWith('cotizave');
+  });
+
+  it('cicla cotizave -> original al presionar', () => {
+    mockTheme.uiStyle = 'cotizave';
     let renderer;
     act(() => { renderer = TestRenderer.create(<UiStyleToggle />); });
     press(renderer.root.findByType(TouchableOpacity));
