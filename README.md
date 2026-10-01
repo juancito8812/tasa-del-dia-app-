@@ -17,7 +17,7 @@
 
 - **Tasas en vivo:** BCV, Paralelo, Euro, Binance P2P con brechas y gasolina
 - **Conversor Bs/USD:** con tasas en tiempo real, modo offline
-- **Datos Bancarios:** CRUD de cuentas bancarias venezolanas con búsqueda de banco, secciones Pago Móvil, Transferencia, Zelle, PayPal, Binance, Facebank, Zinli y Wally
+- **Datos Bancarios:** CRUD de cuentas bancarias venezolanas con búsqueda de banco, secciones Pago Móvil, Transferencia, Zelle, PayPal, Binance, Facebank, Zinli y Wally — la copia de Pago Móvil sale compacta (cédula, teléfono y banco corto, lista para pegar)
 - **PayPal Calculator:** 5.4% + $0.30 con modos "Para recibir" / "Para enviar" y conversión a BCV/Paralelo/Binance/Euro
 - **Pagar compras en BS:** tarjeta que calcula el monto exacto a transferir por PayPal (USD) para cubrir una compra en bolívares (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto en Bs
 - **Historial:** 900+ registros desde 2023 con chart y detalle por día
@@ -99,6 +99,8 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 **v1.6.2 Fixes (06-Sep-2026):** Fórmulas PayPal corregidas (5.4% + $0.30). Sección Digital separada en Zelle/PayPal/Binance. Transferencia con selector de banco. Reanimated 4.x migration. CI: newArchEnabled=true, iconos Ionicons, TypeScript fixes.
 
 **v1.6.4 (08-Sep-2026):** Tarjeta "Pagar compras en BS" en la pestaña PayPal — calcula el monto exacto a transferir (USD) para cubrir una compra en Bs (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto. BankData: iconos Ionicons serios (sin emojis) en las secciones Pago Móvil / Transferencia / Zelle / PayPal / Binance. Nuevos métodos de pago digital: Facebank (email + cuenta), Zinli (email) y Wally (email). Formato de copia mejorado: sección individual compacta (sin etiquetas) y "copiar todo" con etiquetas. Limpieza de repo: eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/`, `dogfood-output/` y endurecido `.gitignore`. Release publicada vía workflow_dispatch (run 34278668785). Apk: `TasaDelDia-v1.6.4.apk` (~76 MB, firma EAS).
+
+**Post-v1.6.5 (01-Oct-2026, PR #6):** Copia de Pago Móvil compacta — el texto copiado/compartido sale como `5624208` / `04143451767` / `Mercantil` (cédula sin prefijo, teléfono solo dígitos, nombre corto del banco sin código), listo para pegar en apps de pago móvil. "Copiar todo" emite el bloque compacto y omite el encabezado `Cédula:` duplicado; el banco también sale sin código en la copia de Transferencia. En `main`, pendiente de la próxima release (v1.6.6).
 
 
 
