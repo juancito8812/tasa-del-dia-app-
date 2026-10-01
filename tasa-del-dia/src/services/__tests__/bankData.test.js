@@ -98,12 +98,16 @@ describe('bankData', () => {
     });
   });
 
-  describe('formatAccountText (copy all — con labels)', () => {
-    it('formats complete account with labels', () => {
+  describe('formatAccountText (copy all — pago móvil compacto + resto con labels)', () => {
+    it('formats complete account: pago móvil compacto + resto con labels', () => {
       const text = formatAccountText(mockAccountComplete);
+      const lines = text.split('\n').filter(Boolean);
 
-      expect(text).toContain('Cédula: 5624208');
-      expect(text).toContain('Teléfono: 04143451767');
+      // Bloque pago móvil compacto (sin labels, cédula sin V-)
+      expect(lines[0]).toBe('5624208');
+      expect(lines[1]).toBe('04143451767');
+      expect(lines[2]).toBe('Mercantil');
+
       expect(text).toContain('Banco: Mercantil (0105)');
       expect(text).toContain('Cuenta: 0105123456789012');
       expect(text).toContain('Tipo: Ahorro');
@@ -116,24 +120,24 @@ describe('bankData', () => {
       expect(text).toContain('Facebank Cuenta: 0105987654321098');
       expect(text).toContain('Zinli: zinli@email.com');
       expect(text).toContain('Wally: wally@email.com');
+
+      // El bloque compacto no usa labels
+      expect(text).not.toContain('Cédula:');
+      expect(text).not.toContain('Teléfono:');
     });
 
-    it('formats pago_movil-only account with labels', () => {
+    it('formats pago_movil-only account compacto (ejemplo del usuario)', () => {
       const text = formatAccountText(mockPagoMovilOnly);
-      const lines = text.split('\n').filter(Boolean);
+      expect(text).toBe('5624208\n04143451767\nMercantil');
+    });
 
-      expect(lines[0]).toBe('Cédula: 5624208');
-      expect(lines[1]).toBe('Teléfono: 04143451767');
-      expect(lines[2]).toBe('Banco: Mercantil (0105)');
+    it('keeps Cédula header when account has no pago móvil', () => {
+      const account = { ...mockAccountComplete, telefono: '' };
+      const text = formatAccountText(account);
 
-      // No other sections
-      expect(text).not.toContain('Cuenta:');
-      expect(text).not.toContain('Zelle:');
-      expect(text).not.toContain('PayPal:');
-      expect(text).not.toContain('Binance');
-      expect(text).not.toContain('Facebank');
-      expect(text).not.toContain('Zinli');
-      expect(text).not.toContain('Wally');
+      expect(text).toContain('Cédula: 5624208');
+      expect(text).toContain('Cuenta: 0105123456789012');
+      expect(text).not.toContain('04143451767');
     });
 
     it('formats account without digital sections', () => {
@@ -151,7 +155,7 @@ describe('bankData', () => {
       };
       const text = formatAccountText(account);
 
-      expect(text).toContain('Cédula: 5624208');
+      expect(text).toContain('04143451767');
       expect(text).toContain('Cuenta: 0105123456789012');
       expect(text).not.toContain('Zelle:');
       expect(text).not.toContain('PayPal:');
@@ -169,7 +173,7 @@ describe('bankData', () => {
 
       expect(lines[0]).toBe('5624208');
       expect(lines[1]).toBe('04143451767');
-      expect(lines[2]).toBe('Mercantil 0105');
+      expect(lines[2]).toBe('Mercantil');
 
       expect(text).not.toContain('Cédula:');
       expect(text).not.toContain('Teléfono:');
@@ -181,7 +185,7 @@ describe('bankData', () => {
       const lines = text.split('\n').filter(Boolean);
 
       expect(lines[0]).toBe('0105123456789012');
-      expect(lines[1]).toBe('Mercantil 0105');
+      expect(lines[1]).toBe('Mercantil');
       expect(lines[2]).toBe('Ahorro');
 
       expect(text).not.toContain('Cuenta:');
