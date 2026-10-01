@@ -28,6 +28,12 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
     Alert.alert('Copiado', 'Datos de la sección copiados');
   }, [account]);
 
+  const handleShareSection = useCallback(async (section) => {
+    hapticLight();
+    const text = formatSectionText(account, section);
+    await Share.share({ message: text });
+  }, [account]);
+
   const handleEdit = useCallback(() => {
     hapticLight();
     onEdit?.(account);
@@ -73,9 +79,19 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="phone-portrait-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Pago Móvil</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('pago_movil')} activeOpacity={0.7}>
-              <Ionicons name="copy" size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
+            <View style={styles.sectionActions}>
+              <TouchableOpacity
+                onPress={() => handleShareSection('pago_movil')}
+                style={[styles.sectionAction, { backgroundColor: colors.highlight + '20' }]}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="share-social" size={12} color={colors.highlight} />
+                <Text style={[styles.sectionActionText, { color: colors.highlight }]}>Enviar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleCopySection('pago_movil')} style={styles.sectionAction} activeOpacity={0.7}>
+                <Ionicons name="copy" size={14} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
           <Text style={[styles.sectionValue, { color: colors.textPrimary }]}>
             {formatBankDisplay(account.banco)}
@@ -309,6 +325,23 @@ const styles = StyleSheet.create({
   sectionValue: {
     fontSize: 14,
     marginBottom: 2,
+  },
+  sectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+  },
+  sectionActionText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
