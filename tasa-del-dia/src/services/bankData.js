@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { formatDocument } from '../constants/documentTypes';
 import { formatBankDisplay } from '../constants/banks';
 
 const STORAGE_KEY = '@bank_accounts';
@@ -71,15 +70,19 @@ function bankShortName(code) {
     .trim();
 }
 
-/** Formatea todos los datos de una cuenta para copiar/compartir (con labels). */
+/**
+ * Formatea todos los datos de una cuenta para copiar/compartir.
+ * Pago Móvil sale compacto (cédula, teléfono, banco corto); el resto con labels.
+ */
 export function formatAccountText(account) {
   const sections = [];
 
-  sections.push(`Cédula: ${account.numeroDocumento || ''}`);
-
   if (account.banco && account.telefono) {
-    sections.push(`Teléfono: ${digitsOnly(account.telefono)}`);
-    sections.push(`Banco: ${bankShortName(account.banco)} (${account.banco})`);
+    sections.push(account.numeroDocumento || '');
+    sections.push(digitsOnly(account.telefono));
+    sections.push(bankShortName(account.banco));
+  } else {
+    sections.push(`Cédula: ${account.numeroDocumento || ''}`);
   }
 
   if (account.banco && account.numeroCuenta) {
@@ -125,12 +128,12 @@ export function formatSectionText(account, section) {
   if (section === 'pago_movil' && account.banco && account.telefono) {
     lines.push(account.numeroDocumento || '');
     lines.push(digitsOnly(account.telefono));
-    lines.push(`${bankShortName(account.banco)} ${account.banco}`);
+    lines.push(bankShortName(account.banco));
   }
 
   if (section === 'transferencia' && account.banco && account.numeroCuenta) {
     lines.push(account.numeroCuenta);
-    lines.push(`${bankShortName(account.banco)} ${account.banco}`);
+    lines.push(bankShortName(account.banco));
     lines.push(account.tipoCuenta === 'corriente' ? 'Corriente' : 'Ahorro');
   }
 
