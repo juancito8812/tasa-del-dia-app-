@@ -105,7 +105,7 @@ jobs:
           echo "📝 Changelog generado:"
           echo "$CHANGELOG"
 
-      - name: Actualizar versión en app.config.js
+      - name: Actualizar versión en app.config.js y package.json
         run: |
           # Si el trigger fue un tag (detached HEAD), posicionarse en main
           # para que el commit del bump llegue a la rama y no falle el push.
@@ -113,10 +113,11 @@ jobs:
             git fetch origin main
             git checkout -b ci-release origin/main
           fi
-          # El bump actualiza la const VERSION de app.config.js; el versionCode
+          # El bump actualiza la const VERSION de app.config.js y version en package.json; el versionCode
           # Android se deriva automáticamente de la versión (mayor*10000+menor*100+patch).
           sed -i "s/const VERSION = '[0-9.]*'/const VERSION = '${{ steps.version.outputs.version }}'/" app.config.js
-          echo "✅ app.config.js actualizado a ${{ steps.version.outputs.version }}"
+          sed -i 's/"version": "[0-9.]*"/"version": "'"${{ steps.version.outputs.version }}"'"/' package.json
+          echo "✅ app.config.js y package.json actualizados a ${{ steps.version.outputs.version }}"
 
       - name: Commit version bump a main
         env:
@@ -124,9 +125,9 @@ jobs:
         run: |
           git config user.name "release-bot[bot]"
           git config user.email "release-bot[bot]@users.noreply.github.com"
-          git add app.config.js
+          git add app.config.js package.json
           if git diff --cached --quiet; then
-            echo "🟢 Sin cambios en app.config.js"
+            echo "🟢 Sin cambios en versión"
           else
             git commit -m "chore: bump version to ${{ steps.version.outputs.version }} [skip ci]"
             git push origin HEAD:main
