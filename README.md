@@ -32,10 +32,10 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.6.4** (versionCode 10604) |
+| Versión actual | **1.6.8** (versionCode 10608) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 475/475 passing · 32 suites |
+| Tests | 548/548 passing · 34 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
 | Seguridad | Review full-app 07-sep-2026: 0 vulnerabilidades explotables |
@@ -100,7 +100,9 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 
 **v1.6.4 (08-Sep-2026):** Tarjeta "Pagar compras en BS" en la pestaña PayPal — calcula el monto exacto a transferir (USD) para cubrir una compra en Bs (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto. BankData: iconos Ionicons serios (sin emojis) en las secciones Pago Móvil / Transferencia / Zelle / PayPal / Binance. Nuevos métodos de pago digital: Facebank (email + cuenta), Zinli (email) y Wally (email). Formato de copia mejorado: sección individual compacta (sin etiquetas) y "copiar todo" con etiquetas. Limpieza de repo: eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/`, `dogfood-output/` y endurecido `.gitignore`. Release publicada vía workflow_dispatch (run 34278668785). Apk: `TasaDelDia-v1.6.4.apk` (~76 MB, firma EAS).
 
-**Post-v1.6.5 (01-Oct-2026, PR #6):** Copia de Pago Móvil compacta — el texto copiado/compartido sale como `5624208` / `04143451767` / `Mercantil` (cédula sin prefijo, teléfono solo dígitos, nombre corto del banco sin código), listo para pegar en apps de pago móvil. "Copiar todo" emite el bloque compacto y omite el encabezado `Cédula:` duplicado; el banco también sale sin código en la copia de Transferencia. En `main`, pendiente de la próxima release (v1.6.6).
+**v1.6.6 & v1.6.7 (01-Oct-2026):** Introducción de nuevo estilo de diseño alternativo Fintech (paleta crema + vino granate, panel oscuro con BCV amarillo, fuentes Space Grotesk + JetBrains Mono), soporte de compartir/enviar directo en Pago Móvil y modernización de CI.
+
+**v1.6.8 (01-Oct-2026):** Sincronización automática de versión en package.json durante releases en CI, eliminación de dependencia @expo/ngrok de producción y blindaje de AnimatedNumber para entornos de animación.
 
 
 
