@@ -75,12 +75,14 @@ function AnimatedNumber({
         const formatted = formatRef.current ? formatRef.current(v) : v.toFixed(2);
         setDisplayText(prefix + formatted);
       });
-      animation = Animated.timing(animatedValue, {
-        toValue: value,
-        duration,
-        useNativeDriver: false,
-      });
-      animation.start();
+      if (Animated && typeof Animated.timing === 'function') {
+        animation = Animated.timing(animatedValue, {
+          toValue: value,
+          duration,
+          useNativeDriver: false,
+        });
+        animation.start();
+      }
     };
 
     // Posponer el conteo hasta que el hilo JS quede libre: en el arranque,
