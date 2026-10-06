@@ -23,6 +23,7 @@ logs/
 .freebuff/
 temp_files/
 dogfood-output/
+qa-evidencia/
 
 # ─── Python / PyInstaller ───
 __pycache__/
