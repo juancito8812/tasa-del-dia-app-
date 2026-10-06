@@ -10,7 +10,7 @@ import PressableScale from './PressableScale';
 import useReduceMotion from '../hooks/useReduceMotion';
 
 const ICON_NAMES = {
-  bank: 'bank',
+  bank: 'business',
   'trending-up': 'trending-up',
   globe: 'globe',
   'logo-bitcoin': 'logo-bitcoin',

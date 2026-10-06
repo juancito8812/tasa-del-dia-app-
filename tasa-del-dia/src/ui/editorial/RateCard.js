@@ -9,7 +9,7 @@ import PressableScale from '../../components/PressableScale';
 import useReduceMotion from '../../hooks/useReduceMotion';
 
 const ICON_NAMES = {
-  bank: 'bank',
+  bank: 'business',
   'trending-up': 'trending-up',
   globe: 'globe',
   'logo-bitcoin': 'logo-bitcoin',
@@ -114,7 +114,8 @@ function createStyles(C) {
       opacity: 0.6,
     },
     rateValueMedium: {
-      fontSize: 32,
+      // 24 = cabe en la columna media del bento (~120dp); 32 desbordaba a 360dp
+      fontSize: 24,
       fontWeight: '700',
       letterSpacing: 0.3,
       fontVariant: ['tabular-nums'],

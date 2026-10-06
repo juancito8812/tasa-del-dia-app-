@@ -1,5 +1,6 @@
 import React from 'react';
 import TestRenderer from 'react-test-renderer';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import RateCard from '../RateCard';
 
 jest.mock('expo-blur', () => {
@@ -237,5 +238,28 @@ describe('RateCard', () => {
     const texts = root.findAllByType('Text');
     const liveText = texts.find(t => t.props.children === 'EN VIVO');
     expect(liveText).toBeFalsy();
+  });
+
+  it('hero BCV usa un nombre de icono Ionicons válido (business, no "?")', () => {
+    let renderer;
+    TestRenderer.act(() => {
+      renderer = TestRenderer.create(
+        <RateCard
+          title="BCV (Oficial)"
+          subtitle="Banco Central de Venezuela"
+          rate={60.5}
+          icon="bank"
+          color="#00b894"
+          loading={false}
+          size="large"
+          type="bcv"
+          updatedAt="2026-07-03T00:00:00Z"
+        />
+      );
+    });
+    const icons = renderer.root.findAllByType(Ionicons);
+    expect(icons.length).toBeGreaterThan(0);
+    expect(icons[0].props.name).toBe('business');
+    expect(icons.some((i) => i.props.name === 'bank')).toBe(false);
   });
 });

@@ -12,7 +12,7 @@ import useReduceMotion from '../../hooks/useReduceMotion';
 import { useFintechFonts } from './fonts';
 
 const ICON_NAMES = {
-  bank: 'bank',
+  bank: 'business',
   'trending-up': 'trending-up',
   globe: 'globe',
   'logo-bitcoin': 'logo-bitcoin',
@@ -99,6 +99,9 @@ function createStyles(C, F) {
       backgroundColor: C.cardBg,
       padding: 20,
       marginBottom: 16,
+      // Dentro de bentoHalf (columna) la altura es eje main: sin flexGrow la
+      // tarjeta queda a altura natural y las parejas del bento se desigualan.
+      flexGrow: 1,
     },
     headerMedium: {
       flexDirection: 'row',
@@ -131,7 +134,8 @@ function createStyles(C, F) {
       fontFamily: F.mono,
     },
     rateValueMedium: {
-      fontSize: 32,
+      // 24 = cabe en la columna media del bento (~120dp); 32 desbordaba a 360dp
+      fontSize: 24,
       fontWeight: '600',
       letterSpacing: 0.3,
       fontVariant: ['tabular-nums'],
@@ -154,6 +158,7 @@ function createStyles(C, F) {
       backgroundColor: C.cardBg,
       padding: 14,
       marginBottom: 0,
+      flexGrow: 1,
     },
     headerCompact: {
       flexDirection: 'row',
