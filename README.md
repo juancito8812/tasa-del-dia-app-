@@ -32,10 +32,10 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.6.8** (versionCode 10608) |
+| Versión actual | **1.6.9** (versionCode 10609) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 548/548 passing · 34 suites |
+| Tests | 554/554 passing · 34 suites |
 | Lint | 0 errors, 0 warnings |
 | Typecheck | 0 errores (`checkJs: true`) |
 | Seguridad | Review full-app 07-sep-2026: 0 vulnerabilidades explotables |
@@ -74,7 +74,7 @@ cd android
 
 > 💡 **Debug standalone:** la variante debug embebe el bundle JS (`debuggableVariants = []` en `android/app/build.gradle`) y usa el sufijo `applicationIdSuffix ".debug"` — corre sin Metro y puede convivir con la app de producción. Tras cambios de JS hay que recompilar la APK; `expo prebuild --clean` borra esta configuración.
 
-> 📦 **APK oficial v1.6.4:** `TasaDelDia-v1.6.4.apk` (~76 MB, firma EAS, publicada en GitHub Releases el 08-Sep-2026). Instala como la app de producción (`com.tasadeldia.app`). Auto-update desde GitHub desde esta versión. Nota: si antes instalaste la APK tester debug (`com.tasadeldia.app.debug`), desinstálala primero — firmas distintas (debug vs EAS) y Android no permite actualizar entre ellas.
+> 📦 **APK oficial (última release):** `TasaDelDia-vX.Y.Z.apk` (~76 MB, firma EAS, publicada en GitHub Releases). Instala como la app de producción (`com.tasadeldia.app`). Auto-update desde GitHub desde la v1.6.4. Nota: si antes instalaste la APK tester debug (`com.tasadeldia.app.debug`), desinstálala primero — firmas distintas (debug vs EAS) y Android no permite actualizar entre ellas.
 >
 > 🔬 **APK tester (solo para validación interna, obsoleta):** `tasa-del-dia/TasaDelDia-v1.6.3-debug-tester.apk` (118 MB, bundle embebido — funciona sin PC, offline). Instala como `com.tasadeldia.app.debug`, así que convive con la app de producción. Solo para pruebas: firma debug ≠ firma EAS, así que NO sirve para auto-update (los testers deben desinstalarla antes de pasar a una release firmada) y NUNCA publicarla (bundle dev sin minificar + keystore debug público). Nota: la APK es full-ABI — RN 0.81 embarca libs prebuilt de AARs que ni `abiFilters` ni packaging excludes remueven; además `gradlew clean` está roto en este proyecto (quirk de CMake codegen) — purgar `android/app/build` manualmente si hace falta.
 
@@ -103,6 +103,8 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 **v1.6.6 & v1.6.7 (01-Oct-2026):** Introducción de nuevo estilo de diseño alternativo Fintech (paleta crema + vino granate, panel oscuro con BCV amarillo, fuentes Space Grotesk + JetBrains Mono), soporte de compartir/enviar directo en Pago Móvil y modernización de CI.
 
 **v1.6.8 (01-Oct-2026):** Sincronización automática de versión en package.json durante releases en CI, eliminación de dependencia @expo/ngrok de producción y blindaje de AnimatedNumber para entornos de animación.
+
+**v1.6.9 (05-Oct-2026):** Icono del BCV corregido (`landmark` → `business`, el primero no existe en Ionicons) en los 4 estilos. Tasa de Paralelo/Euro en estilo Fintech a 24px (alineada con el resto de las tarjetas medianas). Tarjetas bento del estilo Fintech con alturas parejas (`flexGrow: 1` — antes cada tarjeta quedaba a tamaño natural del contenido y desiguales cuando el subtítulo se partía en 2 líneas). +6 tests → 554/554.
 
 
 
@@ -168,7 +170,7 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (475) + lint (0 warnings) + typecheck |
+| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (554) + lint (0 warnings) + typecheck |
 | **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
 | **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
 | **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |
