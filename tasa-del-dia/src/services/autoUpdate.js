@@ -7,6 +7,22 @@ import { Platform } from 'react-native';
 import { API_CONFIG } from '../constants';
 
 const GITHUB_REPO = 'juancito8812/tasa-del-dia-app-';
+// Endurecimiento (S2): solo se descarga/instala un APK desde hosts de GitHub
+// por HTTPS. Evita que una URL manipulada apunte a un binario ajeno.
+const ALLOWED_APK_HOSTS = [
+  'github.com',
+  'objects.githubusercontent.com',
+  'github-releases.githubusercontent.com',
+  'release-assets.githubusercontent.com',
+];
+
+export function isTrustedApkUrl(url) {
+  if (typeof url !== 'string' || !url.startsWith('https://')) return false;
+  const host = url.slice('https://'.length).split('/')[0].toLowerCase();
+  if (!host || host.includes('@')) return false;
+  const hostname = host.split(':')[0];
+  return ALLOWED_APK_HOSTS.some((h) => hostname === h || hostname.endsWith('.' + h));
+}
 const STORAGE_KEY_SKIP = '@tasa_del_dia/skip_version';
 const STORAGE_KEY_UPDATE_CACHE = '@tasa_del_dia/update_cache';
 // Watchdog anti-cuelgue de la descarga: si el archivo no crece en este
@@ -83,7 +99,9 @@ export async function checkLatestRelease() {
       const release = releases[i];
       // Preferir APKs que empiecen con 'TasaDelDia' (EAS-signed) sobre
       // 'app-release.apk' (debug keystore, firma incorrecta).
-      const apkAssets = release.assets.filter(a => a.name?.endsWith('.apk'));
+      const apkAssets = release.assets.filter(
+        a => a.name?.endsWith('.apk') && isTrustedApkUrl(a.browser_download_url),
+      );
       const apkAsset =
         apkAssets.find(a => a.name?.startsWith('TasaDelDia')) ||
         apkAssets[0];
@@ -134,6 +152,9 @@ export function getCurrentVersion() {
  */
 export async function downloadAndInstall(apkUrl, onProgress) {
   if (!apkUrl || Platform.OS !== 'android') return false;
+  // Segunda puerta: aunque el asset venga de checkLatestRelease, nunca
+  // instalamos desde un host no confiable.
+  if (!isTrustedApkUrl(apkUrl)) return false;
   try {
     const file = new File(Paths.cache, 'TasaDelDia-update.apk');
     const download = File.downloadFileAsync(apkUrl, file, { idempotent: true });

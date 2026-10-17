@@ -4,7 +4,23 @@ import {
   isUpdateAvailable,
   getCurrentVersion,
   downloadAndInstall,
+  isTrustedApkUrl,
 } from '../autoUpdate';
+
+describe('isTrustedApkUrl (S2 — solo hosts GitHub por HTTPS)', () => {
+  it('acepta URLs de GitHub por HTTPS', () => {
+    expect(isTrustedApkUrl('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk')).toBe(true);
+    expect(isTrustedApkUrl('https://objects.githubusercontent.com/x/app.apk')).toBe(true);
+  });
+
+  it('rechaza HTTP, otros hosts y entradas inválidas', () => {
+    expect(isTrustedApkUrl('http://github.com/x/app.apk')).toBe(false);
+    expect(isTrustedApkUrl('https://evil.com/github.com/app.apk')).toBe(false);
+    expect(isTrustedApkUrl('https://github.com.evil.com/app.apk')).toBe(false);
+    expect(isTrustedApkUrl('')).toBe(false);
+    expect(isTrustedApkUrl(null)).toBe(false);
+  });
+});
 
 describe('autoUpdate - Pure Functions', () => {
   describe('compareVersions', () => {
@@ -98,11 +114,11 @@ describe('downloadAndInstall', () => {
     const { startActivityAsync } = require('expo-intent-launcher');
     const { File } = require('expo-file-system');
 
-    const ok = await downloadAndInstall('https://example.com/app.apk');
+    const ok = await downloadAndInstall('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
 
     expect(ok).toBe(true);
     expect(File.downloadFileAsync).toHaveBeenCalledWith(
-      'https://example.com/app.apk',
+      'https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk',
       expect.any(File),
       { idempotent: true },
     );
@@ -126,7 +142,7 @@ describe('downloadAndInstall', () => {
       let bytes = 0;
       File.sizeFn = () => (bytes += 1024 * 1024); // crece 1 MB por poll
 
-      const promise = downloadAndInstall('https://example.com/app.apk', onProgress);
+      const promise = downloadAndInstall('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk', onProgress);
       await jest.advanceTimersByTimeAsync(10000);
 
       expect(onProgress.mock.calls.length).toBeGreaterThanOrEqual(1);
@@ -143,10 +159,10 @@ describe('downloadAndInstall', () => {
     const { openURL } = require('expo-linking');
     File.downloadFileAsync.mockRejectedValue(new Error('network error'));
 
-    const ok = await downloadAndInstall('https://example.com/app.apk');
+    const ok = await downloadAndInstall('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
 
     expect(ok).toBe(true);
-    expect(openURL).toHaveBeenCalledWith('https://example.com/app.apk');
+    expect(openURL).toHaveBeenCalledWith('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
   });
 
   it('cae al navegador si la descarga se cuelga (watchdog anti-stall)', async () => {
@@ -158,11 +174,11 @@ describe('downloadAndInstall', () => {
       // La descarga nunca resuelve ni avanza: debe disparar el watchdog (45s)
       File.downloadFileAsync.mockReturnValue(new Promise(() => {}));
 
-      const promise = downloadAndInstall('https://example.com/app.apk');
+      const promise = downloadAndInstall('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
       await jest.advanceTimersByTimeAsync(50000);
 
       await expect(promise).resolves.toBe(true);
-      expect(openURL).toHaveBeenCalledWith('https://example.com/app.apk');
+      expect(openURL).toHaveBeenCalledWith('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
     } finally {
       jest.useRealTimers();
     }
@@ -182,7 +198,7 @@ describe('downloadAndInstall', () => {
     jest.replaceProperty(Platform, 'OS', 'ios');
     const { startActivityAsync } = require('expo-intent-launcher');
 
-    const ok = await downloadAndInstall('https://example.com/app.apk');
+    const ok = await downloadAndInstall('https://github.com/juancito8812/tasa-del-dia-app-/releases/download/v1/app.apk');
 
     expect(ok).toBe(false);
     expect(startActivityAsync).not.toHaveBeenCalled();

@@ -1,23 +1,101 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { formatBankDisplay } from '../constants/banks';
 
-const STORAGE_KEY = '@bank_accounts';
+// Los datos bancarios (cédula, teléfono, cuentas, emails, wallets) son PII
+// sensible: se guardan cifrados con el Keystore/Keychain del sistema a través
+// de SecureStore. Una cuenta por clave (evita el límite de 2 KB por valor).
+// En plataformas sin Keystore (web) se cae a AsyncStorage para no perder datos.
+const LEGACY_KEY = '@bank_accounts';
+const INDEX_KEY = 'bank_accounts_index';
+const accountKey = (id) => `bank_account_${id}`;
+
+let secureAvailable = null;
+async function isSecure() {
+  if (secureAvailable === null) {
+    try {
+      secureAvailable = await SecureStore.isAvailableAsync();
+    } catch {
+      secureAvailable = false;
+    }
+  }
+  return secureAvailable;
+}
+
+async function storageGet(key) {
+  return (await isSecure()) ? SecureStore.getItemAsync(key) : AsyncStorage.getItem(key);
+}
+async function storageSet(key, value) {
+  return (await isSecure()) ? SecureStore.setItemAsync(key, value) : AsyncStorage.setItem(key, value);
+}
+async function storageDelete(key) {
+  return (await isSecure()) ? SecureStore.deleteItemAsync(key) : AsyncStorage.removeItem(key);
+}
 
 /** Genera un ID único simple. */
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
 }
 
-/** Sanitiza un ID para usarlo como key de AsyncStorage. */
+/** Sanitiza un ID para usarlo como key de almacenamiento. */
 function sanitizeId(id) {
   return String(id).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+}
+
+/** Lee el índice de IDs de cuentas guardadas. */
+async function getIndex() {
+  try {
+    const raw = await storageGet(INDEX_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+async function setIndex(ids) {
+  await storageSet(INDEX_KEY, JSON.stringify(ids));
+}
+
+/** Migra las cuentas del formato anterior (blob único en AsyncStorage). */
+async function migrateLegacy() {
+  try {
+    const raw = await AsyncStorage.getItem(LEGACY_KEY);
+    if (!raw) return null;
+    const legacy = JSON.parse(raw);
+    if (!Array.isArray(legacy) || legacy.length === 0) return null;
+
+    const accounts = [];
+    for (const acc of legacy) {
+      const id = sanitizeId(acc.id || generateId());
+      const account = { ...acc, id };
+      await storageSet(accountKey(id), JSON.stringify(account));
+      accounts.push(account);
+    }
+    await setIndex(accounts.map((a) => a.id));
+    await AsyncStorage.removeItem(LEGACY_KEY);
+    return accounts;
+  } catch {
+    return null;
+  }
 }
 
 /** Obtiene todas las cuentas bancarias guardadas. */
 export async function getAccounts() {
   try {
-    const json = await AsyncStorage.getItem(STORAGE_KEY);
-    return json ? JSON.parse(json) : [];
+    const ids = await getIndex();
+    if (ids.length === 0) {
+      const migrated = await migrateLegacy();
+      return migrated ?? [];
+    }
+    const accounts = [];
+    for (const id of ids) {
+      try {
+        const raw = await storageGet(accountKey(id));
+        if (raw) accounts.push({ ...JSON.parse(raw), id });
+      } catch {}
+    }
+    return accounts;
   } catch {
     return [];
   }
@@ -41,16 +119,18 @@ export async function saveAccount(account) {
     accounts.push(safeAccount);
   }
 
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+  await storageSet(accountKey(safeAccount.id), JSON.stringify(safeAccount));
+  await setIndex(accounts.map((a) => a.id));
   return safeAccount;
 }
 
 /** Elimina una cuenta por su ID. */
 export async function deleteAccount(id) {
   try {
-    const accounts = await getAccounts();
-    const filtered = accounts.filter((a) => a.id !== id);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    const safeId = sanitizeId(id);
+    const ids = await getIndex();
+    await storageDelete(accountKey(safeId));
+    await setIndex(ids.filter((i) => i !== safeId));
     return true;
   } catch {
     return false;

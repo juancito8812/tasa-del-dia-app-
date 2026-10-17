@@ -46,10 +46,22 @@ module.exports = {
       permissions: IS_GALAXY_STORE
         ? ['POST_NOTIFICATIONS']
         : ['POST_NOTIFICATIONS', 'REQUEST_INSTALL_PACKAGES'],
+      // Los datos bancarios personales NO deben salir del dispositivo vía
+      // ADB backup / respaldo en la nube. Con allowBackup=false el sandbox
+      // de la app queda fuera de las copias del sistema.
+      allowBackup: false,
+      // Permisos heredados de dependencias/dev que la app no usa; se bloquean
+      // explícitamente para minimizar la superficie del manifest de release.
+      blockedPermissions: [
+        'android.permission.READ_EXTERNAL_STORAGE',
+        'android.permission.WRITE_EXTERNAL_STORAGE',
+        'android.permission.SYSTEM_ALERT_WINDOW',
+      ],
     },
     plugins: [
       "expo-asset",
       "expo-font",
+      "expo-secure-store",
       "@react-native-community/datetimepicker",
       [
         "expo-build-properties",

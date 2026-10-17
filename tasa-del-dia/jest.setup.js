@@ -33,6 +33,20 @@ jest.mock('expo-haptics', () => ({
 
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
+// SecureStore: respaldado por el mismo store in-memory de AsyncStorage (claves
+// prefijadas) para que AsyncStorage.clear() aísle cada test automáticamente.
+jest.mock('expo-secure-store', () => {
+  const mod = require('@react-native-async-storage/async-storage');
+  const AS = mod.default ?? mod;
+  const prefix = '__secure__';
+  return {
+    isAvailableAsync: jest.fn().mockResolvedValue(true),
+    getItemAsync: jest.fn((key) => AS.getItem(prefix + key)),
+    setItemAsync: jest.fn((key, value) => AS.setItem(prefix + key, value)),
+    deleteItemAsync: jest.fn((key) => AS.removeItem(prefix + key)),
+  };
+});
+
 // Mock expo-constants for API_CONFIG
 jest.mock('expo-constants', () => ({
   expoConfig: {
