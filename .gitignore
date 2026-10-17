@@ -65,6 +65,7 @@ nul
 # ─── AI agent artifacts ───
 AI_HANDOFF.md
 MEMORY.md
+.lcm/
 docs/superpowers/
 .superpowers/
 opencode.json

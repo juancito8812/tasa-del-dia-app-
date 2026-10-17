@@ -1,6 +1,6 @@
 # Política de Privacidad — Tasa del Día
 
-**Última actualización:** 08 de septiembre de 2026
+**Última actualización:** 17 de octubre de 2026
 
 ## Datos que recopila esta app
 
@@ -15,7 +15,7 @@ Tasa del Día es una aplicación gratuita que consulta tasas de cambio en Venezu
 - **Caché de datos:** Tasas de cambio para funcionamiento offline.
 - **Datos bancarios:** La app almacena localmente cuentas bancarias que el usuario registra voluntariamente (cedula, teléfono, banco, número de cuenta, tipo de cuenta) y métodos de pago digital (Zelle, PayPal, Binance, Facebank, Zinli, Wally). **Estos datos NO se envían a ningún servidor externo** — permanecen exclusivamente en el dispositivo del usuario.
 
-Todos estos datos se almacenan exclusivamente en el dispositivo del usuario mediante AsyncStorage. **No se envían a servidores externos.**
+Todos estos datos se almacenan exclusivamente en el dispositivo del usuario. Las preferencias, caché de tasas e historial usan el almacenamiento interno de la app (AsyncStorage). **Los datos bancarios y de pago digital se guardan cifrados** con el almacén seguro del sistema (Android Keystore / iOS Keychain) mediante `expo-secure-store`. **Nada se envía a servidores externos.** Además, el respaldo del sistema (ADB/cloud) está desactivado para el sandbox de la app (`allowBackup=false`).
 
 ### Datos que la app accede (pero no recopila)
 
@@ -29,6 +29,7 @@ Todos estos datos se almacenan exclusivamente en el dispositivo del usuario medi
 | Permiso | Uso |
 |---------|-----|
 | `POST_NOTIFICATIONS` | Mostrar recordatorio semanal de ingresar tasa del BCV (solo si el usuario lo activa) |
+| `REQUEST_INSTALL_PACKAGES` | Solo en instalaciones directas (fuera de tienda): abrir el instalador del sistema para aplicar la actualización descargada desde GitHub Releases. No se usa en la versión de Galaxy Store. |
 
 ## Actualizaciones
 
@@ -42,9 +43,11 @@ La app puede verificar actualizaciones desde GitHub Releases cuando se instala d
 ## Seguridad
 
 - La app no utiliza `eval()` ni ejecuta código dinámico.
-- Todas las conexiones de red se realizan exclusivamente por HTTPS.
+- Todas las conexiones de red se realizan exclusivamente por HTTPS (`usesCleartextTraffic=false`).
 - No se almacenan credenciales, tokens de acceso ni datos bancarios en servidores externos.
-- Los datos bancarios y de pago digital se almacenan localmente en el dispositivo del usuario (AsyncStorage) y no se transmiten a terceros.
+- Los datos bancarios y de pago digital se almacenan **cifrados** en el almacén seguro del sistema (Keystore/Keychain) y no se transmiten a terceros.
+- La actualización automática solo descarga e instala APKs por HTTPS desde el repositorio oficial de GitHub; el sistema operativo verifica la firma antes de instalar.
+- El respaldo del sistema para la app está deshabilitado (`allowBackup=false`).
 
 ## Cambios en esta política
 
