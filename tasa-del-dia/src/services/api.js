@@ -425,7 +425,7 @@ export async function getHistoricalRates() {
  * Lee/escribe SOLO el storage local (no pasa por getHistoricalRates que mergea API).
  * Conserva máximo 365 días de historial local.
  * @param {string} dateKey - "YYYY-MM-DD"
- * @param {{ bcv?: number|null, paralelo?: number|null, binance_p2p?: number|null, euro?: number|null, fetchedAt?: string|null }} rates
+ * @param {{ bcv?: number|null, paralelo?: number|null, binance_p2p?: number|null, euro?: number|null, bcv_lunes?: number|null, fetchedAt?: string|null }} rates
  */
 export async function saveHistoricalRate(dateKey, rates) {
   try {
@@ -438,6 +438,9 @@ export async function saveHistoricalRate(dateKey, rates) {
       paralelo: rates.paralelo ?? all[dateKey]?.paralelo ?? null,
       binance_p2p: rates.binance_p2p ?? all[dateKey]?.binance_p2p ?? null,
       euro: rates.euro ?? all[dateKey]?.euro ?? null,
+      // "BCV Lunes" es un valor manual independiente: NO debe escribir sobre
+      // `bcv` (la tasa oficial del día), o corrompe el historial/gráfico.
+      bcv_lunes: rates.bcv_lunes ?? all[dateKey]?.bcv_lunes ?? null,
       fetchedAt: rates.fetchedAt ?? all[dateKey]?.fetchedAt ?? new Date().toISOString(),
     };
 

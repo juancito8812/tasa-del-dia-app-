@@ -10,11 +10,11 @@ import {
 
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
-import useRatesData from '../hooks/useRatesData';
+import { useRates } from '../context/RatesContext';
 import RateCard from '../components/RateCard';
 import RatesHeader from '../components/RatesHeader';
 import BCVModal from '../components/BCVModal';
-import { formatCurrency } from '../utils/formatting';
+import { formatCurrency, getSeverityKey } from '../utils/formatting';
 
 function createStyles(C) {
   return StyleSheet.create({
@@ -86,7 +86,7 @@ function createStyles(C) {
 export default function RatesScreen() {
   const { colors: C } = useTheme();
   const styles = useMemo(() => createStyles(C), [C]);
-  const hook = useRatesData();
+  const hook = useRates();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editValue, setEditValue] = useState('');
@@ -96,12 +96,11 @@ export default function RatesScreen() {
 
   const bcvLunesColor = C.bcvLunes;
 
-  const brechaColor = hook.brecha !== null
-    ? hook.brecha > 15 ? C.highlight : hook.brecha > 8 ? C.warning : C.success
-    : C.textMuted;
-  const brechaLunesColor = hook.brechaLunes !== null
-    ? hook.brechaLunes > 15 ? C.highlight : hook.brechaLunes > 8 ? C.warning : C.success
-    : C.textMuted;
+  const severityColor = (pct) => pct === null
+    ? C.textMuted
+    : { highlight: C.highlight, warning: C.warning, success: C.success }[getSeverityKey(pct)];
+  const brechaColor = severityColor(hook.brecha);
+  const brechaLunesColor = severityColor(hook.brechaLunes);
 
   // Handlers estables: se pasan a RateCard/BCVModal (memoizados)
   const handleEditBCVLunes = useCallback(() => {

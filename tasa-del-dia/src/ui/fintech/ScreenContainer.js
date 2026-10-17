@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../context/ThemeContext';
+import { FintechFontsProvider } from './fonts';
 
 export default function ScreenContainer({ children }) {
   const { isDark } = useTheme();
@@ -13,7 +14,7 @@ export default function ScreenContainer({ children }) {
         locations={[0, 0.5, 1]}
         style={styles.container}
       >
-        {children}
+        <FintechFontsProvider>{children}</FintechFontsProvider>
       </LinearGradient>
     );
   }
@@ -23,7 +24,7 @@ export default function ScreenContainer({ children }) {
       locations={[0, 1]}
       style={styles.container}
     >
-      {children}
+      <FintechFontsProvider>{children}</FintechFontsProvider>
     </LinearGradient>
   );
 }

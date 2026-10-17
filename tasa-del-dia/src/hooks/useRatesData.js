@@ -179,7 +179,7 @@ export default function useRatesData() {
       const now = new Date().toISOString();
       setBcvLunesUpdatedAt(now);
       setStoredBCVLunes(parsed);
-      saveHistoricalRate(getTodayKey(), { bcv: parsed });
+      saveHistoricalRate(getTodayKey(), { bcv_lunes: parsed });
       // Avisar a otros hooks montados (ej. el Conversor) para que
       // actualicen su tasa del lunes sin esperar un re-montaje.
       emitBcvLunesChanged(parsed);

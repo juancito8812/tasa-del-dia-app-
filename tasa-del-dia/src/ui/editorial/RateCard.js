@@ -319,7 +319,7 @@ function RateCard({
           )}
         </View>
         {onEdit && (
-          <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Editar tasa">
             <Ionicons name="pencil" size={isLarge ? 16 : 12} color={C.textSecondary} />
           </TouchableOpacity>
         )}

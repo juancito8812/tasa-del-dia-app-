@@ -56,9 +56,7 @@ function createStyles(C) {
  * el dato, el tema o sus handlers (que son estables). Al teclear en el buscador,
  * cambiar la selección o copiar, los 10 items NO se re-renderizan.
  */
-function HistoryListItemView({ item, C, onPress, handleCopy }) {
-  const styles = useMemo(() => createStyles(C), [C]);
-
+function HistoryListItemView({ item, C, styles, onPress, handleCopy }) {
   const renderRateCol = (label, value, color) => (
     <TouchableOpacity
       style={styles.rateCol}
@@ -205,6 +203,7 @@ export default function HistoryScreen() {
                       key={item.dateKey}
                       item={item}
                       C={C}
+                      styles={styles}
                       onPress={handleSelectItem}
                       handleCopy={h.handleCopy}
                     />

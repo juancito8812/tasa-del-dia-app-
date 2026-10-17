@@ -62,10 +62,10 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
           </Text>
         </View>
         <View style={styles.headerActions}>
-          <TouchableOpacity onPress={handleEdit} style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleEdit} style={styles.iconButton} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Editar cuenta">
             <Ionicons name="pencil" size={16} color={colors.textSecondary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.iconButton} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleDelete} style={styles.iconButton} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Eliminar cuenta">
             <Ionicons name="trash" size={16} color={colors.danger || '#e53e3e'} />
           </TouchableOpacity>
         </View>
@@ -88,7 +88,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
                 <Ionicons name="share-social" size={12} color={colors.highlight} />
                 <Text style={[styles.sectionActionText, { color: colors.highlight }]}>Enviar</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleCopySection('pago_movil')} style={styles.sectionAction} activeOpacity={0.7}>
+              <TouchableOpacity onPress={() => handleCopySection('pago_movil')} style={styles.sectionAction} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar datos de Pago Móvil">
                 <Ionicons name="copy" size={14} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
@@ -110,7 +110,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="business-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Transferencia</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('transferencia')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('transferencia')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar datos de transferencia">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -134,7 +134,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="mail-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Zelle</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('zelle')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('zelle')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar Zelle">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -152,7 +152,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="card-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>PayPal</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('paypal')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('paypal')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar PayPal">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -170,7 +170,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="logo-bitcoin" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Binance</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('binance')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('binance')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar Binance">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -200,7 +200,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="globe-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Facebank</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('facebank')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('facebank')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar Facebank">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -225,7 +225,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="wallet-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Zinli</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('zinli')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('zinli')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar Zinli">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
@@ -243,7 +243,7 @@ function BankAccountCard({ account, onEdit, onDelete, colors }) {
               <Ionicons name="phone-portrait-outline" size={13} color={colors.textSecondary} />
               <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Wally</Text>
             </View>
-            <TouchableOpacity onPress={() => handleCopySection('wally')} activeOpacity={0.7}>
+            <TouchableOpacity onPress={() => handleCopySection('wally')} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Copiar Wally">
               <Ionicons name="copy" size={14} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>

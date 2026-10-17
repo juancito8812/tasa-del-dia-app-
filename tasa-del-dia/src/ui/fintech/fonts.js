@@ -1,7 +1,9 @@
 // 🔤 Tipografías del estilo FINTECH — sans + mono geométricas:
 //   --font-sans: "Space Grotesk"  ·  --font-mono: "JetBrains Mono"
-// Se cargan perezosamente al montar el primer componente del paquete; mientras
-// cargan (o si la carga falla) las pantallas caen a la fuente del sistema.
+// Se cargan UNA sola vez en FintechFontsProvider (envuelve las pantallas vía
+// ScreenContainer) y se reparten por contexto. Antes cada componente llamaba
+// useFonts por su cuenta (9 suscripciones).
+import React, { createContext, useContext } from 'react';
 import { useFonts } from 'expo-font';
 import {
   SpaceGrotesk_400Regular,
@@ -31,11 +33,12 @@ export const FONT = {
 // Referencia estable: mientras cargan las fuentes devolvemos esto (→ sistema).
 const SYSTEM_FALLBACK = /** @type {Record<string, string|undefined>} */ ({});
 
+const FintechFontsContext = createContext(null);
+
 /**
- * Devuelve FONT cuando las tipografías están listas; un objeto vacío
- * (→ fuente del sistema) mientras cargan o si la carga falla.
+ * Carga las tipografías fintech una sola vez y las comparte por contexto.
  */
-export function useFintechFonts() {
+export function FintechFontsProvider({ children }) {
   const [loaded] = useFonts({
     SpaceGrotesk_400Regular,
     SpaceGrotesk_500Medium,
@@ -46,5 +49,18 @@ export function useFintechFonts() {
     JetBrainsMono_600SemiBold,
     JetBrainsMono_700Bold,
   });
-  return loaded ? FONT : SYSTEM_FALLBACK;
+  const value = loaded ? FONT : SYSTEM_FALLBACK;
+  return (
+    <FintechFontsContext.Provider value={value}>
+      {children}
+    </FintechFontsContext.Provider>
+  );
+}
+
+/**
+ * Devuelve FONT cuando las tipografías están listas; un objeto vacío
+ * (→ fuente del sistema) fuera del provider o mientras cargan.
+ */
+export function useFintechFonts() {
+  return useContext(FintechFontsContext) ?? SYSTEM_FALLBACK;
 }

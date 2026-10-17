@@ -15,7 +15,7 @@ import useRatesData from '../../hooks/useRatesData';
 import RateCard from './RateCard';
 import RatesHeader from './RatesHeader';
 import BCVModal from './BCVModal';
-import { formatCurrency } from '../../utils/formatting';
+import { formatCurrency, getSeverityKey } from '../../utils/formatting';
 
 function createStyles(C) {
   return StyleSheet.create({
@@ -97,12 +97,11 @@ export default function RatesScreen() {
 
   const bcvLunesColor = C.bcvLunes;
 
-  const brechaColor = hook.brecha !== null
-    ? hook.brecha > 15 ? C.highlight : hook.brecha > 8 ? C.warning : C.success
-    : C.textMuted;
-  const brechaLunesColor = hook.brechaLunes !== null
-    ? hook.brechaLunes > 15 ? C.highlight : hook.brechaLunes > 8 ? C.warning : C.success
-    : C.textMuted;
+  const severityColor = (pct) => pct === null
+    ? C.textMuted
+    : { highlight: C.highlight, warning: C.warning, success: C.success }[getSeverityKey(pct)];
+  const brechaColor = severityColor(hook.brecha);
+  const brechaLunesColor = severityColor(hook.brechaLunes);
 
   // Handlers estables: se pasan a RateCard/BCVModal (memoizados)
   const handleEditBCVLunes = useCallback(() => {

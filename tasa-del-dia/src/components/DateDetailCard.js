@@ -35,7 +35,7 @@ function DateDetailCard({ selectedData, C, copiedField, handleCopy, handleCopyAl
             </View>
           )}
         </View>
-        <TouchableOpacity onPress={onClose} style={{ padding: 4 }}>
+        <TouchableOpacity onPress={onClose} style={{ padding: 4 }} accessibilityRole="button" accessibilityLabel="Cerrar detalle">
           <Ionicons name="close-circle" size={22} color={C.textMuted} />
         </TouchableOpacity>
       </View>

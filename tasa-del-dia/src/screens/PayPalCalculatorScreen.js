@@ -12,7 +12,7 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
-import useRatesData from '../hooks/useRatesData';
+import { useRates } from '../context/RatesContext';
 import { PAYPAL_FEES, calculateNet, calculateGross, calculateBsPurchase } from '../constants/paypalFees';
 import { hapticLight } from '../utils/haptics';
 
@@ -32,7 +32,7 @@ function parseNumericInput(value) {
 
 function PayPalCalculatorScreen() {
   const { colors: C } = useTheme();
-  const { data } = useRatesData();
+  const { data } = useRates();
 
   const [mode, setMode] = useState('net'); // 'net' = ¿Cuánto recibo?, 'gross' = ¿Cuánto cobro?
   const [amount, setAmount] = useState('');
@@ -377,8 +377,10 @@ function PayPalCalculatorScreen() {
               <Text style={styles.bsRecoValue}>{formatBs(bsPurchase.equivalenteBs)}</Text>
             </View>
             <View style={styles.bsRecoRow}>
-              <Text style={styles.bsRecoLabel}>Vuelto / saldo a favor</Text>
-              <Text style={styles.bsRecoValue}>{formatBs(bsPurchase.vueltoBs)}</Text>
+              <Text style={styles.bsRecoLabel}>
+                {bsPurchase.vueltoBs < 0 ? 'Faltante por cubrir' : 'Vuelto / saldo a favor'}
+              </Text>
+              <Text style={styles.bsRecoValue}>{formatBs(Math.abs(bsPurchase.vueltoBs))}</Text>
             </View>
             <TouchableOpacity style={styles.bsCopyButton} activeOpacity={0.7} onPress={handleCopyBsPurchase}>
               <Ionicons name="copy" size={14} color={C.highlight} />

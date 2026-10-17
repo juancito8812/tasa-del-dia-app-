@@ -100,7 +100,7 @@ function BankDataScreen() {
       )}
 
       {/* FAB */}
-      <TouchableOpacity onPress={handleAdd} style={styles.fab} activeOpacity={0.8}>
+      <TouchableOpacity onPress={handleAdd} style={styles.fab} activeOpacity={0.8} accessibilityRole="button" accessibilityLabel="Agregar cuenta bancaria">
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 

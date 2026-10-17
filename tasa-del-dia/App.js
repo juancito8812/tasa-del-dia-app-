@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { DistributionProvider, useDistribution } from './src/context/DistributionContext';
+import { RatesProvider } from './src/context/RatesContext';
 import { ensureReminderScheduled } from './src/services/notifications';
 import { registerBackgroundFetchAsync } from './src/services/backgroundTasks';
 import { getUiPackage } from './src/ui';
@@ -204,9 +205,11 @@ function App() {
     <SafeAreaProvider>
       <DistributionProvider>
         <ThemeProvider>
-          <ErrorBoundary>
-            <AnimatedAppContent />
-          </ErrorBoundary>
+          <RatesProvider>
+            <ErrorBoundary>
+              <AnimatedAppContent />
+            </ErrorBoundary>
+          </RatesProvider>
         </ThemeProvider>
       </DistributionProvider>
     </SafeAreaProvider>

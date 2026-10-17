@@ -7,6 +7,7 @@ import {
   setStoredBCVLunes,
   getReminderEnabled,
   setReminderEnabled,
+  saveHistoricalRate,
   fetchBinanceP2P,
   fetchAllData,
 } from '../api';
@@ -91,6 +92,19 @@ describe('API Service - AsyncStorage Interactions', () => {
       expect(await getReminderEnabled()).toBe(true);
       await setReminderEnabled(false);
       expect(await getReminderEnabled()).toBe(false);
+    });
+  });
+
+  describe('saveHistoricalRate — BCV Lunes no corrompe el BCV oficial (L1)', () => {
+    it('conserva el bcv oficial al guardar bcv_lunes del mismo día', async () => {
+      const day = '2026-10-15';
+      await saveHistoricalRate(day, { bcv: 37.5, paralelo: 39.5 });
+      await saveHistoricalRate(day, { bcv_lunes: 40 });
+
+      const raw = JSON.parse(await AsyncStorage.getItem('@tasa_del_dia/historical_rates'));
+      expect(raw[day].bcv).toBe(37.5);
+      expect(raw[day].paralelo).toBe(39.5);
+      expect(raw[day].bcv_lunes).toBe(40);
     });
   });
 });

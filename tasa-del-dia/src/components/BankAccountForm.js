@@ -176,7 +176,7 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
 
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: C.cardBorder }]}>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityRole="button" accessibilityLabel="Cerrar">
                 <Ionicons name="close" size={22} color={C.textMuted} />
               </TouchableOpacity>
               <Text style={[styles.headerTitle, { color: C.textPrimary }]}>

@@ -53,6 +53,17 @@ export function formatCurrencySmart(v) {
   return n.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+/**
+ * Clasifica una brecha porcentual en una clave de severidad de color.
+ * >15% → 'highlight', >8% → 'warning', resto → 'success'.
+ * Único lugar donde viven estos umbrales (antes estaban duplicados).
+ */
+export function getSeverityKey(diffPercent) {
+  if (diffPercent > 15) return 'highlight';
+  if (diffPercent > 8) return 'warning';
+  return 'success';
+}
+
 export function getRateTypes(C) {
   return [
     { key: 'bcv', label: 'BCV (Oficial)', color: C.success },

@@ -283,7 +283,7 @@ function RateCard({
         <Text style={[styles.rowTitle, { color: C.textPrimary }]} numberOfLines={1}>{title}</Text>
         <Text style={[styles.rowBracket, { color: C.dimmed }]}>{']'}</Text>
         {onEdit && (
-          <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity onPress={onEdit} style={styles.editButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityRole="button" accessibilityLabel="Editar tasa">
             <Ionicons name="pencil" size={12} color={C.textPrimary} />
           </TouchableOpacity>
         )}

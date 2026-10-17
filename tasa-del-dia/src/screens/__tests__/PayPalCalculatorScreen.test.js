@@ -22,13 +22,15 @@ jest.mock('../../context/ThemeContext', () => ({
   }),
 }));
 
-jest.mock('../../hooks/useRatesData', () => () => ({
-  data: {
-    tasaBCV: 37.5,
-    tasaParalelo: 39.5,
-    tasaBinanceP2P: 40.5,
-    tasaEuro: 1.08,
-  },
+jest.mock('../../context/RatesContext', () => ({
+  useRates: () => ({
+    data: {
+      tasaBCV: 37.5,
+      tasaParalelo: 39.5,
+      tasaBinanceP2P: 40.5,
+      tasaEuro: 1.08,
+    },
+  }),
 }));
 
 jest.mock('../../utils/haptics', () => ({

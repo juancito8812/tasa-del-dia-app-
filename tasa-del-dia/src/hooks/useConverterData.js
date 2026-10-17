@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Keyboard } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { fetchWithOfflineFallback, loadCacheRates, getStoredBCVLunes, subscribeBcvLunes } from '../services/api';
-import { extractRawDigits, formatRawDisplay, QUICK_USD, QUICK_BS } from '../utils/formatting';
+import { extractRawDigits, formatRawDisplay, getSeverityKey, QUICK_USD, QUICK_BS } from '../utils/formatting';
 
 export default function useConverterData() {
   const [rates, setRates] = useState({
@@ -187,7 +187,7 @@ export default function useConverterData() {
       diff,
       diffPercent,
       barPercent: Math.min((diffPercent / 30) * 100, 100),
-      barColor: diffPercent > 15 ? 'highlight' : diffPercent > 8 ? 'warning' : 'success',
+      barColor: getSeverityKey(diffPercent),
     };
   }, []);
 
