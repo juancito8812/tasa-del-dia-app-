@@ -1,5 +1,8 @@
 # Galaxy Store Submission Checklist — Tasa del Día
 
+> **Estado:** ⏳ no enviada todavía. Checklist de referencia, sin pasos completados.
+> Versión de la app a la que aplica: **1.6.10** (`com.tasadeldia.app`). Contexto técnico en [`architecture.md`](architecture.md).
+
 ## Pre-submission (before requesting review)
 
 - [ ] Privacy Policy published at a public URL (GitHub Pages recommended)

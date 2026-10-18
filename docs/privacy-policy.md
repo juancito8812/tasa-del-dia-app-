@@ -1,6 +1,6 @@
 # Política de Privacidad — Tasa del Día
 
-**Última actualización:** 17 de octubre de 2026
+**Última actualización:** 18 de octubre de 2026
 
 ## Datos que recopila esta app
 
@@ -13,6 +13,7 @@ Tasa del Día es una aplicación gratuita que consulta tasas de cambio en Venezu
 - **Estado del recordatorio:** Activo / Inactivo (no los contenido de notificaciones).
 - **Versión saltada:** Si el usuario elige "Saltar esta versión" en actualizaciones.
 - **Caché de datos:** Tasas de cambio para funcionamiento offline.
+- **Historial de tasas:** registros de tasas (BCV, paralelo, euro, Binance) guardados localmente por día, incluido el valor manual de "BCV Lunes" si el usuario lo introduce.
 - **Datos bancarios:** La app almacena localmente cuentas bancarias que el usuario registra voluntariamente (cedula, teléfono, banco, número de cuenta, tipo de cuenta) y métodos de pago digital (Zelle, PayPal, Binance, Facebank, Zinli, Wally). **Estos datos NO se envían a ningún servidor externo** — permanecen exclusivamente en el dispositivo del usuario.
 
 Todos estos datos se almacenan exclusivamente en el dispositivo del usuario. Las preferencias, caché de tasas e historial usan el almacenamiento interno de la app (AsyncStorage). **Los datos bancarios y de pago digital se guardan cifrados** con el almacén seguro del sistema (Android Keystore / iOS Keychain) mediante `expo-secure-store`. **Nada se envía a servidores externos.** Además, el respaldo del sistema (ADB/cloud) está desactivado para el sandbox de la app (`allowBackup=false`).

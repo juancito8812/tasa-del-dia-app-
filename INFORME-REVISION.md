@@ -3,6 +3,8 @@
 Fecha: 2026-10-14 · Versión revisada: **1.6.9** · Rama: `main`
 Alcance: calidad, seguridad y lógica. Método: revisión de código de 5 ejes (correctitud, legibilidad, arquitectura, seguridad, rendimiento) + verificación real.
 
+> **Actualización 2026-10-18 (v1.6.10):** los dos hallazgos estructurales que quedaban abiertos (**Q1** duplicación de UI entre temas y **Q2** archivos gigantes) ya están **resueltos y mergeados** — ver el final de la tabla de estado y [`PLAN-REFACTOR-Q1-Q2.md`](PLAN-REFACTOR-Q1-Q2.md) / [`docs/architecture.md`](docs/architecture.md).
+
 ## Verificación ejecutada
 | Check | Resultado |
 |---|---|
@@ -106,7 +108,9 @@ Nota: Jest avisa `worker process failed to exit gracefully` (timers sin cerrar).
 
 ---
 
-## Estado de correcciones (2026-10-15)
+## Estado de correcciones
+
+### 2026-10-15 — hallazgos de la revisión
 Aplicado y verificado (**560/560 tests, tsc 0, ESLint limpio**). L3 no se toca (decisión del dueño).
 
 | ID | Estado | Cambio |
@@ -122,13 +126,13 @@ Aplicado y verificado (**560/560 tests, tsc 0, ESLint limpio**). L3 no se toca (
 | P1 | ✅ | Items del historial reutilizan los `styles` del padre. |
 | P2 | ✅ | Fuentes fintech cargadas una vez en `FintechFontsProvider`. |
 | A1 | ✅ | `accessibilityLabel`/`accessibilityRole` en botones solo-icono (BankAccountCard, RateCard base+temas, FAB, cerrar modales, DateDetailCard). |
-| Q1/Q2 | 📋 | Plan por fases en `PLAN-REFACTOR-Q1-Q2.md`. |
+| Q1/Q2 | ✅ | **2026-10-18 (v1.6.10):** Q1 cerrado — 30 copias por tema eliminadas; un archivo por concepto resuelve los 4 estilos con `THEME_STYLES`. Q2 cerrado — `api.js` 493→36, `BankAccountForm.js` 809→199, `PayPalCalculatorScreen.js` 803→148. Merge `4e96c34` (76 archivos, +4.955/−8.521), 39 suites / 592 tests, tsc 0, lint 0. |
+
+### 2026-10-18 — cierre estructural (v1.6.10)
+Verificado: **39 suites / 592 tests PASS**, `tsc --noEmit` 0 errores, `eslint src --quiet` limpio. Detalle en [`PLAN-REFACTOR-Q1-Q2.md`](PLAN-REFACTOR-Q1-Q2.md) y [`docs/architecture.md`](docs/architecture.md).
 
 ### Nuevo hallazgo (no corregido) — dependencias de build
-`npm audit` reporta **2 críticos / 32 altos** en producción, pero son del **toolchain** (Expo CLI,
-Metro, Jest, `tar`, `shell-quote`), no del bundle que se embarca en el APK. La mayoría con
-`npm audit fix` (sin `--force`). Se puede aplicar en un PR aparte; no toqué el lock para no
-arriesgar el build.
+`npm audit` (consulta 2026-10-18) reporta **69 avisos: 2 críticos, 55 altos, 12 moderados** — el conteo crece a medida que GitHub Advisory agrega avisos, así que hay que reconsultarlo, no citar el número viejo. Todos son del **toolchain** (`shell-quote`, `tar`, Expo CLI, Metro, Jest, `node-forge`), **no del bundle que se embarca en el APK**. Los `fixAvailable` casi todos exigen salto de versión mayor (`jest` 30, `expo` 44) que es lo que aplica `--force`; sin `--force` solo se parchean `shell-quote` y `tar`. Riesgo práctico: DoS/crash contra la máquina de build, bajo. **Diferido por decisión del dueño** a un PR aparte sin `--force`: **issue [#12](https://github.com/juancito8812/tasa-del-dia-app-/issues/12)**. El lock no se tocó para no arriesgar el build.
 
 ### Notas de despliegue
 - `expo-secure-store` exige **recompilar** (prebuild + build). Un build viejo sin el módulo nativo

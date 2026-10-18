@@ -21,7 +21,7 @@
 - **PayPal Calculator:** 5.4% + $0.30 con modos "Para recibir" / "Para enviar" y conversión a BCV/Paralelo/Binance/Euro
 - **Pagar compras en BS:** tarjeta que calcula el monto exacto a transferir por PayPal (USD) para cubrir una compra en bolívares (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto en Bs
 - **Historial:** 900+ registros desde 2023 con chart y detalle por día
-- **Selector de diseño:** Original / Terminal / Editorial / Fintech — el nuevo estilo trae la paleta (crema + vino, panel oscuro con BCV amarillo) y las tipografías Space Grotesk + JetBrains Mono (botón en el header, preferencia persistente)
+- **Selector de diseño:** Original / Terminal / Editorial / Fintech (botón en el header, preferencia persistente). Fintech trae paleta crema + vino, panel oscuro con BCV amarillo y tipografías Space Grotesk + JetBrains Mono
 - **Auto-update:** descarga APK desde GitHub sin desinstalar
 
 ---
@@ -32,13 +32,14 @@
 |---------|-------|
 | Plataforma | Android |
 | Stack | React Native 0.81 + Expo SDK 54 |
-| Versión actual | **1.6.9** (versionCode 10609) |
+| Versión actual | **1.6.10** (versionCode 10610) |
 | Estado | ✅ Activa |
 | Fuente de datos | DolarApi.com (BCV, paralelo, euro) + Binance P2P directo |
-| Tests | 560/560 passing · 35 suites |
-| Lint | 0 errors, 0 warnings |
-| Typecheck | 0 errores (`checkJs: true`) |
-| Seguridad | Review full-app 17-oct-2026: 0 vulnerabilidades explotables (ver `INFORME-REVISION.md`) |
+| Tests | 592/592 passing · 39 suites |
+| Lint | 0 errors, 0 warnings (`npx eslint src --quiet`) |
+| Typecheck | 0 errores (`npx tsc --noEmit`, `checkJs: true`) |
+| Seguridad | Review full-app 17-oct-2026: 0 vulnerabilidades explotables (ver [`INFORME-REVISION.md`](INFORME-REVISION.md)) |
+| Arquitectura | 4 estilos de UI sobre un único set de componentes (ver [`docs/architecture.md`](docs/architecture.md)) |
 
 ### Instalación
 
@@ -90,31 +91,19 @@ La app verifica al iniciar si hay una versión más nueva consultando las releas
 
 **Verificado end-to-end:** v1.4.4 detecta v1.4.6 → modal → descarga → instalación nativa → v1.4.6 activa. Sin crashes, sin loops infinitos.
 
-**v1.4.6 Fix:** El auto-update ahora busca APKs que empiecen con `TasaDelDia*` (firma EAS correcta) en vez de cualquier `.apk`. Esto previene que se descargue una APK con firma de debug que causaba "No se instaló la app".
+Endurecimiento: solo se descargan APKs HTTPS de hosts GitHub cuyo nombre empiece con `TasaDelDia` (`isTrustedApkUrl`, ver `src/services/autoUpdate.js`) — se descartó el nombre genérico `.apk` para no bajar builds con firma de debug.
 
-**v1.4.7 Fixes (QA en Galaxy A12, 20-ago-2026):** BCV (Lunes) se refleja al instante en el Conversor sin reiniciar (pub/sub), validación inline en vez de Alert nativo, decimales para montos < 1 (1,5 Bs → 0,0019 USD), teclado ya no tapa los botones del modal, prefill con formato es-VE ("780,50"), y tarjetas sin acción ya no parecen botones.
-
-**v1.6.0 Features (05-Sep-2026):** Nueva pestaña "Datos Bancarios" con CRUD de cuentas bancarias y caché 24h. Nueva pestaña "PayPal Calculator" con tarifa 5.4% + $0.30 y modos "Para recibir" / "Para enviar". Refactor: calcSpread() DRY, useMemo en spreads, sanitizeId() para seguridad.
-
-**v1.6.2 Fixes (06-Sep-2026):** Fórmulas PayPal corregidas (5.4% + $0.30). Sección Digital separada en Zelle/PayPal/Binance. Transferencia con selector de banco. Reanimated 4.x migration. CI: newArchEnabled=true, iconos Ionicons, TypeScript fixes.
-
-**v1.6.4 (08-Sep-2026):** Tarjeta "Pagar compras en BS" en la pestaña PayPal — calcula el monto exacto a transferir (USD) para cubrir una compra en Bs (5.4% + $0.30 incluido), con chips de tasa en vivo (BCV/Paralelo/Binance), recomendación de entero superior y vuelto. BankData: iconos Ionicons serios (sin emojis) en las secciones Pago Móvil / Transferencia / Zelle / PayPal / Binance. Nuevos métodos de pago digital: Facebank (email + cuenta), Zinli (email) y Wally (email). Formato de copia mejorado: sección individual compacta (sin etiquetas) y "copiar todo" con etiquetas. Limpieza de repo: eliminadas 4 APKs huérfanas v1.4.x (292 MB), `logs/`, `temp_files/`, `dogfood-output/` y endurecido `.gitignore`. Release publicada vía workflow_dispatch (run 34278668785). Apk: `TasaDelDia-v1.6.4.apk` (~76 MB, firma EAS).
-
-**v1.6.6 & v1.6.7 (01-Oct-2026):** Introducción de nuevo estilo de diseño alternativo Fintech (paleta crema + vino granate, panel oscuro con BCV amarillo, fuentes Space Grotesk + JetBrains Mono), soporte de compartir/enviar directo en Pago Móvil y modernización de CI.
-
-**v1.6.8 (01-Oct-2026):** Sincronización automática de versión en package.json durante releases en CI, eliminación de dependencia @expo/ngrok de producción y blindaje de AnimatedNumber para entornos de animación.
-
-**v1.6.9 (05-Oct-2026):** Icono del BCV corregido (`landmark` → `business`, el primero no existe en Ionicons) en los 4 estilos. Tasa de Paralelo/Euro en estilo Fintech a 24px (alineada con el resto de las tarjetas medianas). Tarjetas bento del estilo Fintech con alturas parejas (`flexGrow: 1` — antes cada tarjeta quedaba a tamaño natural del contenido y desiguales cuando el subtítulo se partía en 2 líneas). +6 tests → 554/554.
+> 📜 **Historial de cambios por versión:** [`CHANGELOG.md`](CHANGELOG.md).
 
 ### 🔒 Revisión de calidad y seguridad (17-oct-2026)
 
-Auditoría completa de calidad + seguridad + lógica. **Informe:** [`INFORME-REVISION.md`](INFORME-REVISION.md) · **Trabajo estructural pendiente:** [`PLAN-REFACTOR-Q1-Q2.md`](PLAN-REFACTOR-Q1-Q2.md). Resultado: **0 vulnerabilidades explotables**; se corrigieron privacidad, integridad de datos y accesibilidad.
+Auditoría completa de calidad + seguridad + lógica (versión revisada: 1.6.9). **Informe:** [`INFORME-REVISION.md`](INFORME-REVISION.md). Resultado: **0 vulnerabilidades explotables**; se corrigieron privacidad, integridad de datos y accesibilidad.
 
 **Seguridad**
 - **Datos bancarios cifrados:** las cuentas pasan de AsyncStorage en claro a **`expo-secure-store`** (Keystore/Keychain del sistema), una cuenta por clave, con **migración automática** del formato anterior. `allowBackup=false` saca el sandbox de las copias ADB.
 - **Auto-update endurecido:** la descarga/instalación del APK valida HTTPS + host de GitHub (`isTrustedApkUrl`).
 - **Manifest mínimo:** `blockedPermissions` corta `READ/WRITE_EXTERNAL_STORAGE` y `SYSTEM_ALERT_WINDOW`.
-- **CI supply-chain:** las 7 acciones de GitHub Actions quedan fijadas a commit SHA.
+- **CI supply-chain:** las acciones de GitHub Actions quedan fijadas a commit SHA.
 
 **Lógica / datos**
 - **Historial:** el "BCV Lunes" manual ya no sobreescribe el `bcv` oficial del día (campo propio `bcv_lunes`).
@@ -122,16 +111,23 @@ Auditoría completa de calidad + seguridad + lógica. **Informe:** [`INFORME-REV
 - **PayPal:** el vuelto negativo se etiqueta "Faltante por cubrir".
 
 **Calidad / rendimiento / a11y**
-- `getSeverityKey()` centraliza los umbrales de brecha (>15/>8); items del historial reutilizan estilos; fuentes fintech cargadas una sola vez (`FintechFontsProvider`); `accessibilityLabel`/`accessibilityRole` en todos los botones solo-icono. **+6 tests → 560/560.**
+- `getSeverityKey()` centraliza los umbrales de brecha (>15/>8); items del historial reutilizan estilos; fuentes fintech cargadas una sola vez (`FintechFontsProvider`); `accessibilityLabel`/`accessibilityRole` en todos los botones solo-icono.
 
 > ⚠️ **Requiere rebuild nativo:** `expo-secure-store` es un módulo nativo nuevo. Hay que recompilar la APK (prebuild + CI) antes de distribuir; un build viejo sin el módulo fallaría al leer cuentas bancarias.
+
+### 🧹 Refactor estructural Q1/Q2 (18-oct-2026 — v1.6.10)
+
+- **Q1 — duplicación de UI entre temas:** eliminadas **30 copias** de componentes y pantallas en `src/ui/{terminal,editorial,fintech}/`. El mismo archivo (`RatesScreen`, `RateCard`, `RatesHeader`, `BCVModal`, `HistoryScreen`, `HistoryChart`, `DateDetailCard`, `ConverterScreen`, `UpdateModal`, `ScreenContainer`) sirve los 4 estilos resolviendo las diferencias visuales con un mapa `THEME_STYLES` indexado por `useTheme().uiStyle`.
+- **Q2 — archivos gigantes:** `services/api.js` 493→36 líneas (fachada de re-export sobre `services/api/{network,rates,storage,history,aggregate}.js`), `BankAccountForm.js` 809→199 (+ `components/bank/*`), `PayPalCalculatorScreen.js` 803→148 (+ subcomponentes `PayPal*` y `utils/paypalCalculator.js`).
+- Neto del merge: **76 archivos, +4.955 / −8.521 líneas**. Sin cambios de comportamiento; suite de 39 suites / 592 tests verde.
+- Detalle del plan y su cierre: [`PLAN-REFACTOR-Q1-Q2.md`](PLAN-REFACTOR-Q1-Q2.md) · cómo funciona el sistema de temas: [`docs/architecture.md`](docs/architecture.md).
 
 ### 🔐 Signing Policy (importante)
 
 **Todas las APKs de release DEBEN** ser construidas con `eas build --local` para que usen el mismo keystore EAS y los usuarios puedan hacer upgrade sobre versiones anteriores.
 
 ```bash
-# ✅ CORRECTO — usa el keystore EAS (mismo firma que CI)
+# ✅ CORRECTO — usa el keystore EAS (misma firma que CI)
 EXPO_TOKEN=<tu-token> eas build --platform android --profile preview --local --output TasaDelDia.apk
 
 # ❌ INCORRECTO — usa el debug keystore local (firma diferente)
@@ -150,26 +146,31 @@ cd android && ./gradlew assembleRelease
 tasa-del-dia-app/
 ├── tasa-del-dia/                  # App móvil React Native + Expo
 │   ├── App.js                     # Entry point, 5 pestañas + auto-update
+│   ├── app.config.js              # Config Expo: versión, permisos, plugins
 │   ├── src/
 │   │   ├── screens/               # RatesScreen, ConverterScreen, BankDataScreen, PayPalCalculatorScreen, HistoryScreen
-│   │   ├── components/            # RateCard, UpdateModal, CustomTabBar (Reanimated), BankAccountCard, BankAccountForm, etc.
-│   │   ├── ui/                     # Paquetes de diseño alternativos
-│   │   │   ├── index.js            # Registro getUiPackage(uiStyle)
-│   │   │   ├── terminal/           # Rediseño Terminal (monocromo)
-│   │   │   ├── editorial/          # Rediseño Editorial (premium)
-│   │   │   └── fintech/           # Rediseño Fintech (paleta crema + vino, Space Grotesk + JetBrains Mono)
-│   │   ├── services/              # api.js, autoUpdate.js, bankData.js, notifications.js, etc.
+│   │   ├── components/            # RateCard, UpdateModal, ScreenContainer, BankAccountCard, CustomTabBar, PayPal*
+│   │   │   └── bank/              # Subcomponentes de BankAccountForm (PersonalFields, PagoMovilFields, ...)
+│   │   ├── ui/                    # Paquetes de diseño
+│   │   │   ├── index.js           # Registro getUiPackage(uiStyle) — único dueño del mapeo estilo → componente
+│   │   │   ├── terminal/          # paleta monocroma + CustomTabBar propia
+│   │   │   ├── editorial/         # paleta editorial (premium)
+│   │   │   └── fintech/           # paleta crema + vino y fuentes Space Grotesk + JetBrains Mono
+│   │   ├── services/              # reglas de negocio y acceso a datos
+│   │   │   ├── api.js             # fachada de re-export (los imports no cambian)
+│   │   │   └── api/               # network / rates / storage / history / aggregate
 │   │   ├── hooks/                 # useRatesData, useConverterData, useHistoryData
 │   │   ├── constants/             # banks.js, documentTypes.js, paypalFees.js
-│   │   ├── context/               # ThemeContext (dark/light/system), DistributionContext, RatesContext (tasas compartidas)
-│   │   └── utils/                 # helpers
+│   │   ├── context/               # ThemeContext (dark/light/system + uiStyle), DistributionContext, RatesContext
+│   │   └── utils/                 # helpers (paypalCalculator, fechas, formato...)
 │   └── android/                   # Generated by expo prebuild (no commitear APKs)
 ├── .github/workflows/             # CI/CD (4 workflows, acciones fijadas a SHA)
-├── docs/                          # privacy-policy.md, galaxy-store-checklist.md
+├── docs/                          # architecture.md, privacy-policy.md, galaxy-store-checklist.md
+├── CHANGELOG.md                   # Historial de versiones
 ├── INFORME-REVISION.md            # Auditoría de calidad + seguridad (17-oct-2026)
-├── PLAN-REFACTOR-Q1-Q2.md         # Plan por fases: duplicación de temas + archivos grandes
+├── PLAN-REFACTOR-Q1-Q2.md         # Plan Q1/Q2: cerrado en la v1.6.10
 ├── README.md                      # Este archivo
-└── .gitignore                    # Ignora archivos sensibles y temporales
+└── .gitignore                     # Ignora archivos sensibles y temporales
 ```
 
 ---
@@ -191,10 +192,20 @@ Cuando no hay conexión:
 
 | Workflow | Evento | Producto |
 |----------|--------|----------|
-| **Mobile CI** | Push/PR a `main` con cambios en `tasa-del-dia/` | Tests (560) + lint (0 warnings) + typecheck |
-| **Build APK** | Push a `main` + manual | APK (EAS local) + firma verification + Release |
-| **Release Automático** | Manual (workflow_dispatch) + tags v* | APK + Release con changelog + firma verification |
-| **Auto-Sync** | Cron diario 6AM UTC + manual | Auto-commit de cambios pendientes en `main` |
+| **Mobile CI** (`mobile-ci.yml`) | Push a `main` y PR que toquen `tasa-del-dia/` | Tests (592) + lint + typecheck — es el gate de las ramas |
+| **Build APK** (`build-apk.yml`) | Push a `main`/`master` + manual | APK (EAS local) + verificación de firma + Release |
+| **Release Automático** (`release-automatic.yml`) | Manual (`workflow_dispatch` con `version`) + tags `v*` | Corre tests, bumpea versión, compila APK, verifica firma y publica la GitHub Release |
+| **Auto-Sync** (`auto-sync.yml`) | Cron diario 06:00 UTC + manual | Auto-commit de cambios pendientes en `main` (rama fija, `-uno`, `pull --rebase`, sin `--force`) |
+
+> Las ramas **no** generan APK ni preview web: `build-apk.yml` solo corre en `main`. El gate honesto de un PR es `gh pr checks <n>` (job `test`, ~1 min) y la APK aparece recién al mergear.
+
+**Publicar una release:**
+
+```bash
+gh workflow run release-automatic.yml --ref main -f version=1.6.11   # ~20-25 min
+gh run watch <run-id> --exit-status                                   # seguir el progreso
+gh release view v1.6.11                                               # verificar asset y notas
+```
 
 ---
 
@@ -217,7 +228,7 @@ Cuando no hay conexión:
 - React Native 0.81 + Expo SDK 54
 - Reanimated 4.x (animaciones en hilo UI)
 - Navegación por pestañas con `react-native-pager-view` + `CustomTabBar` (sin react-navigation)
-- AsyncStorage + expo-notifications + expo-background-fetch
+- AsyncStorage + `expo-secure-store` + expo-notifications + expo-background-fetch
 - Typecheck real con `checkJs` (`npm run typecheck` / `npx tsc --noEmit`)
 - DolarApi.com + Binance P2P directo
 - React Compiler lint rules (desactivadas las experimentales: `react-hooks/refs`, `react-hooks/set-state-in-effect`)
