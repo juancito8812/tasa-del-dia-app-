@@ -8,6 +8,7 @@ export const darkTheme = {
   primary: '#0b0b16',
   secondary: '#12122a',
   accent: '#1a1a40',
+  screenGradient: { colors: ['#0b0b16', '#10102a', '#151540'], locations: [0, 0.5, 1] },
 
   // Glass
   cardBg: 'rgba(255, 255, 255, 0.05)',
@@ -66,6 +67,7 @@ export const lightTheme = {
   primary: '#f5f0eb',
   secondary: '#ffffff',
   accent: '#e8e0d9',
+  screenGradient: { colors: ['#f5f0eb', '#faf6f2'], locations: [0, 1] },
 
   // Glass
   cardBg: '#ffffff',

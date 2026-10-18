@@ -6,6 +6,7 @@ export const darkThemeEditorial = {
   primary: '#0A0A0A',
   secondary: '#1A1A1A',
   accent: '#262626',
+  screenGradient: { colors: ['#0A0A0A', '#111111', '#0A0A0A'], locations: [0, 0.5, 1] },
 
   // Glass (superficies sólidas, sin transparencias de color)
   cardBg: '#1A1A1A',
@@ -62,6 +63,7 @@ export const lightThemeEditorial = {
   primary: '#FAFAFA',
   secondary: '#F5F5F5',
   accent: '#EEEEEE',
+  screenGradient: { colors: ['#FAFAFA', '#F5F5F5'], locations: [0, 1] },
 
   // Glass (superficies sólidas)
   cardBg: '#F5F5F5',

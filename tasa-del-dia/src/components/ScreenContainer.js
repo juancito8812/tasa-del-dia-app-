@@ -1,28 +1,41 @@
+// ScreenContainer ÚNICO para todos los estilos de UI (Q1).
+//
+// El degradado de fondo sale de la PALETA del tema activo (`C.screenGradient`)
+// y el estilo fintech envuelve además a los hijos con FintechFontsProvider.
+// Antes había una copia por tema (`ui/editorial/ScreenContainer.js`,
+// `ui/fintech/ScreenContainer.js`) con los colores hardcodeados.
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { FintechFontsProvider } from '../ui/fintech/fonts';
 
 export default function ScreenContainer({ children }) {
-  const { isDark } = useTheme();
-  if (isDark) {
+  const { colors: C, uiStyle } = useTheme();
+  const gradient = C?.screenGradient;
+
+  const content =
+    uiStyle === 'fintech' ? <FintechFontsProvider>{children}</FintechFontsProvider> : children;
+
+  // `screenGradient: null` (terminal) ⇒ fondo sólido de la paleta.
+  if (!gradient) {
     return (
-      <LinearGradient
-        colors={['#0b0b16', '#10102a', '#151540']}
-        locations={[0, 0.5, 1]}
-        style={styles.container}
-      >
-        {children}
-      </LinearGradient>
+      <View style={[styles.container, { backgroundColor: C?.primary || '#000000' }]}>
+        {content}
+      </View>
     );
   }
+
+  const gradientColors = /** @type {any} */ (gradient.colors);
+  const gradientLocations = /** @type {any} */ (gradient.locations);
+
   return (
     <LinearGradient
-      colors={['#f5f0eb', '#faf6f2']}
-      locations={[0, 1]}
+      colors={gradientColors}
+      locations={gradientLocations}
       style={styles.container}
     >
-      {children}
+      {content}
     </LinearGradient>
   );
 }

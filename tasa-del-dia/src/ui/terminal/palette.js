@@ -5,6 +5,7 @@ export const darkThemeTerminal = {
   primary: '#000000',
   secondary: '#101010',
   accent: '#1a1a1a',
+  screenGradient: null, // fondo sólido (C.primary), sin degradado
 
   cardBg: 'rgba(255, 255, 255, 0.05)',
   cardBorder: 'rgba(255, 255, 255, 0.12)',
@@ -45,6 +46,7 @@ export const lightThemeTerminal = {
   primary: '#ffffff',
   secondary: '#f2f2f2',
   accent: '#e5e5e5',
+  screenGradient: null, // fondo sólido (C.primary), sin degradado
 
   cardBg: '#ffffff',
   cardBorder: 'rgba(0, 0, 0, 0.15)',

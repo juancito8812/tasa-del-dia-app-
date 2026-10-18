@@ -1,88 +1,75 @@
 // Registro de paquetes de UI por estilo de diseño.
 // Cada paquete expone las pantallas, la tab bar y los modales de SU diseño;
 // la lógica de negocio (hooks/servicios/utils) se comparte entre todos.
+//
+// Desde el refactor Q1 los componentes son ÚNICOS: el mismo archivo sirve los
+// 4 estilos resolviendo sus diferencias visuales con un mapa `THEME_STYLES`
+// indexado por `useTheme().uiStyle`. Ya no hay una copia por tema.
 
-import RatesScreenOriginal from '../screens/RatesScreen';
-import ConverterScreenOriginal from '../screens/ConverterScreen';
-import BankDataScreenOriginal from '../screens/BankDataScreen';
-import PayPalCalculatorScreenOriginal from '../screens/PayPalCalculatorScreen';
-import HistoryScreenOriginal from '../screens/HistoryScreen';
+import RatesScreen from '../screens/RatesScreen';
+import ConverterScreen from '../screens/ConverterScreen';
+import BankDataScreen from '../screens/BankDataScreen';
+import PayPalCalculatorScreen from '../screens/PayPalCalculatorScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import CustomTabBarOriginal from '../components/CustomTabBar';
-import ScreenContainerOriginal from '../components/ScreenContainer';
-import UpdateModalOriginal from '../components/UpdateModal';
+import ScreenContainer from '../components/ScreenContainer';
+import UpdateModal from '../components/UpdateModal';
 
-import RatesScreenTerminal from './terminal/RatesScreen';
-import ConverterScreenTerminal from './terminal/ConverterScreen';
-import HistoryScreenTerminal from './terminal/HistoryScreen';
+// Terminal sí tiene su propia tab bar (se re-estila vía tokens, pero el
+// componente sigue siendo específico del estilo).
 import CustomTabBarTerminal from './terminal/CustomTabBar';
-import ScreenContainerTerminal from './terminal/ScreenContainer';
-import UpdateModalTerminal from './terminal/UpdateModal';
-
-// Editorial reutiliza la CustomTabBar original (no la reescribió):
-// se re-estila sola vía tokens.
-import RatesScreenEditorial from './editorial/RatesScreen';
-import ConverterScreenEditorial from './editorial/ConverterScreen';
-import HistoryScreenEditorial from './editorial/HistoryScreen';
-import ScreenContainerEditorial from './editorial/ScreenContainer';
-import UpdateModalEditorial from './editorial/UpdateModal';
-
-// Fintech reutiliza la CustomTabBar original (se re-estila vía tokens), como editorial.
-import RatesScreenFintech from './fintech/RatesScreen';
-import ConverterScreenFintech from './fintech/ConverterScreen';
-import HistoryScreenFintech from './fintech/HistoryScreen';
-import ScreenContainerFintech from './fintech/ScreenContainer';
-import UpdateModalFintech from './fintech/UpdateModal';
 
 export const UI_STYLES = /** @type {const} */ (['original', 'terminal', 'editorial', 'fintech']);
 
 const PACKAGES = {
   original: {
     Screens: {
-      rates: RatesScreenOriginal,
-      converter: ConverterScreenOriginal,
-      bankData: BankDataScreenOriginal,
-      paypalCalc: PayPalCalculatorScreenOriginal,
-      history: HistoryScreenOriginal,
+      rates: RatesScreen,
+      converter: ConverterScreen,
+      bankData: BankDataScreen,
+      paypalCalc: PayPalCalculatorScreen,
+      history: HistoryScreen,
     },
     TabBar: CustomTabBarOriginal,
-    ScreenContainer: ScreenContainerOriginal,
-    UpdateModal: UpdateModalOriginal,
+    ScreenContainer,
+    UpdateModal,
   },
   terminal: {
     Screens: {
-      rates: RatesScreenTerminal,
-      converter: ConverterScreenTerminal,
-      bankData: BankDataScreenOriginal,
-      paypalCalc: PayPalCalculatorScreenOriginal,
-      history: HistoryScreenTerminal,
+      rates: RatesScreen,
+      converter: ConverterScreen,
+      bankData: BankDataScreen,
+      paypalCalc: PayPalCalculatorScreen,
+      history: HistoryScreen,
     },
     TabBar: CustomTabBarTerminal,
-    ScreenContainer: ScreenContainerTerminal,
-    UpdateModal: UpdateModalTerminal,
+    ScreenContainer,
+    UpdateModal,
   },
   editorial: {
     Screens: {
-      rates: RatesScreenEditorial,
-      converter: ConverterScreenEditorial,
-      bankData: BankDataScreenOriginal,
-      paypalCalc: PayPalCalculatorScreenOriginal,
-      history: HistoryScreenEditorial,
+      rates: RatesScreen,
+      converter: ConverterScreen,
+      bankData: BankDataScreen,
+      paypalCalc: PayPalCalculatorScreen,
+      history: HistoryScreen,
     },
+    // Editorial y fintech reutilizan la CustomTabBar original (se re-estila vía tokens).
     TabBar: CustomTabBarOriginal,
-    ScreenContainer: ScreenContainerEditorial,
-    UpdateModal: UpdateModalEditorial,
+    ScreenContainer,
+    UpdateModal,
   },
   fintech: {
     Screens: {
-      rates: RatesScreenFintech,
-      converter: ConverterScreenFintech,
-      bankData: BankDataScreenOriginal,
-      paypalCalc: PayPalCalculatorScreenOriginal,
-      history: HistoryScreenFintech,
+      rates: RatesScreen,
+      converter: ConverterScreen,
+      bankData: BankDataScreen,
+      paypalCalc: PayPalCalculatorScreen,
+      history: HistoryScreen,
     },
     TabBar: CustomTabBarOriginal,
-    ScreenContainer: ScreenContainerFintech,
-    UpdateModal: UpdateModalFintech,
+    ScreenContainer,
+    UpdateModal,
   },
 };
 

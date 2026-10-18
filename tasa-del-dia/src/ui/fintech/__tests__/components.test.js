@@ -2,7 +2,7 @@ import React from 'react';
 import TestRenderer from 'react-test-renderer';
 import { StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import RateCard from '../RateCard';
+import RateCard from '../../../components/RateCard';
 import { darkThemeFintech, lightThemeFintech } from '../palette';
 
 // Las tipografías del paquete (Space Grotesk / JetBrains Mono) no se cargan en

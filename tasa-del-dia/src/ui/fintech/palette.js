@@ -10,6 +10,7 @@ export const darkThemeFintech = {
   primary: '#14130F', // --v3-dark
   secondary: '#1B1916', // celda .rc-stat del panel
   accent: '#262219',
+  screenGradient: { colors: ['#14130F', '#1B1916', '#14130F'], locations: [0, 0.5, 1] },
 
   // Glass — filas .rc-row del sitio
   cardBg: 'rgba(255, 255, 255, 0.035)',
@@ -69,6 +70,7 @@ export const lightThemeFintech = {
   primary: '#FBFAF7', // --v3-bg
   secondary: '#F6F5F1', // --v3-field
   accent: '#ECEAE3', // --v3-line
+  screenGradient: { colors: ['#FBFAF7', '#F6F5F1'], locations: [0, 1] },
 
   // Glass — tarjetas blancas con borde línea
   cardBg: '#FFFFFF', // --v3-panel
