@@ -1,6 +1,6 @@
 import React from 'react';
 import TestRenderer from 'react-test-renderer';
-import RateCard from '../RateCard';
+import RateCard from '../../../components/RateCard';
 
 jest.mock('expo-blur', () => {
   const React = require('react');
