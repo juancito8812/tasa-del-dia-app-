@@ -6,7 +6,17 @@ import { Text, TextInput } from 'react-native';
  * `keyboardType` y `autoCapitalize` se omiten en los campos que no los usan
  * (igual que en el original: quedan en el default de TextInput).
  */
-function LabeledInput({ C, styles, label, value, onChangeText, placeholder, error, keyboardType = undefined, autoCapitalize = undefined }) {
+function LabeledInput({
+  C,
+  styles,
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  error = undefined,
+  keyboardType = undefined,
+  autoCapitalize = undefined,
+}) {
   return (
     <>
       <Text style={[styles.label, { color: C.textSecondary }]}>{label}</Text>

@@ -28,7 +28,7 @@ export const INITIAL_FORM = {
  * Los teclados numéricos no impiden pegar letras ni guiones, así que se
  * valida igual un teléfono, una cédula o una cuenta.
  * @param {string} value valor del campo
- * @param {{min:number, max:number, message:string, lettersMessage:string}} rules
+ * @param {{min:number, max:number, message:string, lettersMessage?:string}} rules
  */
 function digitsError(value, { min, max, message, lettersMessage = 'Solo números' }) {
   const trimmed = value.trim();
