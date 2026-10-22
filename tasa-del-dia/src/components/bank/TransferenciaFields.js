@@ -6,7 +6,7 @@ import BankSearchField from './BankSearchField';
 /**
  * Sección "Transferencia": tipo de cuenta, banco y número de cuenta.
  */
-function TransferenciaFields({ C, styles, form, updateField, bankSearchTransfer, setBankSearchTransfer }) {
+function TransferenciaFields({ C, styles, form, errors, updateField, bankSearchTransfer, setBankSearchTransfer }) {
   return (
     <>
       <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>TRANSFERENCIA</Text>
@@ -54,7 +54,7 @@ function TransferenciaFields({ C, styles, form, updateField, bankSearchTransfer,
           {
             backgroundColor: C.inputBg,
             color: C.textPrimary,
-            borderColor: C.inputBorder,
+            borderColor: errors.numeroCuenta ? C.highlight : C.inputBorder,
           },
         ]}
         value={form.numeroCuenta}
@@ -63,6 +63,9 @@ function TransferenciaFields({ C, styles, form, updateField, bankSearchTransfer,
         placeholderTextColor={C.textMuted}
         keyboardType="numeric"
       />
+      {errors.numeroCuenta && (
+        <Text style={[styles.errorField, { color: C.highlight }]}>{errors.numeroCuenta}</Text>
+      )}
     </>
   );
 }
