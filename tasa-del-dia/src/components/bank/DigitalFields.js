@@ -6,7 +6,7 @@ import { Text, TextInput } from 'react-native';
  * `keyboardType` y `autoCapitalize` se omiten en los campos que no los usan
  * (igual que en el original: quedan en el default de TextInput).
  */
-function LabeledInput({ C, styles, label, value, onChangeText, placeholder, keyboardType = undefined, autoCapitalize = undefined }) {
+function LabeledInput({ C, styles, label, value, onChangeText, placeholder, error, keyboardType = undefined, autoCapitalize = undefined }) {
   return (
     <>
       <Text style={[styles.label, { color: C.textSecondary }]}>{label}</Text>
@@ -16,7 +16,7 @@ function LabeledInput({ C, styles, label, value, onChangeText, placeholder, keyb
           {
             backgroundColor: C.inputBg,
             color: C.textPrimary,
-            borderColor: C.inputBorder,
+            borderColor: error ? C.highlight : C.inputBorder,
           },
         ]}
         value={value}
@@ -26,6 +26,7 @@ function LabeledInput({ C, styles, label, value, onChangeText, placeholder, keyb
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
       />
+      {error && <Text style={[styles.errorField, { color: C.highlight }]}>{error}</Text>}
     </>
   );
 }
@@ -33,7 +34,7 @@ function LabeledInput({ C, styles, label, value, onChangeText, placeholder, keyb
 /**
  * Sección "Digital": Zelle, PayPal, Binance, Facebank, Zinli y Wally.
  */
-function DigitalFields({ C, styles, form, updateField }) {
+function DigitalFields({ C, styles, form, errors, updateField }) {
   return (
     <>
       {/* Zelle */}
@@ -46,6 +47,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.email}
         onChangeText={(v) => updateField('email', v)}
         placeholder="correo@ejemplo.com"
+        error={errors.email}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -60,6 +62,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.emailPayPal}
         onChangeText={(v) => updateField('emailPayPal', v)}
         placeholder="correo@paypal.com"
+        error={errors.emailPayPal}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -84,6 +87,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.emailBinance}
         onChangeText={(v) => updateField('emailBinance', v)}
         placeholder="correo@binance.com"
+        error={errors.emailBinance}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -108,6 +112,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.facebankEmail}
         onChangeText={(v) => updateField('facebankEmail', v)}
         placeholder="correo@facebank.com"
+        error={errors.facebankEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -132,6 +137,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.zinliEmail}
         onChangeText={(v) => updateField('zinliEmail', v)}
         placeholder="correo@zinli.com"
+        error={errors.zinliEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />
@@ -146,6 +152,7 @@ function DigitalFields({ C, styles, form, updateField }) {
         value={form.wallyEmail}
         onChangeText={(v) => updateField('wallyEmail', v)}
         placeholder="correo@wally.tech"
+        error={errors.wallyEmail}
         keyboardType="email-address"
         autoCapitalize="none"
       />

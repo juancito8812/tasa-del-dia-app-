@@ -168,6 +168,7 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
                     C={C}
                     styles={styles}
                     form={form}
+                    errors={errors}
                     updateField={updateField}
                     bankSearch={bankSearch}
                     setBankSearch={setBankSearch}
@@ -176,6 +177,7 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
                     C={C}
                     styles={styles}
                     form={form}
+                    errors={errors}
                     updateField={updateField}
                     bankSearchTransfer={bankSearchTransfer}
                     setBankSearchTransfer={setBankSearchTransfer}
@@ -184,7 +186,7 @@ function BankAccountForm({ visible, onClose, onSave, account, colors }) {
               )}
 
               {formTab === 'digital' && (
-                <DigitalFields C={C} styles={styles} form={form} updateField={updateField} />
+                <DigitalFields C={C} styles={styles} form={form} errors={errors} updateField={updateField} />
               )}
 
               <View style={{ height: 32 }} />

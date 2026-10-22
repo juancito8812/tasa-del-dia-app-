@@ -5,7 +5,7 @@ import BankSearchField from './BankSearchField';
 /**
  * Sección "Pago Móvil": banco + teléfono.
  */
-function PagoMovilFields({ C, styles, form, updateField, bankSearch, setBankSearch }) {
+function PagoMovilFields({ C, styles, form, errors, updateField, bankSearch, setBankSearch }) {
   return (
     <>
       <Text style={[styles.sectionLabel, { color: C.textMuted, marginTop: 20 }]}>PAGO MÓVIL</Text>
@@ -26,7 +26,7 @@ function PagoMovilFields({ C, styles, form, updateField, bankSearch, setBankSear
           {
             backgroundColor: C.inputBg,
             color: C.textPrimary,
-            borderColor: C.inputBorder,
+            borderColor: errors.telefono ? C.highlight : C.inputBorder,
           },
         ]}
         value={form.telefono}
@@ -35,6 +35,7 @@ function PagoMovilFields({ C, styles, form, updateField, bankSearch, setBankSear
         placeholderTextColor={C.textMuted}
         keyboardType="phone-pad"
       />
+      {errors.telefono && <Text style={[styles.errorField, { color: C.highlight }]}>{errors.telefono}</Text>}
     </>
   );
 }
